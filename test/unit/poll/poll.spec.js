@@ -9,6 +9,7 @@ var _ = require('lodash'),
     sinonChai = require('sinon-chai'),
     chaiAsPromised = require("chai-as-promised"),
     expect = chai.expect,
+    mongoose = require('mongoose'),
     Promise = require('bluebird');
 
 chai.use(sinonChai);
@@ -164,6 +165,38 @@ describe('Poll', function () {
     });
   });
   
+  describe('#addVote', function () {
+
+    var poll, voterId;
+
+    beforeEach(function () {
+      voterId = mongoose.Types.ObjectId();
+      poll = new Poll(dataFactory.create()); 
+      sinon.stub(poll, 'saveAsync', function () {
+        return Promise.resolve([this, 1]); 
+      });
+    });
+
+    it('should add a new vote and rturn promise', function () {
+      return expect(poll.addVote(voterId, 1)).to.be.fulfilled
+      .then(function (poll) {
+        expect(poll.votes[0]).to.have.property('voterId', voterId);
+        expect(poll.votes[0]).to.have.property('createdAt').to.be.a('date');
+        expect(poll.votes[0]).to.have.property('subjectId', 1);
+        expect(poll.votes[0]).to.have.property('subjectText', 'Basketball');
+      });
+    });
+
+    it('should increase number of votes of the voted subject', function () {
+      return expect(poll.addVote(voterId, 2)).to.eventually.have
+        .deep.property('subject2.numVotes', 1);
+    });
+
+    it('should increase total number of votes of the poll', function () {
+      return expect(poll.addVote(voterId, 2)).to.eventually.have
+        .deep.property('numTotalVotes', 1);
+    });
+  });
 
   it('should have #toJSON to get clean json', function () {
     data = dataFactory.create();
