@@ -107,7 +107,7 @@ describe('Poll', function () {
       });
     });
 
-    describe('when first find returns null', function () {
+    describe('when first find query returns null', function () {
 
       beforeEach(function () {
         Poll.findOneAsync.onFirstCall().returns(Promise.resolve(null));
@@ -195,6 +195,11 @@ describe('Poll', function () {
     it('should increase total number of votes of the poll', function () {
       return expect(poll.addVote(voterId, 2)).to.eventually.have
         .deep.property('numTotalVotes', 1);
+    });
+
+    it('should be rejected with error with invalid subjectId', function () {
+      return expect(poll.addVote(voterId, 3)).to.eventually.be
+        .rejectedWith('argument subjectId must be an integer 1 or 2');
     });
   });
 
