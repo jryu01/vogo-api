@@ -152,7 +152,7 @@ describe('Secured Routes', function () {
   it('should requires valid access_token', function (done) {
     request(app).get(securedUrl)
     .expect(401)
-    .expect(/Valid access token is required/, done);
+    .expect(/Access token is missing!/, done);
   });
 
   it('should requires non-expired access_token', function (done) {

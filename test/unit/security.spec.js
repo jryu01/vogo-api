@@ -114,14 +114,17 @@ describe('security', function () {
         req.body = {};
         return expect(verifyToken(req, res)).to.be.rejected.then(function (e) {
           expect(e.status).to.equal(401);
-          expect(e.message).to.equal('Valid access token is required');
+          expect(e.message).to.equal('Access token is missing!');
         });
       });
 
       it('should reject with decoding error', function () {
         mockJwt.decode.withArgs(TOKEN, 'testsecret')
         .throws(new Error("decode err"));
-        return expect(verifyToken(req, res)).to.be.rejectedWith('decode err');
+        return expect(verifyToken(req, res)).to.be.rejected.then(function (e) {
+          expect(e.status).to.equal(401);
+          expect(e.message).to.equal('Access token is not a valid token!');
+        });
       });
 
       it('should reject with 401 when token is expired', function () {
