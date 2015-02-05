@@ -58,7 +58,7 @@ describe('Poll', function () {
         expect(poll).to.have.property('updatedAt').to.be.a('date');
         expect(poll).to.have.deep.property('subject1.numVotes', 0);
         expect(poll).to.have.deep.property('subject2.numVotes', 0);
-        expect(poll).to.have.property('numTotalVotes', 0);
+        expect(poll).to.have.property('totalNumVotes', 0);
         expect(poll).to.have.property('votes').to.be.ok.and.empty;
         expect(poll).to.have.property('tags').to.be.ok.and.empty;
         expect(poll).to.have.property('_random').to.be.ok.and.a('Number');
@@ -194,7 +194,7 @@ describe('Poll', function () {
 
     it('should increase total number of votes of the poll', function () {
       return expect(poll.addVote(voterId, 2)).to.eventually.have
-        .deep.property('numTotalVotes', 1);
+        .deep.property('totalNumVotes', 1);
     });
 
     it('should be rejected with error with invalid subjectId', function () {
