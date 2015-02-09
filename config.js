@@ -40,7 +40,7 @@ var config = (function (env) {
     env: "test",
     port: process.env.PORT || 3030,
     mongo: {
-      url: process.env.MONGOLAB_URI || "mongodb://localhost/voteit-api-test"
+      url: process.env.MONGOLAB_URI
     },
     aws: {
       bucket: 'AWS S3 BUCKET NAME'
