@@ -6,7 +6,7 @@ var app = require('../app');
 app.set('port', config.port);
 
 // connect db
-console.log(config.mongo.url);
+console.log(config);
 mongoose.connect(config.mongo.url);
 
 // start listening for requests
