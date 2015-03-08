@@ -51,7 +51,7 @@ var config = (function (env) {
   conf.production = {
     env: "production",
     mongo: {
-      url: "mongodb://localhost/voteit-api"
+      url: process.env.MONGOLAB_URI,
     },
     aws: {
       bucket: 'AWS S3 BUCKET NAME'
