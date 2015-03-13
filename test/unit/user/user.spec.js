@@ -35,7 +35,7 @@ describe('User', function () {
   beforeEach(function () {
     bcrypt = require('bcrypt');
     testUtil.useMockBcrypt();
-    User = require('../../../lib/user/user');
+    User = require('../../../app/user/user');
   });
 
   afterEach(function () {

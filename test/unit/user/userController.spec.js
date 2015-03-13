@@ -42,7 +42,7 @@ describe('userController', function () {
     req = reqFactory.create(); 
     res = {};
 
-    controller = rewire('../../../lib/user/userController');
+    controller = rewire('../../../app/user/userController');
     controller.__set__({
       User: User
     });

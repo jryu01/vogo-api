@@ -200,7 +200,7 @@ describe('User Routes', function () {
 
   beforeEach(function () {
     app = require('../app');
-    User = require('../lib/user/user.js');
+    User = require('../app/user/user.js');
   });
 
   beforeEach(function (done) {
@@ -313,7 +313,7 @@ describe('Poll Routes', function () {
 
  //  beforeEach(function () {
  //    app = require('../app');
- //    Activity = require('../lib/poll/poll.js');
+ //    Activity = require('../app/poll/poll.js');
  //  });
 
  //  beforeEach(function (done) {

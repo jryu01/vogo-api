@@ -3,9 +3,9 @@
 var express = require('express');
 var router = express.Router();
 
-var userCtrl = require('../lib/user/userController');
-var pollCtrl = require('../lib/poll/pollController');
-var security = require('../lib/security');
+var userCtrl = require('../app/user/userController');
+var pollCtrl = require('../app/poll/pollController');
+var security = require('../app/security');
 
 // exports router
 module.exports = router;

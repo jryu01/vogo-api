@@ -4,7 +4,7 @@
 
 var jwt = require('jwt-simple'),
   crypto = require('crypto'),
-  config = require('../config'),
+  config = require('./config'),
   User = require('./user/user'),
   Promise = require('bluebird'),
   request = Promise.promisify(require("request"));
