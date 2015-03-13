@@ -1,7 +1,6 @@
 'use strict';
 // this is mock to replace real bcrypt module because
 // hsaing is too expensive
-var Promise = require('bluebird');
 
 var mockBcrypt = {
   genSalt: function (saltWorkFactor, cb){
@@ -17,4 +16,5 @@ var mockBcrypt = {
   }
 };
 
-module.exports = Promise.promisifyAll(mockBcrypt);
+// module.exports = Promise.promisifyAll(mockBcrypt);
+module.exports = mockBcrypt;
