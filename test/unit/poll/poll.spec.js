@@ -31,7 +31,7 @@ describe('Poll', function () {
   var Poll, data;
  
   beforeEach(function () {
-    Poll = require('../../../app/poll/poll');
+    Poll = require('app/poll/poll');
   });
 
   describe('.createNew', function () {

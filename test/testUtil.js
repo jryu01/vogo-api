@@ -4,9 +4,9 @@ var Promise = require('bluebird');
 var sinon = require('sinon');
 var mockBcrypt = require('./mockBcrypt');
 var bcrypt = Promise.promisifyAll(require('bcrypt'));
-var config = require('../app/config');
+var config = require('app/config');
 var jwt = require('jwt-simple');
-var User = require('../app/user/user.js');
+var User = require('app/user/user.js');
 var mongoose = require('mongoose');
 
 

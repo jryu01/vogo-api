@@ -23,7 +23,7 @@ describe('All Routes', function () {
   var app;
 
   beforeEach(function () {
-    app = require('../app');
+    app = require('app');
   });
 
   it('should respond with header with valid CORS settings', function (done) {
@@ -51,7 +51,7 @@ describe('Auth Routes', function () {
   });
 
   beforeEach(function (done) {
-    app = require('../app');
+    app = require('app');
     data = {
       email: 'jhon@handsome.com',
       firstName: 'Jhon', 
@@ -145,7 +145,7 @@ describe('Secured Routes', function () {
   });
 
   beforeEach(function () {
-    app = require('../app');
+    app = require('app');
     securedUrl = '/api/users';
   });
 
@@ -199,8 +199,8 @@ describe('User Routes', function () {
   });
 
   beforeEach(function () {
-    app = require('../app');
-    User = require('../app/user/user.js');
+    app = require('app');
+    User = require('app/user/user.js');
   });
 
   beforeEach(function (done) {
@@ -312,8 +312,8 @@ describe('Poll Routes', function () {
  //  });
 
  //  beforeEach(function () {
- //    app = require('../app');
- //    Activity = require('../app/poll/poll.js');
+ //    app = require('app');
+ //    Activity = require('app/poll/poll.js');
  //  });
 
  //  beforeEach(function (done) {

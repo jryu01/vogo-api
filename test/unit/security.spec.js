@@ -36,7 +36,7 @@ describe('security', function () {
     sinon.stub(Date, 'now').returns(1417876057391);
 
     // load module
-    security = rewire('../../app/security');
+    security = rewire('app/security');
     security.__set__({
       jwt: mockJwt,
       config: mockConfig,

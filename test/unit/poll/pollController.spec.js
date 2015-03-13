@@ -40,7 +40,7 @@ chai.use(chaiAsPromised);
 //     req = reqFactory.create(); 
 //     res = {};
 
-//     controller = rewire('../../../app/poll/pollController');
+//     controller = rewire('app/poll/pollController');
 //     controller.__set__({
 //       Activity: Activity
 //     });
