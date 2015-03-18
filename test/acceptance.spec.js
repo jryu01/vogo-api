@@ -187,118 +187,120 @@ describe('Secured Routes', function () {
   });
 });
 
-describe('User Routes', function () {
+// ----------------COVERED in V2------------
 
-  var app, User, data, token;
+// describe('User Routes', function () {
 
-  before(function () {
-    testUtil.useMockBcrypt();
-  });
-  after(function () {
-    testUtil.restoreBcrypt();
-  });
+//   var app, User, data, token;
 
-  beforeEach(function () {
-    app = require('app');
-    User = require('app/user/user.js');
-  });
+//   before(function () {
+//     testUtil.useMockBcrypt();
+//   });
+//   after(function () {
+//     testUtil.restoreBcrypt();
+//   });
 
-  beforeEach(function (done) {
-    testUtil.createUserAndGetAccessToken({}, function (err, tk) {
-      if (err) { return done(err); }
-      token = tk;
-      done();
-    });
-  });
+//   beforeEach(function () {
+//     app = require('app');
+//     User = require('app/user/user.js');
+//   });
 
-  describe('POST /api/users', function () {
+//   beforeEach(function (done) {
+//     testUtil.createUserAndGetAccessToken({}, function (err, tk) {
+//       if (err) { return done(err); }
+//       token = tk;
+//       done();
+//     });
+//   });
 
-    beforeEach(function () {
-      data = dataFactory.create({ access_token: token });
-    });
+//   describe('POST /api/users', function () {
 
-    it('should save a user to db and return it', function (done) {
-      request(app).post('/api/users').send(data)
-      .expect('Content-Type', /json/)
-      .expect(200)
-      .end(function (err, res) {
-        if (err) { done(err); }
-        expect(res.body).to.have.property('id');
-        expect(res.body).to.have.property('email', 'example@example.com');
-        expect(res.body).to.not.have.property('password');
-        User.findById(res.body.id, function (err, user) {
-          expect(user).to.have.property('id');
-          expect(user).to.have.property('email', 'example@example.com');
-          expect(user).to.have.property('password');
-          done();
-        });
-      });
-    });
+//     beforeEach(function () {
+//       data = dataFactory.create({ access_token: token });
+//     });
 
-    it('should respond with 400 error when required field is missing', 
-      function (done) {
-      delete data.email;
-      request(app).post('/api/users').send(data)
-      .expect('Content-Type', /json/)
-      .expect(400)
-      .expect(/email is required!/, done);
-    });
+//     it('should save a user to db and return it', function (done) {
+//       request(app).post('/api/users').send(data)
+//       .expect('Content-Type', /json/)
+//       .expect(200)
+//       .end(function (err, res) {
+//         if (err) { done(err); }
+//         expect(res.body).to.have.property('id');
+//         expect(res.body).to.have.property('email', 'example@example.com');
+//         expect(res.body).to.not.have.property('password');
+//         User.findById(res.body.id, function (err, user) {
+//           expect(user).to.have.property('id');
+//           expect(user).to.have.property('email', 'example@example.com');
+//           expect(user).to.have.property('password');
+//           done();
+//         });
+//       });
+//     });
 
-    it('should respond with 400 error when email already exists', function (done) {
-      request(app).post('/api/users').send(data)
-      .expect(200, function (err, res) {
-        request(app).post('/api/users').send(data)
-        .expect(400)
-        .expect(/The email already exists in the system/, done);
-      });
-    });
+//     it('should respond with 400 error when required field is missing', 
+//       function (done) {
+//       delete data.email;
+//       request(app).post('/api/users').send(data)
+//       .expect('Content-Type', /json/)
+//       .expect(400)
+//       .expect(/email is required!/, done);
+//     });
 
-  });
+//     it('should respond with 400 error when email already exists', function (done) {
+//       request(app).post('/api/users').send(data)
+//       .expect(200, function (err, res) {
+//         request(app).post('/api/users').send(data)
+//         .expect(400)
+//         .expect(/The email already exists in the system/, done);
+//       });
+//     });
 
-  describe('GET /api/users', function () {
+//   });
 
-    beforeEach(function (done) {
-      var user1 = dataFactory.create({email: 'bob@home.io'});
-      var user2 = dataFactory.create({email: 'sam@home.io'});
-      testUtil.createUser([user1, user2], function (err, user) {
-        if (err) { return done(err); }
-        done();
-      });
-    });
+//   describe('GET /api/users', function () {
 
-    it('should retreive array of users', function (done) {
-      request(app).get('/api/users')
-        .set('X-Access-Token', token)
-        .expect('Content-Type', /json/)
-        .expect(200)
-        .end(function (err, res) {
-          if (err) { return done(err); }
-          expect(res.body).to.be.an('array');
-          expect(JSON.stringify(res.body)).to.match(/bob@home.io/);
-          expect(JSON.stringify(res.body)).to.match(/sam@home.io/);
-          done();
-        });
-    });
+//     beforeEach(function (done) {
+//       var user1 = dataFactory.create({email: 'bob@home.io'});
+//       var user2 = dataFactory.create({email: 'sam@home.io'});
+//       testUtil.createUser([user1, user2], function (err, user) {
+//         if (err) { return done(err); }
+//         done();
+//       });
+//     });
 
-  });
+//     it('should retreive array of users', function (done) {
+//       request(app).get('/api/users')
+//         .set('X-Access-Token', token)
+//         .expect('Content-Type', /json/)
+//         .expect(200)
+//         .end(function (err, res) {
+//           if (err) { return done(err); }
+//           expect(res.body).to.be.an('array');
+//           expect(JSON.stringify(res.body)).to.match(/bob@home.io/);
+//           expect(JSON.stringify(res.body)).to.match(/sam@home.io/);
+//           done();
+//         });
+//     });
+
+//   });
   
-  describe('GET /api/users/{userId}', function () {
-    it('should retreive a specific user with id', function (done) {
-      User.findOne(function (err, user) {
-        request(app).get('/api/users/' + user.id)
-          .set('X-Access-Token', token)
-          .expect('Content-Type', /json/)
-          .expect(200)
-          .end(function (err, res) {
-            if (err) { done(err); }
-            expect(res.body).to.have.property('id', user.id);
-            done();
-          });
-      });
-    });
-  });
+//   describe('GET /api/users/{userId}', function () {
+//     it('should retreive a specific user with id', function (done) {
+//       User.findOne(function (err, user) {
+//         request(app).get('/api/users/' + user.id)
+//           .set('X-Access-Token', token)
+//           .expect('Content-Type', /json/)
+//           .expect(200)
+//           .end(function (err, res) {
+//             if (err) { done(err); }
+//             expect(res.body).to.have.property('id', user.id);
+//             done();
+//           });
+//       });
+//     });
+//   });
 
-});
+// });
 
 describe('Poll Routes', function () {
 
