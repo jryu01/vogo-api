@@ -17,7 +17,7 @@ describe('User Router', function () {
           done();
         });
     });
-    
+
   });
 
   describe('GET /api/users', function () {
