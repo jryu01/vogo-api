@@ -15,8 +15,8 @@ var getUser = function (req, res, next) {
   User.findByIdAsync(req.params.id).then(res.json.bind(res)).catch(next);
 };
 
-router.post('/api/v2/users', createUser);
-router.get('/api/v2/users', listUsers);
-router.get('/api/v2/users/:id', getUser);
+router.post('/v2/users', createUser);
+router.get('/v2/users', listUsers);
+router.get('/v2/users/:id', getUser);
 
 module.exports = router;

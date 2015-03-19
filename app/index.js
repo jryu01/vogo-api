@@ -25,7 +25,7 @@ app.use('/', function (req, res, next) {
   }
 });
 app.use('/', require('./router'));
-app.use('/', require('app/user/router'));
+app.use('/api', require('app/user/router'));
 app.use(errorHandler());
 
 module.exports = app;
