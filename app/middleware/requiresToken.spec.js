@@ -9,7 +9,7 @@ var express = require('express'),
 
 describe('Middleware', function () {
 
-  var mw, mockJwt, mockUser, mockConfig;
+  var requiresToken, mockJwt, mockUser, mockConfig;
 
   beforeEach(function () {
 
@@ -22,15 +22,15 @@ describe('Middleware', function () {
       }
     };
     mockUser = { findByIdAsync: sinon.stub(), findOneAsync: sinon.stub() };
-    mw = rewire('app/middleware');
-    mw.__set__({
+    requiresToken = rewire('./requiresToken');
+    requiresToken.__set__({
       jwt: mockJwt,
       User: mockUser,
       config: mockConfig
     });
   });
 
-  describe('#requiresAccessToken', function () {
+  describe('requiresToken', function () {
 
     var app, reqObj, TOKEN;
 
@@ -38,7 +38,7 @@ describe('Middleware', function () {
       app = express();
       app.use(bodyParser.json());
       app.use(function (req, res) {
-        mw.requiresAccessToken(req, res, function (err) {
+        requiresToken(req, res, function (err) {
           reqObj = req;
           res.statusCode = err ? (err.status || 500) : 200;
           res.end(err ? err.message : JSON.stringify(req.body));
@@ -85,43 +85,49 @@ describe('Middleware', function () {
           .expect(200, done);
       });
 
-      it('should reject with 401 error if user not found', function (done) {
+      it('should response with 401 if user not found', function (done) {
         mockUser.findByIdAsync.withArgs(321).returns(Promise.resolve(null));
 
         request(app).get('/')
           .set('x-access-token', TOKEN)
           .expect(401, 
-            '{"status":401,"message":"User not found with the token"}', done);
+            '{"status":401,"message":"User not found with the token!"}', done);
       });
     });
 
-  //  describe('with an Invalid token', function () {
+   describe('with an Invalid token', function () {
 
-  //     it('should reject with 401 with missing token', function () {
-  //       req.body = {};
-  //       return expect(requiresAccessToken(req, res)).to.be.rejected.then(function (e) {
-  //         expect(e.status).to.equal(401);
-  //         expect(e.message).to.equal('Access token is missing!');
-  //       });
-  //     });
+      it('should response with 401 with missing token', function (done) {
+        request(app).get('/')
+          .expect(401, 
+            '{"status":401,"message":"Access token is missing!"}', done);
+      });
 
-  //     it('should reject with decoding error', function () {
-  //       mockJwt.decode.withArgs(TOKEN, 'testsecret')
-  //       .throws(new Error("decode err"));
-  //       return expect(requiresAccessToken(req, res)).to.be.rejected.then(function (e) {
-  //         expect(e.status).to.equal(401);
-  //         expect(e.message).to.equal('Access token is not a valid token!');
-  //       });
-  //     });
+      it('should response with 401 with decoding error', function (done) {
+        mockJwt.decode.withArgs('invalidToken', 'testsecret')
+        .throws(new Error("decode err"));
 
-  //     it('should reject with 401 when token is expired', function () {
-  //       var expTokenDecoded = {
-  //         iss: 123, 
-  //         exp: Date.now() - (60*24*60*60*1000)
-  //       };
-  //       mockJwt.decode.withArgs(TOKEN, 'testsecret').returns(expTokenDecoded);
-  //       return expect(requiresAccessToken(req, res)).to.be.rejectedWith('Access token has been expired');
-  //     });
-  //   });
+        request(app).get('/')
+          .set('x-access-token', 'invalidToken')
+          .expect(401,
+            '{"status":401,"message":"Access token is not a valid token!"}',
+            done);
+      });
+
+      it('should response with 401 when token is expired', function (done) {
+        var expTokenDecoded = {
+          iss: 123, 
+          exp: Date.now() - (60*24*60*60*1000)
+        };
+        mockJwt.decode.withArgs('expToken', 'testsecret')
+          .returns(expTokenDecoded);
+
+        request(app).get('/')
+          .set('x-access-token', 'expToken')
+          .expect(401,
+            '{"status":401,"message":"Access token has been expired!"}',
+            done);
+      });
+    });
   });
 });
