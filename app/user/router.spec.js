@@ -29,6 +29,10 @@ describe('User Router', function () {
       });
     });
 
+    it('should return 401 without an accessToken', function (done) {
+      app.get('/api/v2/users').expect(401, done); 
+    });
+
     it('should retreive array of users', function (done) {
       app.get('/api/v2/users').expect(200, function (err, res) {
         if (err) { return done(err); }
