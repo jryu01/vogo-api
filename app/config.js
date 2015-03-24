@@ -18,6 +18,7 @@ var config = (function (env) {
     port: process.env.PORT || 3000,
     mongo: {},
     jwtsecret: 'jwtrandom secret for this beautiful app',
+    jwtexp: 60 * 24 * 60 * 60 * 1000,
     aws: {
       accessKey: 'AWS ACCESS KEY',
       secretKey: 'AWS SECRET KEY'
