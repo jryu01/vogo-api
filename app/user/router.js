@@ -1,9 +1,11 @@
 'use strict';
-var User = require('./user');
-var requiresToken = require('app/middleware/requiresToken');
-var config = require('app/config');
-var jwt = require('jwt-simple');
-var router = require("express").Router();
+var jwt = require('jwt-simple'),
+    User = require('./user'), 
+    config = require('app/config'),
+    router = require("express").Router(),
+    Promise = require('bluebird'),
+    request = Promise.promisify(require("request")),
+    requiresToken = require('app/middleware/requiresToken');
 
 var createUser = function (req, res, next) {
   User.createAsync(req.body).then(res.status(201).json.bind(res)).catch(next);
@@ -28,7 +30,7 @@ var signin = function (req, res, next) {
         res.status(401)
           .json({status: 401, message: 'Can\'t find a user with that email'});
       }
-      var ACCESS_TOKEN = jwt.encode({
+      var token = jwt.encode({
         iss: user.id,
         exp: Date.now() + config.jwtexp
       }, config.jwtsecret);
@@ -37,12 +39,57 @@ var signin = function (req, res, next) {
           return res.status(401)
                     .json({ status: 401, message: 'Password is not correct'});
         }
-        res.status(200).json({
+        res.json({
           user: user,
-          access_token: ACCESS_TOKEN
+          access_token: token
         });
       });
     }).catch(next);
+  } else if (req.body.grantType === 'facebook') {
+    if (!req.body.facebookAccessToken) {
+      return res.status(400)
+        .json({ status: 400, message: 'A facebook access token is required'});
+    }
+    request('https://graph.facebook.com/me?' +
+      'field=id,email,name&access_token=' + 
+      req.body.facebookAccessToken)
+    .spread(function (response, body) {
+      var profile;
+      if (response.statusCode !== 200) {
+        return res.status(500).json({
+          name: 'FacebookGraphAPIError',
+          message: "Failed to fetch facebook user profile",
+          status: 500
+        });
+      }
+      return JSON.parse(body);
+    }).then(function (fbProfile) {
+      return User.findOneAsync({ 'facebook.id': fbProfile.id }).then(function (user) {
+        if (!user) {
+          var newUser = {
+            email: fbProfile.email,
+            name: fbProfile.name,
+            facebook: { 
+              id: fbProfile.id,
+              email: fbProfile.email,
+              name: fbProfile.name 
+            }
+          };
+          return User.createAsync(newUser);
+        }
+        return user;
+      });
+    }).then(function (user) {
+      var token = jwt.encode({
+        iss: user.id,
+        exp: Date.now() + config.jwtexp
+      }, config.jwtsecret);
+      res.json({ 
+        user: user,
+        access_token: token 
+      }); 
+    }).catch(next);
+      
   } else {
     return res.status(400).json({
       status: 400,

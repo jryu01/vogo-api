@@ -1,12 +1,25 @@
 'use strict';
 /*jshint expr: true*/
-
-var jwt = require('jwt-simple'),
-    config = require('app/config'),
+var methodOverride = require('method-override'),
+    bodyParser = require('body-parser'),
+    Promise = require('bluebird'),
     request = require('supertest'),
-    app = request(require('app'));
+    express = require('express'),
+    rewire = require('rewire'),
+    config = require('app/config'),
+    User = require('./user'),
+    jwt = require('jwt-simple');
+    
+var router = rewire('./router');
 
 describe('User Router', function () {
+  
+  // create app with the router
+  var app = express();
+  app.use(bodyParser.json());
+  app.use(methodOverride());
+  app.use('/api', router);
+  app = request(app);
   
   describe('POST /users/signin', function () {
     
@@ -24,17 +37,15 @@ describe('User Router', function () {
       var user;
       
       beforeEach(function (done) {
-        var reqBody = {
+        var data = {
           email: 'test@vogo.com',
           password: 'testpwd'
         }
-        app.post('/api/v2/users')
-          .send(reqBody)
-          .expect(201, function (err, res) {
-            if (err) { return done(err); }
-            user = res.body;
-            done();
-          });
+        User.create(data, function (err, newUser) {
+          if (err) { return done(err); } 
+          user = newUser;
+          done();
+        });
       });
       
       it('should send 200 with user object', function (done) {
@@ -44,13 +55,13 @@ describe('User Router', function () {
           password: 'testpwd'
         };
         app.post(path).send(reqBody).expect(200, function(err, res) {
-          if (err) { done(err); }
+          if (err) { return done(err); }
           expect(res.body.user.email).to.equal('test@vogo.com');
           done();
         });
       });
       
-      it('should send with 200 with access_token', function (done) {
+      it('should send 200 with access_token', function (done) {
         
         sinon.stub(Date, 'now').returns(1417876057391);
         
@@ -67,7 +78,7 @@ describe('User Router', function () {
         
         app.post(path).send(reqBody).expect(200, function(err, res) {
           Date.now.restore();
-          if (err) { done(err); }
+          if (err) { return done(err); }
           expect(res.body).to.have.deep.property('access_token', ACCESS_TOKEN);
           done();
         });
@@ -121,6 +132,121 @@ describe('User Router', function () {
           message: 'Can\'t find a user with that email'
         });
         app.post(path).send(reqBody).expect(401, resBody, done);
+      });
+    });
+    
+    describe('with facebook access token', function () {
+      
+      var revert, mockRequest, user;
+      
+      beforeEach(function (done) {
+        var userData = {
+          email: 'test@vogo.com',
+          name: 'Test Vogo',
+          facebook: {
+            id: 'fbtestid123',
+            name: 'Test Vogo'
+          }
+        }
+        User.create(userData, function (err, newUser) {
+          if (err) { return done(err); } 
+          user = newUser;
+          done(); 
+        });
+      });
+      
+      beforeEach(function () {
+        mockRequest = sinon.stub();
+        revert = router.__set__({
+          request: mockRequest
+        });
+        mockRequest.returns(Promise.resolve([{
+          statusCode: 200
+        },
+        '{ "id": "fbtestid123", "email": "test@vogo.com", "name": "Test Vogo"}'
+        ]));
+      });
+      
+      afterEach(function () {
+        revert();
+      });
+
+      it('should send 400 when facebook token is missing', function (done) {
+        var reqBody = { grantType: 'facebook' };
+        var resBody = { 
+          status: 400, 
+          message: 'A facebook access token is required'
+        };
+        app.post(path).send(reqBody).expect(400, resBody, done);
+      });
+
+      it('should send request to facebook to get profile', function (done) {
+        var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
+        app.post(path).send(reqBody).expect(200, function (err, res) {
+          if (err) { return done(err); } 
+          expect(mockRequest).to.have.been
+            .calledWith('https://graph.facebook.com/me?field=id,email,name&access_token=fakefbtk');
+          done();
+        });
+      });
+
+      it('should send 500 when it fails to get profile from facebook',
+        function (done) {
+        mockRequest.returns(Promise.resolve([{ statusCode: 400 },'{}']));
+        var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
+        var resBody = {
+          name: 'FacebookGraphAPIError',
+          message: "Failed to fetch facebook user profile",
+          status: 500 
+        }; 
+        app.post(path).send(reqBody).expect(500, resBody, done);
+      });
+      
+      it('should send 200 with user object', function (done) {
+        var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
+        app.post(path).send(reqBody).expect(200, function(err, res) {
+          if (err) { return done(err); }
+          expect(res.body.user.id).to.equal(user.id);
+          expect(res.body.user.email).to.equal('test@vogo.com');
+          done();
+        });
+      });
+      
+      it('should send 200 with access_token', function (done) {
+        sinon.stub(Date, 'now').returns(1417876057391);
+        var ACCESS_TOKEN = jwt.encode({
+          iss: user.id,
+          exp: Date.now() + config.jwtexp
+        }, config.jwtsecret);
+        var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
+        app.post(path).send(reqBody).expect(200, function(err, res) {
+          Date.now.restore();
+          if (err) { return done(err); }
+          expect(res.body).to.have.deep.property('access_token', ACCESS_TOKEN);
+          done();
+        });
+      });
+
+      it('should send 201 with a newly created user when there\'s no user with given fb id',
+        function (done) {
+        var reqBody = {grantType: 'facebook', facebookAccessToken: 'anotherfakefbtk'};
+        // predefine result for facebook profile request
+        mockRequest.returns(Promise.resolve([{
+          statusCode: 200
+        },
+        '{ "id": "newFbId12345", "email": "sam@home.net", "name": "Sam Power"}'
+        ]));
+        
+        app.post(path).send(reqBody).expect(200, function (err, res) {
+          if (err) { return done(err); } 
+          expect(res.body).to.have.property('access_token').that.is.an('string')
+          expect(res.body.user).to.have.property('name', 'Sam Power');
+          expect(res.body.user).to.have.property('email', 'sam@home.net');
+          expect(res.body.user.facebook).to.have.property('id', 'newFbId12345');
+          expect(res.body.user.facebook).to.have.property('email', 'sam@home.net');
+          expect(res.body.user.facebook).to.have.property('name', 'Sam Power');
+          done();
+        });  
       });
     });
   });
@@ -179,7 +305,7 @@ describe('User Router', function () {
         .expect(201, function(err, res) {
           if (err) { return done(err); }
           userId = res.body.id;
-          app.get('/api/users/' + userId).expect(200, function (err, res) {
+          app.get(path + '/' + userId).expect(200, function (err, res) {
             if (err) { return done(err); }
             expect(res.body).to.have.property('email', 'bob@vogo.vogo');
             done();
