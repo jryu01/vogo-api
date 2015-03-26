@@ -8,7 +8,7 @@
     "npm": "2.1.x"
   },
   "scripts": {
-    "test": "make test-w",
+    "test": "make test",
     "start": "./bin/www"
   },
   "repository": {
