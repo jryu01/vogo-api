@@ -2,6 +2,7 @@
 
 var methodOverride = require('method-override');
 var errorHandler = require('./errorHandler.js');
+var userRouter = require('app/user/router');
 var bodyParser = require('body-parser');
 var express = require('express');
 var logger  = require('morgan'); // HTTP request logger
@@ -25,7 +26,7 @@ app.use('/', function (req, res, next) {
   }
 });
 app.use('/', require('./router'));
-app.use('/api', require('app/user/router'));
+app.use('/api', userRouter());
 app.use(errorHandler());
 
 module.exports = app;

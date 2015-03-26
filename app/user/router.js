@@ -2,7 +2,7 @@
 var jwt = require('jwt-simple'),
     User = require('./user'), 
     config = require('app/config'),
-    router = require("express").Router(),
+    express = require("express"),
     Promise = require('bluebird'),
     request = Promise.promisify(require("request")),
     requiresToken = require('app/middleware/requiresToken');
@@ -109,11 +109,15 @@ var signin = function (req, res, next) {
     });
   }
 };
- 
-router.post('/v2/users/signin', signin);
 
-router.post('/v2/users', createUser);
-router.get('/v2/users', requiresToken, listUsers);
-router.get('/v2/users/:id', getUser);
-
-module.exports = router;
+var userRouter = module.exports = function () {
+  
+  var router = express.Router();
+  
+  router.post('/v2/users/signin', signin);
+  router.post('/v2/users', createUser);
+  router.get('/v2/users', requiresToken, listUsers);
+  router.get('/v2/users/:id', getUser);
+  
+  return router; 
+}

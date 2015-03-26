@@ -12,14 +12,18 @@ var methodOverride = require('method-override'),
     
 var router = rewire('./router');
 
-describe('User Router', function () {
-  
-  // create app with the router
-  var app = express();
+var createApp = function () {
+  var app = express(); 
   app.use(bodyParser.json());
   app.use(methodOverride());
-  app.use('/api', router);
+  app.use('/api', router());
   app = request(app);
+  return app;
+};
+
+describe('User Router', function () {
+  
+  var app = createApp();
   
   describe('POST /users/signin', function () {
     
@@ -282,12 +286,17 @@ describe('User Router', function () {
       app.get(path).expect(401, done); 
     });
 
-    it.skip('should retreive array of users', function (done) {
-      app.get(path).expect(200, function (err, res) {
+    it('should retreive array of users', function (done) {
+      var revert =  router.__set__({
+        requiresToken: function (req, res, next) { next(); }
+      });
+      var localApp = createApp();
+      localApp.get(path).expect(200, function (err, res) {
         if (err) { return done(err); }
         expect(res.body).to.be.an('array');
         expect(JSON.stringify(res.body)).to.match(/bob@vogo.vogo/);
         expect(JSON.stringify(res.body)).to.match(/sam@vogo.vogo/);
+        revert();
         done();
       });
     });
