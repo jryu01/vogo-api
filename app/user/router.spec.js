@@ -27,13 +27,13 @@ describe('User Router', function () {
   
   describe('POST /users/signin', function () {
     
-    var path = '/api/v2/users/signin';
+    var path = '/api/users/signin';
     
     it('should send 400 when no grantType field is provided', function (done) {
-      var resBody = JSON.stringify({
+      var resBody = {
         status: 400,
         message: 'grantType field is missing or not valid'
-      });
+      };
       app.post(path).send({}).expect(400, resBody, done);
     });
     
@@ -93,10 +93,10 @@ describe('User Router', function () {
           grantType: 'password',
           password: 'testpwd'
         };
-        var resBody = JSON.stringify({
+        var resBody = {
           status: 401,
           message: 'Invalid credentials'
-        });
+        };
         app.post(path).send(reqBody).expect(401, resBody, done);
       });
       
@@ -105,10 +105,10 @@ describe('User Router', function () {
           email: 'test@vogo.com',
           grantType: 'password'
         };
-        var resBody = JSON.stringify({
+        var resBody = {
           status: 401,
           message: 'Invalid credentials'
-        });
+        };
         app.post(path).send(reqBody).expect(401, resBody, done);
       });
 
@@ -118,10 +118,10 @@ describe('User Router', function () {
           grantType: 'password',
           password: 'wrongpwd'
         };
-        var resBody = JSON.stringify({
+        var resBody = {
           status: 401,
           message: 'Password is not correct'
-        });
+        };
         app.post(path).send(reqBody).expect(401, resBody, done);
       });
 
@@ -131,10 +131,10 @@ describe('User Router', function () {
           grantType: 'password',
           password: 'testpwd'
         };
-        var resBody = JSON.stringify({
+        var resBody = {
           status: 401,
           message: 'Can\'t find a user with that email'
-        });
+        };
         app.post(path).send(reqBody).expect(401, resBody, done);
       });
     });
@@ -257,7 +257,7 @@ describe('User Router', function () {
 
   describe('POST /api/users', function () {
     
-    var path = '/api/v2/users';
+    var path = '/api/users';
     
     it('should send 201 with user data', function (done) {
       app.post(path)
@@ -273,7 +273,7 @@ describe('User Router', function () {
 
   describe('GET /api/users', function () {
 
-    var path = '/api/v2/users';
+    var path = '/api/users';
     
     beforeEach(function (done) {
       var users = [{email: 'bob@vogo.vogo'}, {email: 'sam@vogo.vogo'}];
@@ -305,7 +305,7 @@ describe('User Router', function () {
 
   describe('GET /api/users/{userId}', function () {
 
-    var path = '/api/v2/users';
+    var path = '/api/users';
     
     it('should retreive a specific user with id', function (done) {
       var userId;

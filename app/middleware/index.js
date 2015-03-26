@@ -1,5 +1,6 @@
 'use strict';
 
 module.exports = {
-  requiresToken: require('./requiresToken')
+  requiresToken: require('./requireToken'),
+  errorHandler: require('./errorHandler')
 };

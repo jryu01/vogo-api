@@ -1,7 +1,7 @@
 'use strict';
 
 var methodOverride = require('method-override');
-var errorHandler = require('./errorHandler.js');
+var errorHandler = require('app/middleware/errorHandler.js');
 var userRouter = require('app/user/router');
 var bodyParser = require('body-parser');
 var express = require('express');

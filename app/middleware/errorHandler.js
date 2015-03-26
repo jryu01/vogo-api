@@ -2,7 +2,6 @@
 
 var errorHanlder = module.exports = function () {
   return function (err, req, res, next) {
-    console.log(err);
     // TODO: write test
     if (err.name === 'OperationalError') {
       err = err.cause;
