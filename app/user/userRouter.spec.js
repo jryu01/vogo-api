@@ -10,7 +10,7 @@ var methodOverride = require('method-override'),
     User = require('./user'),
     jwt = require('jwt-simple');
     
-var router = rewire('./router');
+var router = rewire('./userRouter');
 
 var createApp = function () {
   var app = express(); 
@@ -22,6 +22,8 @@ var createApp = function () {
 };
 
 describe('User Router', function () {
+  
+  var app; 
   
   var app = createApp();
   
@@ -288,7 +290,7 @@ describe('User Router', function () {
 
     it('should retreive array of users', function (done) {
       var revert =  router.__set__({
-        requiresToken: function (req, res, next) { next(); }
+        requireToken: function (req, res, next) { next(); }
       });
       var localApp = createApp();
       localApp.get(path).expect(200, function (err, res) {

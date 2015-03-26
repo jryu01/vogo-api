@@ -2,7 +2,7 @@
 
 var methodOverride = require('method-override');
 var errorHandler = require('app/middleware/errorHandler.js');
-var userRouter = require('app/user/router');
+var userRouter = require('app/user/userRouter');
 var bodyParser = require('body-parser');
 var express = require('express');
 var logger  = require('morgan'); // HTTP request logger

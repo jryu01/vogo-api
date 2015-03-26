@@ -173,5 +173,4 @@ PollSchema.methods.addVote = function (voterId, subjectId) {
   });
 };
 
-
 module.exports = mongoose.model('Poll', PollSchema);

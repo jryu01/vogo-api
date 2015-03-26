@@ -5,7 +5,7 @@ var jwt = require('jwt-simple'),
     express = require("express"),
     Promise = require('bluebird'),
     request = Promise.promisify(require("request")),
-    requiresToken = require('app/middleware/requireToken');
+    requireToken = require('app/middleware/requireToken');
 
 var createUser = function (req, res, next) {
   User.createAsync(req.body).then(res.status(201).json.bind(res)).catch(next);
@@ -114,11 +114,12 @@ var userRouter = module.exports = function () {
   
   var router = express.Router();
   router.post('/login', signin);
+  router.post('/api/login', signin);
   router.post('/users/signin', signin);
   
   router.post('/users', createUser);
-  router.get('/users', requiresToken, listUsers);
+  router.get('/users', requireToken, listUsers);
   router.get('/users/:id', getUser);
   
-  return router; 
+  return router;
 }
