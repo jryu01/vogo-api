@@ -4,8 +4,8 @@ var requireToken = require('app/middleware/requireToken'),
     mongoose = require('mongoose'),
     express = require("express"),
     Poll = require('./poll'),
-    _ = require('lodash');
-
+    _ = require('lodash')
+    
 var list = function (req, res, next) {
 
   if (req.query.random === "true" ) {
@@ -68,9 +68,9 @@ var listMyPoll = function (req, res) {
   return Poll.findAsync(query, null, options);
 };
 
-var create = function (req, res) {
+var create = function (req, res, next) {
   _.extend(req.body, { user: req.user });
-  return Poll.createNew(req.body);
+  Poll.createNew(req.body).then(res.status(201).json.bind(res)).catch(next);
 };
 
 var getRandom = function (req, res) {
@@ -124,14 +124,14 @@ var pollRouter = module.exports = function () {
   
   var router = express.Router();
   
-  router.all('/api/me*', requireToken);
-  router.get('/api/me/polls', res(listMyPoll));
+  router.all('/me*', requireToken);
+  router.get('/me/polls', res(listMyPoll));
   
-  router.all('/api/polls*', requireToken);
-  router.post('/api/polls', res(create)); 
-  router.get('/api/polls', res(list));
-  router.get('/api/polls/random', res(getRandom)); 
-  router.post('/api/polls/:id/votes', res(createVote));
+  router.all('/polls*', requireToken);
+  router.post('/polls', create); 
+  router.get('/polls', res(list));
+  router.get('/polls/random', res(getRandom)); 
+  router.post('/polls/:id/votes', res(createVote));
   
   return router; 
 }
