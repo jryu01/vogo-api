@@ -3,12 +3,13 @@
 
 var _ = require('lodash'),
     bcrypt = require('bcrypt'),
+    mongoose = require('mongoose'),
     testUtil = require('../../test/testUtil');
 
 var dataFactory = {
   create: function (overwrites) {
     var defaults = {
-      email: 'jhon@jhonhome.com',
+      email: 'Jhon@jhonhome.com',
       name: 'Jhon Bob',
       password: 'testPassword',
       facebook: {
@@ -27,13 +28,13 @@ describe('User', function () {
     User = require('app/user/user');
   });
 
-
   it('should create a new user', function () {
     data = dataFactory.create();
     return expect(User.createAsync(data)).to.be.fulfilled.then(function (user){
       expect(user).to.have.property('email', 'jhon@jhonhome.com');
       expect(user).to.have.property('password');
       expect(user).to.have.property('name', 'Jhon Bob');
+      expect(user).to.have.property('followers').that.is.an('array');
       expect(user).to.have.deep.property('facebook.id', '12345');
     });
   });
@@ -73,6 +74,131 @@ describe('User', function () {
       bcrypt.genSaltAsync.restore();
     });
   });
+  describe('(user graph)', function () {
+
+    var users, targetUser;
+
+    beforeEach(function () {
+      users = [];
+      for (var i = 1; i <= 3; i += 1) {
+        users.push(new User({
+          _id: mongoose.Types.ObjectId(),
+          email: 'from' + i + '@address.com',
+          name: 'From User' + i
+        }));
+      }
+      targetUser = new User({
+        _id: mongoose.Types.ObjectId(),
+        email: 'target@address.com',
+        name: 'Target User'
+      });
+      users.push(targetUser);
+
+      return User.createAsync(users);
+    });
+
+    it('should follow target user', function () {
+      var promise = User.follow(users[0], targetUser._id).then(function () {
+        return User.getFollowers(targetUser.id);
+      });
+      return expect(promise).to.be.fulfilled.then(function (followers) {
+        expect(followers[0]).to.have.property('name', 'From User1');
+        expect(followers[0].userId.toString()).to.equal(users[0].id);
+        expect(followers[0]._id).to.be.undefined;
+      });
+    });
+
+    it('should not follow same user twice', function () {
+      var promise = User.follow(users[1], targetUser._id).then(function () {
+        return User.follow(users[1], targetUser.id);
+      }).then(function () {
+        return User.getFollowers(targetUser.id);
+      });
+      return expect(promise).to.eventually.be.length(1);
+    });
+
+    it('should unfollow a user', function () {
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.unfollow(users[0], targetUser.id);
+      }).then(function () {
+        return User.getFollowers(targetUser.id);
+      });
+      return expect(promise).to.eventually.be.length(0);
+    });
+
+    it('should limit and skip list of followers on getFollowers', function () {
+      var options = { skip: 1 , limit: 1 };
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.follow(users[1], targetUser.id);
+      }).then(function () {
+        return User.follow(users[2], targetUser.id);
+      }).then(function () {
+        return User.getFollowers(targetUser.id, options);
+      });
+      return expect(promise).to.be.fulfilled.then(function (result) {
+        expect(result).to.be.length(1);
+        expect(result[0].name).to.equal(users[1].name);
+      });
+    });
+
+    it('should retrive number of followers for a user', function () {
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.follow(users[1], targetUser.id);
+      }).then(function () {
+        return User.getFollowerCount(targetUser.id);
+      });
+      return expect(promise).to.eventually.equal(2);
+    });
+
+    it('should return null on getFollowersCount on wrong user', function () {
+      var promise = User.getFollowerCount(mongoose.Types.ObjectId());
+      return expect(promise).to.eventually.be.null;
+    });
+
+    it('should get following users list of the user', function () {
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.getFollowing(users[0].id);
+      });
+      return expect(promise).to.be.fulfilled.then(function (following) {
+        expect(following[0]).to.have.property('name', 'Target User');
+        expect(following[0].userId.toString()).to.equal(targetUser.id);
+      });
+    });
+
+    it('should skip list of following users on getFollowing', function () {
+      var options = { skip: 2 };
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.follow(users[0], users[1].id);
+      }).then(function () {
+        return User.follow(users[0], users[2].id);
+      }).then(function () {
+        return User.getFollowing(users[0].id, options);
+      });
+      return expect(promise).to.eventually.be.length(1);
+    });
+
+    it('should limit list of following users on getFollowing', function () {
+      var options = { skip: 1, limit: 1 };
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.follow(users[0], users[1].id);
+      }).then(function () {
+        return User.follow(users[0], users[2].id);
+      }).then(function () {
+        return User.getFollowing(users[0].id, options);
+      });
+      return expect(promise).to.eventually.be.length(1);
+    });
+
+    it('should retrive number of following for a user', function () {
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.follow(users[0], users[1].id);
+      }).then(function () {
+        return User.getFollowingCount(users[0].id);
+      });
+      return expect(promise).to.eventually.equal(2);
+    });
+
+  });
 
   describe('#comparePassword', function () {
 
@@ -102,6 +228,7 @@ describe('User', function () {
       expect(user.toJSON()).to.not.have.property('_id');
       expect(user.toJSON()).to.not.have.property('__V');
       expect(user.toJSON()).to.not.have.property('password');
+      expect(user.toJSON()).to.not.have.property('followers');
     });
   });
 });

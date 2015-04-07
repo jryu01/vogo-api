@@ -8,13 +8,13 @@ var _ = require('lodash'),
 var PollSchema = new Schema({
 
   createdBy: {
-    name: { type: String, required: '{PATH} is required!' },
-    userId: { type: Schema.Types.ObjectId, required: '{PATH} is required!' }
+    userId: { type: Schema.Types.ObjectId, required: '{PATH} is required!' },
+    name: { type: String, required: '{PATH} is required!' }
   },
-
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now },
 
+  question: String,
   subject1: {
     text: { type: String, required: '{PATH} is required!' },
     numVotes: { type: Number, default: 0 }
@@ -35,6 +35,16 @@ var PollSchema = new Schema({
   }],
 
   tags: [String],
+
+  numComments: { type: Number, default: 0 },
+  comments: [{
+    createdBy: {
+      userId: { type: Schema.Types.ObjectId },
+      name: { type: String }
+    },
+    createdAt: { type: Date, default: Date.now },
+    text: String
+  }],
 
   _random: { type: Number, default: Math.random }
 });

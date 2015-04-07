@@ -21,7 +21,7 @@ var mockRequireToken = function (req, res, next) {
     name: 'Test Vogo'
   };
   next();
-}
+};
 
 var createApp = function () {
   var app = express(); 

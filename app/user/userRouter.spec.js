@@ -2,6 +2,7 @@
 /*jshint expr: true*/
 var methodOverride = require('method-override'),
     bodyParser = require('body-parser'),
+    mongoose = require('mongoose'),
     Promise = require('bluebird'),
     request = require('supertest'),
     express = require('express'),
@@ -12,18 +13,37 @@ var methodOverride = require('method-override'),
     
 var router = rewire('./userRouter');
 
+var testUser = new User ({
+  _id: mongoose.Types.ObjectId(),
+  email: 'test@vogo.vogo',
+  name: 'Test Vogo'
+});
+
+var mockRequireToken = function (req, res, next) {
+  var token = req.headers['x-access-token'];
+  if (token !== 'testToken') { 
+    return res.status(401).end();
+  }
+  req.user = testUser;
+  next();
+};
+
 var createApp = function () {
   var app = express(); 
   app.use(bodyParser.json());
   app.use(methodOverride());
+  router.__set__({
+    requireToken: mockRequireToken   
+  });
   app.use('/api', router());
-  app = request(app);
-  return app;
+  app.use(function (err, req, res, next) {
+    res.status(err.status || 500);
+    res.json(err);
+  });
+  return request(app);
 };
 
 describe('User Router', function () {
-  
-  var app; 
   
   var app = createApp();
   
@@ -46,7 +66,7 @@ describe('User Router', function () {
         var data = {
           email: 'test@vogo.com',
           password: 'testpwd'
-        }
+        };
         User.create(data, function (err, newUser) {
           if (err) { return done(err); } 
           user = newUser;
@@ -153,7 +173,7 @@ describe('User Router', function () {
             id: 'fbtestid123',
             name: 'Test Vogo'
           }
-        }
+        };
         User.create(userData, function (err, newUser) {
           if (err) { return done(err); } 
           user = newUser;
@@ -245,7 +265,7 @@ describe('User Router', function () {
         
         app.post(path).send(reqBody).expect(200, function (err, res) {
           if (err) { return done(err); } 
-          expect(res.body).to.have.property('access_token').that.is.an('string')
+          expect(res.body).to.have.property('access_token').that.is.an('string');
           expect(res.body.user).to.have.property('name', 'Sam Power');
           expect(res.body.user).to.have.property('email', 'sam@home.net');
           expect(res.body.user.facebook).to.have.property('id', 'newFbId12345');
@@ -263,10 +283,10 @@ describe('User Router', function () {
     
     it('should send 201 with user data', function (done) {
       app.post(path)
-        .send({ email: 'testUser@vogo.com' })
+        .send({ email: 'testuser@vogo.com' })
         .expect(201, function (err, res) {
           if (err) { return done (err); }
-          expect(res.body).to.have.property('email', 'testUser@vogo.com');
+          expect(res.body).to.have.property('email', 'testuser@vogo.com');
           done();
         });
     });
@@ -289,18 +309,15 @@ describe('User Router', function () {
     });
 
     it('should retreive array of users', function (done) {
-      var revert =  router.__set__({
-        requireToken: function (req, res, next) { next(); }
-      });
-      var localApp = createApp();
-      localApp.get(path).expect(200, function (err, res) {
-        if (err) { return done(err); }
-        expect(res.body).to.be.an('array');
-        expect(JSON.stringify(res.body)).to.match(/bob@vogo.vogo/);
-        expect(JSON.stringify(res.body)).to.match(/sam@vogo.vogo/);
-        revert();
-        done();
-      });
+      app.get(path)
+        .set('x-access-token', 'testToken')
+        .expect(200, function (err, res) {
+          if (err) { return done(err); }
+          expect(res.body).to.be.an('array');
+          expect(JSON.stringify(res.body)).to.match(/bob@vogo.vogo/);
+          expect(JSON.stringify(res.body)).to.match(/sam@vogo.vogo/);
+          done();
+        });
     });
 
   });
@@ -316,13 +333,91 @@ describe('User Router', function () {
         .expect(201, function(err, res) {
           if (err) { return done(err); }
           userId = res.body.id;
-          app.get(path + '/' + userId).expect(200, function (err, res) {
-            if (err) { return done(err); }
-            expect(res.body).to.have.property('email', 'bob@vogo.vogo');
-            done();
-          });
+          app.get(path + '/' + userId)
+            .set('x-access-token', 'testToken')
+            .expect(200, function (err, res) {
+              if (err) { return done(err); }
+              expect(res.body).to.have.property('email', 'bob@vogo.vogo');
+              done();
+            });
         });
     });
   });
 
+  describe('PUT /api/users/{userId}/follwoing/{target}', function () {
+
+    it('should require an access_token', function (done) {
+      var path = '/api/users/' + testUser.id +
+        '/following/507f1f77bcf86cd799439012';
+      app.put(path).expect(401, done);
+    });
+
+    it('should send 403 if current user is not authorized', function (done) {
+      var OTHER_USER_ID = mongoose.Types.ObjectId(),
+          TARGET_ID = mongoose.Types.ObjectId(),
+          path = '/api/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
+      app.put(path).set('x-access-token', 'testToken').expect(403, done);
+    });
+
+    it('should send 200 with success', function (done) {
+      sinon.stub(User, 'follow').returns(Promise.resolve({}));
+      var targetUser = new User({
+        _id: mongoose.Types.ObjectId(),
+        email: 'target@address.com',
+        name: 'Target User'
+      });
+      var path = '/api/users/' + testUser.id + '/following/' + targetUser.id;
+      app.put(path).set('x-access-token', 'testToken')
+        .expect(200, function () {
+          expect(User.follow).to.have.been.calledWith(testUser, targetUser.id);
+          User.follow.restore();
+          done();
+        });
+    });
+  });
+  describe('DELETE /users/{userId}/follwoing/{target}', function () {
+
+    it('should require an access_token', function (done) {
+      var path = '/api/users/' + testUser.id +
+        '/following/507f1f77bcf86cd799439012';
+      app.del(path).expect(401, done);
+    });
+
+    it('should send 403 if current user is not authorized', function (done) {
+      var OTHER_USER_ID = mongoose.Types.ObjectId(),
+          TARGET_ID = mongoose.Types.ObjectId(),
+          path = '/api/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
+      app.del(path).set('x-access-token', 'testToken').expect(403, done);
+    });
+
+    it('should send 200 with success', function (done) {
+      sinon.stub(User, 'unfollow').returns(Promise.resolve({}));
+      var targetUser = new User({
+        _id: mongoose.Types.ObjectId(),
+        email: 'target@address.com',
+        name: 'Target User'
+      });
+      var path = '/api/users/' + testUser.id + '/following/' + targetUser.id;
+      app.del(path).set('x-access-token', 'testToken')
+        .expect(200, function () {
+          expect(User.unfollow).to.have.been
+            .calledWith(testUser, targetUser.id);
+          User.unfollow.restore();
+          done();
+        });
+    });
+
+  });
+  describe('GET /users/{userId}/followers', function () {
+
+  });
+  describe('GET /users/{userId}/followers-count', function () {
+
+  });
+  describe('GET /users/{userId}/following', function () {
+
+  });
+  describe('GET /users/{userId}/following-count', function () {
+
+  });
 });

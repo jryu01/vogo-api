@@ -110,6 +110,34 @@ var signin = function (req, res, next) {
   }
 };
 
+var follow = function (req, res, next) {
+  var user = req.user,
+      update;
+  if (req.params.id !== user.id.toString()) {
+    return res.status(403).json({
+      status: 403,
+      message: 'Not authorized!'
+    });
+  }
+  User.follow(user, req.params.target).then(function () {
+    return res.status(200).end();
+  });
+};
+
+var unfollow = function (req, res, next) {
+  var user = req.user,
+      update;
+  if (req.params.id !== user.id.toString()) {
+    return res.status(403).json({
+      status: 403,
+      message: 'Not authorized!'
+    });
+  }
+  User.unfollow(user, req.params.target).then(function (r) {
+    return res.status(200).end();
+  });
+};
+
 var userRouter = module.exports = function () {
   
   var router = express.Router();
@@ -119,7 +147,14 @@ var userRouter = module.exports = function () {
   
   router.post('/users', createUser);
   router.get('/users', requireToken, listUsers);
-  router.get('/users/:id', getUser);
-  
+  router.get('/users/:id', requireToken, getUser);
+
+  router.put('/users/:id/following/:target', requireToken, follow);
+  router.delete('/users/:id/following/:target', requireToken, unfollow);
+  // router.get('/users/:id/followers', requireToken);
+  // router.get('/users/:id/followers-count', requireToken);
+  // router.get('/users/:id/following', requireToken);
+  // router.get('/users/:id/following-count', requireToken);
+
   return router;
-}
+};
