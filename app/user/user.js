@@ -20,10 +20,12 @@ var UserSchema = new Schema({
   },
   name: String,
   password: String,
+  picture: String,
   facebook: {
     id: String,
     email: String,
-    name: String
+    name: String,
+    picture: String
   },
   followers: { type: [ FollowerSchema ] } 
 });

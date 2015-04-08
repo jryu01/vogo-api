@@ -12,13 +12,25 @@ var createUser = function (req, res, next) {
 };
 
 var listUsers = function (req, res, next) {
-  User.findAsync({}).then(res.json.bind(res)).catch(next);
+  User.findAsync({}, '-followers').then(res.json.bind(res)).catch(next);
 };
 
 var getUser = function (req, res, next) {
-  User.findByIdAsync(req.params.id).then(res.json.bind(res)).catch(next);
+  User.findByIdAsync(req.params.id, '-followers').then(res.json.bind(res)).catch(next);
 };
-
+// var test = function (username, password, done) {
+//   User.findOneAsync({ email: username }).then(function (user) {
+//     if (!user) {
+//         return done({status: 401, message: 'Can\'t find a user with that email'});
+//     }
+//     return user.comparePassword(password).then(function (match) {
+//       if (!match) {
+//         return done({ status: 401, message: 'Password is not correct'});
+//       }
+//       return done(null, user);
+//     });
+//   }).catch(done);
+// };
 var signinWithPassword = function (req, res, next) {
   if (!req.body.email || !req.body.password) {
     return res.status(401)
@@ -29,19 +41,21 @@ var signinWithPassword = function (req, res, next) {
       res.status(401)
         .json({status: 401, message: 'Can\'t find a user with that email'});
     }
-    var token = jwt.encode({
-      iss: user.id,
-      exp: Date.now() + config.jwtexp
-    }, config.jwtsecret);
     return user.comparePassword(req.body.password).then(function (match) {
       if (!match) {
         return res.status(401)
                   .json({ status: 401, message: 'Password is not correct'});
       }
-      res.json({
-        user: user,
-        access_token: token
-      });
+      return user;
+    });
+  }).then(function (user) {
+    var token = jwt.encode({
+      iss: user.id,
+      exp: Date.now() + config.jwtexp
+    }, config.jwtsecret);
+    res.json({
+      user: user,
+      access_token: token
     });
   }).catch(next);
 };
@@ -52,7 +66,7 @@ var signinWithFacebook = function (req, res, next) {
       .json({ status: 400, message: 'A facebook access token is required'});
   }
   request('https://graph.facebook.com/me?' +
-    'field=id,email,name&access_token=' + 
+    'field=id,email,name,picture&access_token=' + 
     req.body.facebookAccessToken)
   .spread(function (response, body) {
     var profile;
@@ -67,13 +81,17 @@ var signinWithFacebook = function (req, res, next) {
   }).then(function (fbProfile) {
     return User.findOneAsync({ 'facebook.id': fbProfile.id }).then(function (user) {
       if (!user) {
+        var picture = fbProfile.picture && fbProfile.picture.data && 
+            fbProfile.picture.data.url;
         var newUser = {
           email: fbProfile.email,
           name: fbProfile.name,
+          picture: picture,
           facebook: { 
             id: fbProfile.id,
             email: fbProfile.email,
-            name: fbProfile.name 
+            name: fbProfile.name,
+            picture: picture
           }
         };
         return User.createAsync(newUser);
@@ -158,7 +176,7 @@ var getFollowing = function (req, res, next) {
 };
 
 var getFollowingCount = function (req, res, next) {
-   User.getFollowingCount(req.params.id)
+  User.getFollowingCount(req.params.id)
     .then(function (count) {
       res.json({ numberOfFollowing: count });
     }).catch(next);

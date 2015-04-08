@@ -21,7 +21,7 @@ var requiresToken = module.exports = function (req, res, next) {
       .json({ status: 401, message: 'Access token is not a valid token!'});
   }
   if (decoded.exp <= Date.now()) {
-    res.status(401)
+    return res.status(401)
       .json({ status: 401, message: 'Access token has been expired!' });
   }
   User.findByIdAsync(decoded.iss).then(function (user) {

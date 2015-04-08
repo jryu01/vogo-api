@@ -211,7 +211,7 @@ describe('User Router', function () {
         app.post(path).send(reqBody).expect(200, function (err, res) {
           if (err) { return done(err); } 
           expect(mockRequest).to.have.been
-            .calledWith('https://graph.facebook.com/me?field=id,email,name&access_token=fakefbtk');
+            .calledWith('https://graph.facebook.com/me?field=id,email,name,picture&access_token=fakefbtk');
           done();
         });
       });
@@ -260,7 +260,12 @@ describe('User Router', function () {
         mockRequest.returns(Promise.resolve([{
           statusCode: 200
         },
-        '{ "id": "newFbId12345", "email": "sam@home.net", "name": "Sam Power"}'
+        '{' + 
+        '   "id": "newFbId12345",' +
+        '   "email": "sam@home.net",' + 
+        '   "name": "Sam Power",' +
+        '   "picture": {"data": { "url": "profileUrl" } }' + 
+        '}'
         ]));
         
         app.post(path).send(reqBody).expect(200, function (err, res) {
@@ -268,9 +273,12 @@ describe('User Router', function () {
           expect(res.body).to.have.property('access_token').that.is.an('string');
           expect(res.body.user).to.have.property('name', 'Sam Power');
           expect(res.body.user).to.have.property('email', 'sam@home.net');
+          expect(res.body.user).to.have.property('picture', 'profileUrl');
           expect(res.body.user.facebook).to.have.property('id', 'newFbId12345');
           expect(res.body.user.facebook).to.have.property('email', 'sam@home.net');
           expect(res.body.user.facebook).to.have.property('name', 'Sam Power');
+          expect(res.body.user.facebook).to.have
+              .property('picture', 'profileUrl');
           done();
         });  
       });
@@ -290,7 +298,6 @@ describe('User Router', function () {
           done();
         });
     });
-
   });
 
   describe('GET /users', function () {
