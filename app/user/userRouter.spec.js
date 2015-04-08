@@ -368,13 +368,15 @@ describe('User Router', function () {
       });
       var path = '/api/users/' + testUser.id + '/following/' + targetUser.id;
       app.put(path).set('x-access-token', 'testToken')
-        .expect(200, function () {
+        .expect(204, function (err) {
+          if (err) { return done(err); }
           expect(User.follow).to.have.been.calledWith(testUser, targetUser.id);
           User.follow.restore();
           done();
         });
     });
   });
+
   describe('DELETE /users/{userId}/follwoing/{target}', function () {
 
     it('should require an access_token', function (done) {
@@ -399,7 +401,8 @@ describe('User Router', function () {
       });
       var path = '/api/users/' + testUser.id + '/following/' + targetUser.id;
       app.del(path).set('x-access-token', 'testToken')
-        .expect(200, function () {
+        .expect(204, function (err) {
+          if (err) { return done(err); }
           expect(User.unfollow).to.have.been
             .calledWith(testUser, targetUser.id);
           User.unfollow.restore();
@@ -408,16 +411,87 @@ describe('User Router', function () {
     });
 
   });
+
   describe('GET /users/{userId}/followers', function () {
 
+    beforeEach(function () { sinon.stub(User, 'getFollowers'); });
+    afterEach(function () { User.getFollowers.restore(); });
+
+    it('should require an access_token', function (done) {
+      var path = '/api/users/' + testUser.id + '/followers';
+      app.get(path).expect(401, done);
+    });
+
+    it('should send 200 with list of followers', function (done) {
+      var path = '/api/users/' + testUser.id + '/followers';
+      User.getFollowers
+        .withArgs(testUser.id)
+        .returns(Promise.resolve([{ name: 'follower' }]));
+      app.get(path).set('x-access-token', 'testToken')
+        .expect(200, [{ name: 'follower' }], done);
+    });
   });
+
   describe('GET /users/{userId}/followers-count', function () {
 
-  });
-  describe('GET /users/{userId}/following', function () {
+    beforeEach(function () { sinon.stub(User, 'getFollowerCount'); });
+    afterEach(function () { User.getFollowerCount.restore(); });
+
+    it('should require an access_token', function (done) {
+      var path = '/api/users/' + testUser.id + '/followers-count';
+      app.get(path).expect(401, done);
+    });
+
+    it('should send 200 with followers count', function (done) {
+      var path = '/api/users/' + testUser.id + '/followers-count';
+      User.getFollowerCount
+        .withArgs(testUser.id)
+        .returns(Promise.resolve(3));
+      app.get(path).set('x-access-token', 'testToken')
+        .expect(200, { numberOfFollowers: 3 }, done);
+    });
 
   });
+
+  describe('GET /users/{userId}/following', function () {
+
+    beforeEach(function () { sinon.stub(User, 'getFollowing'); });
+    afterEach(function () { User.getFollowing.restore(); });
+
+    it('should require an access_token', function (done) {
+      var path = '/api/users/' + testUser.id + '/following';
+      app.get(path).expect(401, done);
+    });
+
+    it('should send 200 with list of following users', function (done) {
+      var path = '/api/users/' + testUser.id + '/following';
+      User.getFollowing
+        .withArgs(testUser.id)
+        .returns(Promise.resolve([{ name: 'user' }]));
+      app.get(path).set('x-access-token', 'testToken')
+        .expect(200, [{ name: 'user' }], done);
+    });
+
+  });
+
   describe('GET /users/{userId}/following-count', function () {
+
+    beforeEach(function () { sinon.stub(User, 'getFollowingCount'); });
+    afterEach(function () { User.getFollowingCount.restore(); });
+
+    it('should require an access_token', function (done) {
+      var path = '/api/users/' + testUser.id + '/following-count';
+      app.get(path).expect(401, done);
+    });
+
+    it('should send 200 with following count', function (done) {
+      var path = '/api/users/' + testUser.id + '/following-count';
+      User.getFollowingCount
+        .withArgs(testUser.id)
+        .returns(Promise.resolve(2));
+      app.get(path).set('x-access-token', 'testToken')
+        .expect(200, { numberOfFollowing: 2 }, done);
+    });
 
   });
 });

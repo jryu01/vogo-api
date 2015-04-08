@@ -120,7 +120,7 @@ var follow = function (req, res, next) {
     });
   }
   User.follow(user, req.params.target).then(function () {
-    return res.status(200).end();
+    return res.status(204).end();
   });
 };
 
@@ -134,8 +134,34 @@ var unfollow = function (req, res, next) {
     });
   }
   User.unfollow(user, req.params.target).then(function (r) {
-    return res.status(200).end();
+    return res.status(204).end();
   });
+};
+
+var getFollowers = function (req, res, next) {
+  User.getFollowers(req.params.id)
+    .then(res.json.bind(res))
+    .catch(next);
+};
+
+var getFollowerCount = function (req, res, next) {
+   User.getFollowerCount(req.params.id)
+    .then(function (count) {
+      res.json({ numberOfFollowers: count });
+    }).catch(next);
+};
+
+var getFollowing = function (req, res, next) {
+  User.getFollowing(req.params.id)
+    .then(res.json.bind(res))
+    .catch(next);
+};
+
+var getFollowingCount = function (req, res, next) {
+   User.getFollowingCount(req.params.id)
+    .then(function (count) {
+      res.json({ numberOfFollowing: count });
+    }).catch(next);
 };
 
 var userRouter = module.exports = function () {
@@ -146,15 +172,15 @@ var userRouter = module.exports = function () {
   router.post('/users/signin', signin);
   
   router.post('/users', createUser);
-  router.get('/users', requireToken, listUsers);
+  router.get('/users', requireToken, listUsers); // will be depreciated
   router.get('/users/:id', requireToken, getUser);
 
   router.put('/users/:id/following/:target', requireToken, follow);
   router.delete('/users/:id/following/:target', requireToken, unfollow);
-  // router.get('/users/:id/followers', requireToken);
-  // router.get('/users/:id/followers-count', requireToken);
-  // router.get('/users/:id/following', requireToken);
-  // router.get('/users/:id/following-count', requireToken);
+  router.get('/users/:id/followers', requireToken, getFollowers);
+  router.get('/users/:id/followers-count', requireToken, getFollowerCount);
+  router.get('/users/:id/following', requireToken, getFollowing);
+  router.get('/users/:id/following-count', requireToken, getFollowingCount);
 
   return router;
 };

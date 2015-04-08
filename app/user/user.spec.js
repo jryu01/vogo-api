@@ -150,9 +150,9 @@ describe('User', function () {
       return expect(promise).to.eventually.equal(2);
     });
 
-    it('should return null on getFollowersCount on wrong user', function () {
+    it('should return 0 on getFollowersCount on non-exist user', function () {
       var promise = User.getFollowerCount(mongoose.Types.ObjectId());
-      return expect(promise).to.eventually.be.null;
+      return expect(promise).to.eventually.equal(0);
     });
 
     it('should get following users list of the user', function () {
@@ -228,7 +228,6 @@ describe('User', function () {
       expect(user.toJSON()).to.not.have.property('_id');
       expect(user.toJSON()).to.not.have.property('__V');
       expect(user.toJSON()).to.not.have.property('password');
-      expect(user.toJSON()).to.not.have.property('followers');
     });
   });
 });

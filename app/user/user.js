@@ -78,7 +78,7 @@ UserSchema.statics.getFollowers = function (userId, options) {
     'followers._id': 0, 
   };
   return this.findByIdAsync(userId, project).then(function (result) {
-    //TODO: handle case when result is null
+    //TODO: handle case when result is null -> return []
     return result.followers;
   });
 };
@@ -88,7 +88,7 @@ UserSchema.statics.getFollowerCount = function (userId) {
     { $match: { "_id": mongoose.Types.ObjectId(userId) } },
     { $project: { numFollowers: { $size: '$followers' } } }
   ]).then(function (result) {
-    return result[0] ? result[0].numFollowers : null;
+    return result[0] ? result[0].numFollowers : 0;
   });
 };
 
@@ -113,14 +113,12 @@ UserSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compareAsync(candidatePassword, this.password);
 };
 
-
 //Add toJSON option to transform document before returnig the result
 UserSchema.options.toJSON = {
   transform: function (doc, ret, options) {
     ret.id = ret._id;
     delete ret._id;
     delete ret.__v;
-    delete ret.followers;
     delete ret.password;
   }
 };
