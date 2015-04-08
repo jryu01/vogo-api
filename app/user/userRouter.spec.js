@@ -106,6 +106,7 @@ describe('User Router', function () {
           Date.now.restore();
           if (err) { return done(err); }
           expect(res.body).to.have.deep.property('access_token', ACCESS_TOKEN);
+          expect(res.body.user).to.not.have.property('followers');
           done();
         });
       });
@@ -249,6 +250,7 @@ describe('User Router', function () {
           Date.now.restore();
           if (err) { return done(err); }
           expect(res.body).to.have.deep.property('access_token', ACCESS_TOKEN);
+          expect(res.body.user).to.not.have.property('followers');
           done();
         });
       });

@@ -36,7 +36,8 @@ var signinWithPassword = function (req, res, next) {
     return res.status(401)
               .json({ status: 401, message: 'Invalid credentials'});
   }
-  User.findOneAsync({ email: req.body.email }).then(function (user) {
+  User.findOneAsync({ email: req.body.email }, '-followers')
+  .then(function (user) {
     if (!user) {
       res.status(401)
         .json({status: 401, message: 'Can\'t find a user with that email'});
@@ -79,7 +80,8 @@ var signinWithFacebook = function (req, res, next) {
     }
     return JSON.parse(body);
   }).then(function (fbProfile) {
-    return User.findOneAsync({ 'facebook.id': fbProfile.id }).then(function (user) {
+    return User.findOneAsync({ 'facebook.id': fbProfile.id }, '-followers')
+    .then(function (user) {
       if (!user) {
         var picture = fbProfile.picture && fbProfile.picture.data && 
             fbProfile.picture.data.url;
