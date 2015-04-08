@@ -277,7 +277,7 @@ describe('User Router', function () {
     });
   });
 
-  describe('POST /api/users', function () {
+  describe('POST /users', function () {
     
     var path = '/api/users';
     
@@ -293,7 +293,7 @@ describe('User Router', function () {
 
   });
 
-  describe('GET /api/users', function () {
+  describe('GET /users', function () {
 
     var path = '/api/users';
     
@@ -322,7 +322,7 @@ describe('User Router', function () {
 
   });
 
-  describe('GET /api/users/{userId}', function () {
+  describe('GET /users/{userId}', function () {
 
     var path = '/api/users';
     
@@ -344,7 +344,7 @@ describe('User Router', function () {
     });
   });
 
-  describe('PUT /api/users/{userId}/follwoing/{target}', function () {
+  describe('PUT /users/{userId}/follwoing/{target}', function () {
 
     it('should require an access_token', function (done) {
       var path = '/api/users/' + testUser.id +
