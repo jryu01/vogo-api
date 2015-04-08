@@ -65,8 +65,8 @@ var signinWithFacebook = function (req, res, next) {
     return res.status(400)
       .json({ status: 400, message: 'A facebook access token is required'});
   }
-  request('https://graph.facebook.com/me?' +
-    'field=id,email,name,picture&access_token=' + 
+  request('https://graph.facebook.com/v2.3/me?' +
+    'fields=id,email,name,picture&access_token=' + 
     req.body.facebookAccessToken)
   .spread(function (response, body) {
     var profile;
