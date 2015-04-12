@@ -84,13 +84,15 @@ describe('User', function () {
         users.push(new User({
           _id: mongoose.Types.ObjectId(),
           email: 'from' + i + '@address.com',
-          name: 'From User' + i
+          name: 'From User' + i,
+          picture: 'profilePic' + i
         }));
       }
       targetUser = new User({
         _id: mongoose.Types.ObjectId(),
         email: 'target@address.com',
-        name: 'Target User'
+        name: 'Target User',
+        picture: 'profilePicT'
       });
       users.push(targetUser);
 
@@ -103,6 +105,7 @@ describe('User', function () {
       });
       return expect(promise).to.be.fulfilled.then(function (followers) {
         expect(followers[0]).to.have.property('name', 'From User1');
+        expect(followers[0]).to.have.property('picture', 'profilePic1');
         expect(followers[0].userId.toString()).to.equal(users[0].id);
         expect(followers[0]._id).to.be.undefined;
       });
@@ -161,6 +164,7 @@ describe('User', function () {
       });
       return expect(promise).to.be.fulfilled.then(function (following) {
         expect(following[0]).to.have.property('name', 'Target User');
+        expect(following[0]).to.have.property('picture', 'profilePicT');
         expect(following[0].userId.toString()).to.equal(targetUser.id);
       });
     });

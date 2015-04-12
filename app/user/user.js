@@ -8,7 +8,8 @@ var Promise = require('bluebird'),
 
 var FollowerSchema = new Schema({
   userId: { type: Schema.Types.ObjectId },
-  name: String
+  picture: String,
+  name: String,
 });
 
 var UserSchema = new Schema({
@@ -53,6 +54,7 @@ UserSchema.statics.follow = function (fromUser, toUserId) {
     '$push': {
       'followers': {
         userId: fromUser.id,
+        picture: fromUser.picture,
         name: fromUser.name
       }
     }
@@ -102,7 +104,7 @@ UserSchema.statics.getFollowing = function (userId, options) {
     { $match: { 'followers.userId': mongoose.Types.ObjectId(userId) } },
     { $skip: options.skip }, 
     { $limit: options.limit },
-    { $project: { name: 1, userId: '$_id', _id: 0 } }
+    { $project: { name: 1, userId: '$_id', _id: 0, picture: 1 } }
   ]);
 };
 

@@ -4,7 +4,7 @@ var requireToken = require('app/middleware/requireToken'),
     mongoose = require('mongoose'),
     express = require("express"),
     Poll = require('./poll'),
-    _ = require('lodash')
+    _ = require('lodash');
     
 var list = function (req, res, next) {
 
@@ -134,4 +134,4 @@ var pollRouter = module.exports = function () {
   router.post('/polls/:id/votes', res(createVote));
   
   return router; 
-}
+};

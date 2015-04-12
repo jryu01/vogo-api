@@ -1,36 +1,200 @@
 'use strict';
 /*jshint expr: true*/
 
-var _ = require('lodash'),
-    mongoose = require('mongoose'),
-    Promise = require('bluebird');
+var mongoose = require('mongoose'),
+    Promise = require('bluebird'),
+    User = require('app/user/user'),
+    _ = require('lodash');
+
+var Poll = require('./poll');
 
 var dataFactory = {
   create: function (overwrites) {
     var defaults = {
       subject1: { text: 'Basketball' },
       subject2: { text: 'Soccer' },
-      user: { id: '544ef523ef51cd394ba17326', name: 'Bob' }
+      user: { 
+        id: '544ef523ef51cd394ba17326', 
+        name: 'Bob', 
+        picture: 'profilePic' 
+      }
     };
     return _.extend(defaults, overwrites);
   }
 };
+var createPollData = function (overwrites) {
+  var defaults = {
+    question: 'which sports?',
+    answer1: {
+      text: 'basketball',
+      picture: 'a1picurl'
+    },
+    answer2: {
+      text: 'soccer',
+      picture: 'a2picurl'
+    } 
+  };
+  return _.extend(defaults, overwrites);
+};
 
 describe('Poll', function () {
 
-  var Poll, data;
+  var user;
+
+  var data; //will be removed
  
   beforeEach(function () {
-    Poll = require('./poll');
+    user = new User({
+      name: 'Bob',
+      picture: 'profilePic'
+    });
   });
+
+  it('should publish and return a new poll', function () {
+    var data = createPollData();
+    var expectAndValidate = function (poll) {
+      expect(poll.createdBy.userId.toString()).to.equal(user.id.toString());
+      expect(poll).to.have.deep.property('createdBy.name', 'Bob');
+      expect(poll).to.have.deep.property('createdBy.picture', 'profilePic');
+
+      expect(poll).to.have.property('question', 'which sports?');
+      expect(poll).to.have.deep.property('answer1.text', 'basketball');
+      expect(poll).to.have.deep.property('answer1.picture', 'a1picurl');
+      expect(poll).to.have.deep.property('answer1.numVotes', 0);
+      expect(poll).to.have.deep.property('answer2.text', 'soccer');
+      expect(poll).to.have.deep.property('answer2.picture', 'a2picurl');
+      expect(poll).to.have.deep.property('answer2.numVotes', 0);
+    };
+    var promise = Poll.publish(user, data).then(function (poll) {
+      expectAndValidate(poll);
+      return Poll.getById(poll.id);
+    }).then(function (poll) {
+      expectAndValidate(poll);
+    });
+    return expect(promise).to.eventually.be.fulfilled; 
+  });
+  
+  it('should get polls in decending order by id for a user', function () {
+    var poll1 = createPollData({ question: 'poll1' }),
+        poll2 = createPollData({ question: 'poll2' }),
+        poll3 = createPollData({ question: 'poll3' }),
+        user2 = new User({ name: 'Sam', picture: 'pfpic' });
+
+    var promise = Poll.publish(user, poll1).then(function (poll1) {
+      return Poll.publish(user2, poll3);
+    }).then(function () {
+      return Poll.publish(user, poll2);
+    }).then(function () {
+      return Poll.getByUserId(user.id);
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (polls) {
+      expect(polls).to.have.length(2);
+      expect(polls[0].question).to.equal(poll2.question);
+      expect(polls[1].question).to.equal(poll1.question);
+    });
+  });
+
+  it('should limit the number of result', function () {
+    var poll1 = createPollData({ question: 'poll1' }),
+        poll2 = createPollData({ question: 'poll2' });
+
+    var promise = Poll.publish(user, poll1).then(function (poll1) {
+      return Poll.publish(user, poll2);
+    }).then(function () {
+      return Poll.getByUserId(user.id, null, 1);
+    });
+
+    return expect(promise).to.eventually.have.length(1);
+  });
+
+  it('should get polls before provided poll id with limit', function () {
+    var poll1 = createPollData({ question: 'poll1' }),
+        poll2 = createPollData({ question: 'poll2' }),
+        poll3 = createPollData({ question: 'poll3' }),
+        poll4 = createPollData({ question: 'poll4' }),
+        poll3Id;
+
+    var promise = Poll.publish(user, poll1).then(function () {
+      return Poll.publish(user, poll2);
+    }).then(function () {
+      return Poll.publish(user, poll3);
+    }).then(function (poll) {
+      poll3Id = poll.id;
+      return Poll.publish(user, poll4);
+    }).then(function () {
+      return Poll.getByUserId(user.id, poll3Id, 1);
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (polls) {
+      expect(polls).to.have.length(1);
+      expect(polls[0].question).to.equal('poll2');
+    });
+  });
+
+  it('should vote to answer for the poll', function () {
+    var user2 = new User({ name: 'Sam', picture: 'pfpic' });
+    var pollId;
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.voteAnswer(pollId, user.id, 1);
+    }).then(function () {
+      return Poll.voteAnswer(pollId, user2.id, 2);
+    }).then(function () {
+      return Poll.getById(pollId);
+    });
+    return expect(promise).to.be.fulfilled.then(function (poll) {
+      expect(poll.answer1.numVotes).to.equal(1);
+      expect(poll.answer1.voters[0].toString()).to.equal(user.id);
+      expect(poll.answer2.numVotes).to.equal(1);
+      expect(poll.answer2.voters[0].toString()).to.equal(user2.id);
+    });
+  });
+
+  it('should give error when vote with invalid answer number', function () {
+    var pollId;
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.voteAnswer(pollId, user.id);
+    });
+    return expect(promise).to.be
+      .rejectedWith('Invalid answer: answer must be either number 1 or 2');
+  });
+
+  it('should not vote same poll twice with same user', function () {
+    var pollId;
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.voteAnswer(pollId, user.id, 1);
+    }).then(function () {
+      return Poll.voteAnswer(pollId, user.id, 1);
+    }).then(function () {
+      return Poll.voteAnswer(pollId, user.id, 2);
+    }).then(function () {
+      return Poll.getById(pollId); 
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (poll) {
+      expect(poll.answer1.numVotes).to.equal(1);
+      expect(poll.answer1.voters[0].toString()).to.equal(user.id);
+      expect(poll.answer2.numVotes).to.equal(0);
+      expect(poll.answer2.voters).to.be.empty;
+    });
+  });
+
+  it('should add comment to a poll', function () {
+
+  });
+
+
 
   describe('.createNew', function () {
 
     beforeEach(function () {
-      data = dataFactory.create(); 
+      data = dataFactory.create({answer1: { text: 'test' }}); 
     });
 
-    it('should create a new poll with correct fields', function () {
+    it('should create a new poll', function () {
       return expect(Poll.createNew(data)).to.be.fulfilled
         .then(function (poll) {
         expect(poll).to.have.deep.property('createdBy.userId').to.be.ok;
@@ -38,6 +202,7 @@ describe('Poll', function () {
 
         expect(poll).to.have.deep.property('subject1.text', 'Basketball');
         expect(poll).to.have.deep.property('subject2.text', 'Soccer');
+        expect(poll).to.have.property('_random').to.be.ok.and.a('Number');
       });
     });
 
@@ -51,19 +216,18 @@ describe('Poll', function () {
         expect(poll).to.have.property('totalNumVotes', 0);
         expect(poll).to.have.property('votes').to.be.ok.and.empty;
         expect(poll).to.have.property('tags').to.be.ok.and.empty;
-        expect(poll).to.have.property('_random').to.be.ok.and.a('Number');
         // expect(poll).to.have.property('_random').to.be.an('Array').length(2);
       });
     });
 
-    it('should be rejected when required fields are missing', function () {
-      return expect(Poll.createNew({})).to.be.rejected.then(function (e) {
-        expect(e).to.match(/createdBy.userId is required!/);
-        expect(e).to.match(/createdBy.name is required!/);
-        expect(e).to.match(/subject1.text is required!/);
-        expect(e).to.match(/subject2.text is required!/);
-      });
-    });
+    // it('should be rejected when required fields are missing', function () {
+    //   return expect(Poll.createNew({})).to.be.rejected.then(function (e) {
+    //     expect(e).to.match(/createdBy.userId is required!/);
+    //     expect(e).to.match(/createdBy.name is required!/);
+    //     expect(e).to.match(/subject1.text is required!/);
+    //     expect(e).to.match(/subject2.text is required!/);
+    //   });
+    // });
 
     it('should have subjectTexts fields with subject texts', function () {
       return expect(Poll.createNew(data)).to.eventually.have

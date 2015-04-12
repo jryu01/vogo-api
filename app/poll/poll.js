@@ -9,51 +9,73 @@ var PollSchema = new Schema({
 
   createdBy: {
     userId: { type: Schema.Types.ObjectId, required: '{PATH} is required!' },
-    name: { type: String, required: '{PATH} is required!' }
+    name: { type: String, required: '{PATH} is required!' },
+    picture: { type: String }
   },
-  createdAt: { type: Date, default: Date.now },
+  createdAt: { type: Date, default: Date.now }, //will be depreciated
+  // updatedAt change when new vote or new comments are added 
   updatedAt: { type: Date, default: Date.now },
 
-  question: String,
+  // will be removed
   subject1: {
-    text: { type: String, required: '{PATH} is required!' },
+    text: { type: String },
     numVotes: { type: Number, default: 0 }
   },
   subject2: {
-    text: { type: String, required: '{PATH} is required!' },
+    text: { type: String },
     numVotes: { type: Number, default: 0 }
   },
   subjectTexts: [],
+  /////////////////////
 
-  totalNumVotes: { type: Number, default: 0 }, 
+  //// added /////
+  question: { type: String, default: '' },
+  answer1: {
+    text: { type: String, default: '' },
+    numVotes: { type: Number, default: 0 },
+    picture: { type: String, default: '' },
+    voters: [ Schema.Types.ObjectId ],
+  },
+  answer2: {
+    text: { type: String, default: '' },
+    numVotes: { type: Number, default: 0 },
+    picture: { type: String, default: '' },
+    voters: [ Schema.Types.ObjectId ],
+  },
+  //////////
 
+  totalNumVotes: { type: Number, default: 0 }, // be removed (total: a1 + a2)
   votes: [{
     voterId: { type: Schema.Types.ObjectId },
-    createdAt: { type: Date, default: Date.now },
-    subjectId: { type: Number },
-    subjectText: { type: String }
+    createdAt: { type: Date, default: Date.now }, //will be removed
+    subjectId: { type: Number }, //will be removed
+    subjectText: { type: String }, //will be removed
+    answer: { type: Number },
+    answerText : { type: String }
   }],
-
-  tags: [String],
 
   numComments: { type: Number, default: 0 },
   comments: [{
     createdBy: {
       userId: { type: Schema.Types.ObjectId },
-      name: { type: String }
+      name: { type: String },
+      picture: { type: String }
     },
-    createdAt: { type: Date, default: Date.now },
     text: String
   }],
+
+  tags: [String],
 
   _random: { type: Number, default: Math.random }
 });
 
-// Indeices
+// Indexes
 PollSchema.index({'votes.voterId': 1, '_random': 1});
 PollSchema.index({'votes.voterId': 1, '_id': -1, '_random': 1});
 PollSchema.index({'votes.voterId': 1, 'votes.createdAt': -1 });
 PollSchema.index({'createdBy.userId': 1, 'updatedAt': -1 });
+
+PollSchema.index({'createdBy.userId': 1, '_id': -1 });
 
 //Add toJSON option to transform document before returnig the result
 PollSchema.options.toJSON = {
@@ -66,6 +88,88 @@ PollSchema.options.toJSON = {
 };
 
 // Static methods
+PollSchema.statics.publish = function (user, data) {
+  data = data || {};
+  data.createdBy = {
+    name: user.name,
+    userId: user.id,
+    picture: user.picture
+  };
+  return this.createAsync(data);
+};
+
+PollSchema.statics.getByUserId = function (userId, pollId, limit) {
+  var query = { 'createdBy.userId': userId },
+      projection = {},
+      options = { sort: { '_id': -1 } };
+
+  if (limit > 0) {
+    options.limit = limit; 
+  }   
+  if (pollId) {
+    query._id = { $lt: pollId };
+  }
+
+  return this.findAsync(query, projection, options);
+};
+
+PollSchema.statics.getById = function (pollId) {
+  return this.findByIdAsync(pollId);
+};
+
+PollSchema.statics.voteAnswer = function (pollId, voterId, answer) {
+  var query = { 
+    '_id': pollId,
+    'answer1.voters': { $ne: voterId },
+    'answer2.voters': { $ne: voterId }
+  };
+  var update = { $inc: {}, $push: {} };
+
+  if(answer !== 1 && answer !== 2) {
+    return Promise.reject(
+      new Error('Invalid answer: answer must be either number 1 or 2')
+    );
+  }
+
+  update.$inc['answer' + answer + '.numVotes'] = 1;
+  update.$push['answer'+ answer + '.voters'] = voterId;
+
+  return this.findOneAndUpdateAsync(query, update).then(function () {});
+};
+
+// PollSchema.statics.getVotesByVoterId = function (voterId, voteId, limit) {
+
+// };
+
+PollSchema.statics.comment = function (pollId, userId, text) {
+  //answer is either 1 or 2 to vote answer1 or answer2
+};
+
+PollSchema.statics.getComments = function (pollId, commentId, limit) {
+  //answer is either 1 or 2 to vote answer1 or answer2
+};
+
+
+
+//VVVVVVVVVVVVVVVVVVVVVVVV Will be depreciated VVVVVVVVVVVVVVVVVVVVV
+PollSchema.methods.addVote = function (voterId, subjectId) {
+  var that = this;
+  if (!(subjectId === 1 || subjectId === 2)) {
+    return Promise
+      .reject(new Error('argument subjectId must be an integer 1 or 2'));
+  }
+  this.totalNumVotes += 1;
+  this['subject' + subjectId].numVotes += 1;
+  this.votes.push({
+    voterId: voterId,
+    subjectId: subjectId,
+    subjectText: this['subject' + subjectId].text 
+  });
+  return this.saveAsync().then(function (result) {
+    return result[0];
+  });
+};
+
 PollSchema.statics.createNew = function (data) {
   var text1 = data.subject1 && data.subject1.text,
       text2 = data.subject1 && data.subject2.text;
@@ -132,6 +236,27 @@ PollSchema.statics.findOneRandomNew = function (query, field, options) {
   });
 };
 
+////////////////////////////////////////////////
+// Instance Methods
+PollSchema.methods.addVote = function (voterId, subjectId) {
+  var that = this;
+  if (!(subjectId === 1 || subjectId === 2)) {
+    return Promise
+      .reject(new Error('argument subjectId must be an integer 1 or 2'));
+  }
+  this.totalNumVotes += 1;
+  this['subject' + subjectId].numVotes += 1;
+  this.votes.push({
+    voterId: voterId,
+    subjectId: subjectId,
+    subjectText: this['subject' + subjectId].text 
+  });
+  return this.saveAsync().then(function (result) {
+    return result[0];
+  });
+};
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 //TODO: need test
 PollSchema.statics.getRecommendations = function (query, field) {
   var that = this,
@@ -161,25 +286,6 @@ PollSchema.statics.getRecommendations = function (query, field) {
       });
     }
     return resultPromise;
-  });
-};
-
-// Instance Methods
-PollSchema.methods.addVote = function (voterId, subjectId) {
-  var that = this;
-  if (!(subjectId === 1 || subjectId === 2)) {
-    return Promise
-      .reject(new Error('argument subjectId must be an integer 1 or 2'));
-  }
-  this.totalNumVotes += 1;
-  this['subject' + subjectId].numVotes += 1;
-  this.votes.push({
-    voterId: voterId,
-    subjectId: subjectId,
-    subjectText: this['subject' + subjectId].text 
-  });
-  return this.saveAsync().then(function (result) {
-    return result[0];
   });
 };
 
