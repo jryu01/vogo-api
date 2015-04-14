@@ -132,7 +132,7 @@ describe('Poll', function () {
     });
   });
 
-  it('should vote to answer for the poll', function () {
+  it('should vote an answer for the poll', function () {
     var user2 = new User({ name: 'Sam', picture: 'pfpic' });
     var pollId;
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
@@ -151,7 +151,20 @@ describe('Poll', function () {
     });
   });
 
-  it('should give error when vote with invalid answer number', function () {
+  it('should return updated poll when voted', function () {
+    var pollId;
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.voteAnswer(poll.id, user.id, 1);
+    });
+    return expect(promise).to.be.fulfilled.then(function (poll) {
+      expect(poll.id).to.equal(pollId);
+      expect(poll.answer1.numVotes).to.equal(1);
+      expect(poll.answer1.voters[0].toString()).to.equal(user.id);
+    });
+  });
+
+  it('should give error when vote with invalid answerNumber', function () {
     var pollId;
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
       pollId = poll.id;
@@ -182,12 +195,84 @@ describe('Poll', function () {
     });
   });
 
-  it('should add comment to a poll', function () {
+  it('should add comment to a poll and return updated poll', function () {
+    var pollId, poll;
+    var id = mongoose.Types.ObjectId();
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.comment(pollId, user, 'hello');
+    }).then(function (result) {
+      poll = result;
+      return Poll.getComments(pollId);
+    });
+    return expect(promise).to.be.fulfilled.then(function (comments) {
+      expect(poll.comments[0]).to.have.property('_id');
+      expect(poll.comments[0]).to.have.property('text', 'hello');
+      expect(poll.comments[0].createdBy.userId.toString()).to.equal(user.id);
+      expect(poll.comments[0]).to.have.deep.property('createdBy.name', user.name);
+      expect(poll.comments[0]).to.have.deep.property('createdBy.picture', user.picture);
 
+      expect(comments[0]).to.have.property('_id');
+      expect(comments[0]).to.have.property('text', 'hello');
+      expect(comments[0].createdBy.userId.toString()).to.equal(user.id);
+      expect(comments[0]).to.have.deep.property('createdBy.userId');
+      expect(comments[0]).to.have.deep.property('createdBy.name', user.name);
+      expect(comments[0]).to.have.deep
+        .property('createdBy.picture', user.picture);
+    });
   });
 
+  it('should update number of comments of the poll', function () {
+    var pollId;
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.comment(pollId, user, 'hello');
+    }).then(function () {
+      return Poll.getById(pollId);
+    });
 
+    return expect(promise).to.eventually.have.property('numComments', 1);
+  });
+  
+  it('should get empty array for comments', function () {
+    var promise = Poll.getComments(mongoose.Types.ObjectId());
+    return expect(promise).to.eventually.be.an('array').that.is.empty;
+  });
 
+  it('should paginate comments on getComments', function () {
+    var options = { skip: 1, limit: 2 };
+
+    var pollId, comment;
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.comment(pollId, user, 'first');
+    }).then(function () {
+      return Poll.comment(pollId, user, 'second');
+    }).then(function () {
+      return Poll.comment(pollId, user, 'third');
+    }).then(function () {
+      return Poll.comment(pollId, user, 'fourth');
+    }).then(function () {
+      return Poll.getComments(pollId, options);
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (comments) {
+      expect(comments).to.be.length(2); 
+      expect(comments[0].text).to.equal('second');
+      expect(comments[1].text).to.equal('third');
+    });
+  });
+
+  it('should have #toJSON to get clean json', function () {
+    data = dataFactory.create();
+    data.someWeird = "adsjfklsdfjalsdfjsalkdfjskldf";
+    var poll = new Poll(data);
+    expect(poll.toJSON()).to.have.property('id');
+    expect(poll.toJSON()).to.not.have.property('_id');
+    expect(poll.toJSON()).to.not.have.property('__V');
+    expect(poll.toJSON()).to.not.have.property('_random');
+  });
+//////////////////////////////////////////////////////////////////////////
   describe('.createNew', function () {
 
     beforeEach(function () {
@@ -215,7 +300,6 @@ describe('Poll', function () {
         expect(poll).to.have.deep.property('subject2.numVotes', 0);
         expect(poll).to.have.property('totalNumVotes', 0);
         expect(poll).to.have.property('votes').to.be.ok.and.empty;
-        expect(poll).to.have.property('tags').to.be.ok.and.empty;
         // expect(poll).to.have.property('_random').to.be.an('Array').length(2);
       });
     });
@@ -355,16 +439,6 @@ describe('Poll', function () {
       return expect(poll.addVote(voterId, 3)).to.eventually.be
         .rejectedWith('argument subjectId must be an integer 1 or 2');
     });
-  });
-
-  it('should have #toJSON to get clean json', function () {
-    data = dataFactory.create();
-    data.someWeird = "adsjfklsdfjalsdfjsalkdfjskldf";
-    var poll = new Poll(data);
-    expect(poll.toJSON()).to.have.property('id');
-    expect(poll.toJSON()).to.not.have.property('_id');
-    expect(poll.toJSON()).to.not.have.property('__V');
-    expect(poll.toJSON()).to.not.have.property('_random');
   });
 
 });

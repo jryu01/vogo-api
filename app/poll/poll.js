@@ -64,8 +64,6 @@ var PollSchema = new Schema({
     text: String
   }],
 
-  tags: [String],
-
   _random: { type: Number, default: Math.random }
 });
 
@@ -117,39 +115,57 @@ PollSchema.statics.getById = function (pollId) {
   return this.findByIdAsync(pollId);
 };
 
-PollSchema.statics.voteAnswer = function (pollId, voterId, answer) {
+PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
   var query = { 
     '_id': pollId,
     'answer1.voters': { $ne: voterId },
     'answer2.voters': { $ne: voterId }
   };
-  var update = { $inc: {}, $push: {} };
+  var update = { $inc: {}, $addToSet: {} };
 
-  if(answer !== 1 && answer !== 2) {
+  if(answerNumber !== 1 && answerNumber !== 2) {
     return Promise.reject(
       new Error('Invalid answer: answer must be either number 1 or 2')
     );
   }
 
-  update.$inc['answer' + answer + '.numVotes'] = 1;
-  update.$push['answer'+ answer + '.voters'] = voterId;
+  update.$inc['answer' + answerNumber + '.numVotes'] = 1;
+  update.$addToSet['answer'+ answerNumber + '.voters'] = voterId;
 
-  return this.findOneAndUpdateAsync(query, update).then(function () {});
+  return this.findOneAndUpdateAsync(query, update);
 };
 
-// PollSchema.statics.getVotesByVoterId = function (voterId, voteId, limit) {
-
-// };
-
-PollSchema.statics.comment = function (pollId, userId, text) {
-  //answer is either 1 or 2 to vote answer1 or answer2
+PollSchema.statics.comment = function (pollId, user, text) {
+  var comment = {
+    'createdBy': {
+      userId: user.id,
+      name: user.name,
+      picture: user.picture
+    },
+    'text': text
+  };
+  var update = {
+    '$push': {
+      'comments': comment
+    },
+    '$inc': {
+      'numComments': 1
+    }
+  };
+  return this.findByIdAndUpdateAsync(pollId, update);
 };
 
-PollSchema.statics.getComments = function (pollId, commentId, limit) {
-  //answer is either 1 or 2 to vote answer1 or answer2
+PollSchema.statics.getComments = function (pollId, options) {
+  options = options || {};
+  options.skip = options.skip || 0;
+  options.limit = options.limit || 100;
+  var project = { 
+    'comments': { $slice: [options.skip, options.limit] }
+  };
+  return this.findByIdAsync(pollId, project).then(function (poll) {
+    return poll ? poll.comments: [];
+  });
 };
-
-
 
 //VVVVVVVVVVVVVVVVVVVVVVVV Will be depreciated VVVVVVVVVVVVVVVVVVVVV
 PollSchema.methods.addVote = function (voterId, subjectId) {
