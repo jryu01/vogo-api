@@ -30,6 +30,7 @@ VoteSchema.statics.createNew = function (voterId, pollId, answer) {
 VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
   var query = { 'voterId': voterId },
       options = { sort: { '_id': -1 } };
+      options = {};
 
   if (limit > 0) {
     options.limit = limit; 

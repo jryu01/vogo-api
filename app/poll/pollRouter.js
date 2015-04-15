@@ -4,6 +4,7 @@ var requireToken = require('app/middleware/requireToken'),
     mongoose = require('mongoose'),
     express = require("express"),
     Poll = require('./poll'),
+    Vote = require('./vote'),
     _ = require('lodash');
     
 var list = function (req, res, next) {
@@ -119,19 +120,52 @@ function res(promiseReturningFunction) {
     }).catch(next);
   };
 }
+//////////////////////////////////////////////////////////////////
+var publish = function (req, res, next) {
+  //TODO: input validation with req.body
+  Poll.publish(req.user, req.body)
+    .then(res.status(201).json.bind(res))
+    .catch(next);
+};
+
+var vote = function (req, res, next) {
+  Vote.createNew(req.user.id, req.params.id, req.body.answer)
+    .then(res.status(201).json.bind(res));
+};
+
+var comment = function (req, res, next) {
+  var pollId = req.params.id;
+  Poll.comment(pollId, req.user, req.body.text).then(function (poll) {
+    var newComment = poll.comments[poll.comments.length - 1];
+    res.status(201).json(newComment);
+  });
+};
 
 var pollRouter = module.exports = function () {
   
   var router = express.Router();
   
-  router.all('/me*', requireToken);
-  router.get('/me/polls', res(listMyPoll));
+  // router.all('/me*', requireToken);
+  // router.get('/me/polls', res(listMyPoll));
   
-  router.all('/polls*', requireToken);
-  router.post('/polls', create); 
-  router.get('/polls', res(list));
-  router.get('/polls/random', res(getRandom)); 
-  router.post('/polls/:id/votes', res(createVote));
-  
+  // router.all('/polls*', requireToken);
+  // router.post('/polls', create); 
+  // router.get('/polls', res(list));
+  // router.get('/polls/random', res(getRandom)); 
+  // router.post('/polls/:id/votes', res(createVote));
+
+
+/////////////////////////////////////////////
+  router.post('/polls', requireToken, publish);
+  router.post('/polls/:id/votes', requireToken, vote);
+  router.post('/polls/:id/comments', requireToken, comment);
+
+  router.get('/polls/:id');
+  router.get('/polls/:id/comments');
+  router.get('/polls/random');
+
+  router.get('/users/:id/polls');
+  router.get('/users/:id/votes');
+
   return router; 
 };

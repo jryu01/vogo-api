@@ -35,7 +35,7 @@ var createApp = function () {
   router.__set__({
     requireToken: mockRequireToken   
   });
-  app.use('/api', router());
+  app.use(router());
   app.use(function (err, req, res, next) {
     res.status(err.status || 500);
     res.json(err);
@@ -49,7 +49,7 @@ describe('User Router', function () {
   
   describe('POST /users/signin', function () {
     
-    var path = '/api/users/signin';
+    var path = '/users/signin';
     
     it('should send 400 when no grantType field is provided', function (done) {
       var resBody = {
@@ -289,7 +289,7 @@ describe('User Router', function () {
 
   describe('POST /users', function () {
     
-    var path = '/api/users';
+    var path = '/users';
     
     it('should send 201 with user data', function (done) {
       app.post(path)
@@ -304,7 +304,7 @@ describe('User Router', function () {
 
   describe('GET /users', function () {
 
-    var path = '/api/users';
+    var path = '/users';
     
     beforeEach(function (done) {
       var users = [{email: 'bob@vogo.vogo'}, {email: 'sam@vogo.vogo'}];
@@ -333,7 +333,7 @@ describe('User Router', function () {
 
   describe('GET /users/{userId}', function () {
 
-    var path = '/api/users';
+    var path = '/users';
     
     it('should retreive a specific user with id', function (done) {
       var userId;
@@ -356,7 +356,7 @@ describe('User Router', function () {
   describe('PUT /users/{userId}/follwoing/{target}', function () {
 
     it('should require an access_token', function (done) {
-      var path = '/api/users/' + testUser.id +
+      var path = '/users/' + testUser.id +
         '/following/507f1f77bcf86cd799439012';
       app.put(path).expect(401, done);
     });
@@ -364,7 +364,7 @@ describe('User Router', function () {
     it('should send 403 if current user is not authorized', function (done) {
       var OTHER_USER_ID = mongoose.Types.ObjectId(),
           TARGET_ID = mongoose.Types.ObjectId(),
-          path = '/api/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
+          path = '/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
       app.put(path).set('x-access-token', 'testToken').expect(403, done);
     });
 
@@ -375,7 +375,7 @@ describe('User Router', function () {
         email: 'target@address.com',
         name: 'Target User'
       });
-      var path = '/api/users/' + testUser.id + '/following/' + targetUser.id;
+      var path = '/users/' + testUser.id + '/following/' + targetUser.id;
       app.put(path).set('x-access-token', 'testToken')
         .expect(204, function (err) {
           if (err) { return done(err); }
@@ -389,7 +389,7 @@ describe('User Router', function () {
   describe('DELETE /users/{userId}/follwoing/{target}', function () {
 
     it('should require an access_token', function (done) {
-      var path = '/api/users/' + testUser.id +
+      var path = '/users/' + testUser.id +
         '/following/507f1f77bcf86cd799439012';
       app.del(path).expect(401, done);
     });
@@ -397,7 +397,7 @@ describe('User Router', function () {
     it('should send 403 if current user is not authorized', function (done) {
       var OTHER_USER_ID = mongoose.Types.ObjectId(),
           TARGET_ID = mongoose.Types.ObjectId(),
-          path = '/api/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
+          path = '/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
       app.del(path).set('x-access-token', 'testToken').expect(403, done);
     });
 
@@ -408,7 +408,7 @@ describe('User Router', function () {
         email: 'target@address.com',
         name: 'Target User'
       });
-      var path = '/api/users/' + testUser.id + '/following/' + targetUser.id;
+      var path = '/users/' + testUser.id + '/following/' + targetUser.id;
       app.del(path).set('x-access-token', 'testToken')
         .expect(204, function (err) {
           if (err) { return done(err); }
@@ -427,12 +427,12 @@ describe('User Router', function () {
     afterEach(function () { User.getFollowers.restore(); });
 
     it('should require an access_token', function (done) {
-      var path = '/api/users/' + testUser.id + '/followers';
+      var path = '/users/' + testUser.id + '/followers';
       app.get(path).expect(401, done);
     });
 
     it('should send 200 with list of followers', function (done) {
-      var path = '/api/users/' + testUser.id + '/followers';
+      var path = '/users/' + testUser.id + '/followers';
       User.getFollowers
         .withArgs(testUser.id)
         .returns(Promise.resolve([{ name: 'follower' }]));
@@ -447,12 +447,12 @@ describe('User Router', function () {
     afterEach(function () { User.getFollowerCount.restore(); });
 
     it('should require an access_token', function (done) {
-      var path = '/api/users/' + testUser.id + '/followers-count';
+      var path = '/users/' + testUser.id + '/followers-count';
       app.get(path).expect(401, done);
     });
 
     it('should send 200 with followers count', function (done) {
-      var path = '/api/users/' + testUser.id + '/followers-count';
+      var path = '/users/' + testUser.id + '/followers-count';
       User.getFollowerCount
         .withArgs(testUser.id)
         .returns(Promise.resolve(3));
@@ -468,12 +468,12 @@ describe('User Router', function () {
     afterEach(function () { User.getFollowing.restore(); });
 
     it('should require an access_token', function (done) {
-      var path = '/api/users/' + testUser.id + '/following';
+      var path = '/users/' + testUser.id + '/following';
       app.get(path).expect(401, done);
     });
 
     it('should send 200 with list of following users', function (done) {
-      var path = '/api/users/' + testUser.id + '/following';
+      var path = '/users/' + testUser.id + '/following';
       User.getFollowing
         .withArgs(testUser.id)
         .returns(Promise.resolve([{ name: 'user' }]));
@@ -489,12 +489,12 @@ describe('User Router', function () {
     afterEach(function () { User.getFollowingCount.restore(); });
 
     it('should require an access_token', function (done) {
-      var path = '/api/users/' + testUser.id + '/following-count';
+      var path = '/users/' + testUser.id + '/following-count';
       app.get(path).expect(401, done);
     });
 
     it('should send 200 with following count', function (done) {
-      var path = '/api/users/' + testUser.id + '/following-count';
+      var path = '/users/' + testUser.id + '/following-count';
       User.getFollowingCount
         .withArgs(testUser.id)
         .returns(Promise.resolve(2));
