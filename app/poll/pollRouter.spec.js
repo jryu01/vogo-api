@@ -128,6 +128,69 @@ describe('Poll Router', function () {
         .send(reqBody)
         .expect(201, {text: 'new comment'}, done);
     });
+
+    it('should send 404 with non existing poll', function (done) {
+      var reqBody = { text: 'new comment' };
+      Poll.comment.withArgs(pollId, user, 'new comment')
+        .returns(Promise.resolve(null));
+      request(app).post('/polls/' + pollId + '/comments')
+        .set('x-access-token', 'testToken')
+        .send(reqBody)
+        .expect(404, { status: 404, message: 'poll not found' }, done);
+    });
+  });
+
+  describe('GET /polls/:id/comments', function () {
+
+    var pollId = mongoose.Types.ObjectId().toString();
+
+    beforeEach(function () { sinon.stub(Poll, 'getComments'); });
+    afterEach(function () { Poll.getComments.restore(); });  
+
+    it('should require an access token', function (done) {
+      request(app).get('/polls/' + pollId + '/comments').expect(401, done);
+    });
+
+    it('should send 200 with comments', function (done) {
+      Poll.getComments.withArgs(pollId, { skip: 0, limit: 20 })
+        .returns(Promise.resolve([{text: 'comment1'}, {text: 'comment2'}]));
+
+      request(app).get('/polls/' + pollId + '/comments')
+        .set('x-access-token', 'testToken')
+        .expect(200, [{text: 'comment1'}, {text: 'comment2'}], done);
+    });
+
+    it('should paginate comments', function (done) {
+      Poll.getComments.withArgs(pollId, { skip: 20, limit: 2})
+        .returns(Promise.resolve([{text: 'comment1'}, {text: 'comment2'}]));
+        
+      request(app).get('/polls/' + pollId + '/comments')
+        .set('x-access-token', 'testToken')
+        .query({ skip: 20, limit: 2 })
+        .expect(200, [{text: 'comment1'}, {text: 'comment2'}], done);
+    });
+
+  });
+
+  describe('GET /polls/:id', function () {
+
+    var pollId = mongoose.Types.ObjectId().toString();
+
+    beforeEach(function () { sinon.stub(Poll, 'getById'); });
+    afterEach(function () { Poll.getById.restore(); });  
+
+    it('should require an access token', function (done) {
+      request(app).get('/polls/' + pollId).expect(401, done);
+    });
+
+    it('should send 200 with a poll', function (done) {
+      Poll.getById.withArgs(pollId)
+        .returns(Promise.resolve({ id: pollId }));
+
+      request(app).get('/polls/' + pollId)
+        .set('x-access-token', 'testToken')
+        .expect(200, { id: pollId }, done);
+    });
   });
 
 });

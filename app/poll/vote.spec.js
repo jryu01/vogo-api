@@ -46,6 +46,13 @@ describe('Vote', function () {
     });
   });
 
+  it('should return null when creating to non-existing poll', function () {
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      return Vote.createNew(user.id, mongoose.Types.ObjectId(), 1);
+    });
+    return expect(promise).to.eventually.be.null;
+  });
+
   it('should get votes for a user decending order by _id', function () {
     var pollList;
     var promise = Promise.all([

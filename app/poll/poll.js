@@ -61,7 +61,7 @@ var PollSchema = new Schema({
       name: { type: String },
       picture: { type: String }
     },
-    text: String
+    text: { type: String, default: '' }
   }],
 
   _random: { type: Number, default: Math.random }

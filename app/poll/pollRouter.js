@@ -129,16 +129,34 @@ var publish = function (req, res, next) {
 };
 
 var vote = function (req, res, next) {
+  //TODO: input validation
   Vote.createNew(req.user.id, req.params.id, req.body.answer)
-    .then(res.status(201).json.bind(res));
+    .then(res.status(201).json.bind(res))
+    .catch(next);
 };
 
 var comment = function (req, res, next) {
+  //TODO: input validation
   var pollId = req.params.id;
   Poll.comment(pollId, req.user, req.body.text).then(function (poll) {
+    if (!poll) {
+       throw { status: 404, message: 'poll not found'};
+    }
     var newComment = poll.comments[poll.comments.length - 1];
     res.status(201).json(newComment);
-  });
+  }).catch(next);
+};
+
+var getComments = function (req, res, next) {
+  var pollId = req.params.id;
+  var options = {};  
+  options.skip = parseInt(req.query.skip, 10) || 0;
+  options.limit = parseInt(req.query.limit, 10) || 20; 
+  Poll.getComments(pollId, options).then(res.json.bind(res)).catch(next);
+};
+
+var getPollById = function (req, res, next) {
+  Poll.getById(req.params.id).then(res.json.bind(res)).catch(next);
 };
 
 var pollRouter = module.exports = function () {
@@ -160,8 +178,8 @@ var pollRouter = module.exports = function () {
   router.post('/polls/:id/votes', requireToken, vote);
   router.post('/polls/:id/comments', requireToken, comment);
 
-  router.get('/polls/:id');
-  router.get('/polls/:id/comments');
+  router.get('/polls/:id', requireToken, getPollById);
+  router.get('/polls/:id/comments', requireToken, getComments);
   router.get('/polls/random');
 
   router.get('/users/:id/polls');

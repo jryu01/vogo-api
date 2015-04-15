@@ -21,7 +21,8 @@ VoteSchema.statics.createNew = function (voterId, pollId, answer) {
     answer: answer,
     _poll: pollId,
   };
-  var promise = Poll.voteAnswer(pollId, voterId, answer).then(function () {
+  var promise = Poll.voteAnswer(pollId, voterId, answer).then(function (poll) {
+    if (!poll) { return null; }
     return that.createAsync(vote);
   });
   return promise;
