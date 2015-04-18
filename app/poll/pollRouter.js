@@ -175,6 +175,15 @@ var getUserPolls = function (req, res, next) {
     .catch(next);
 };
 
+var getUserVotes = function (req, res, next) {
+  var userId = req.params.id,
+      beforeVoteId = req.query.before || null,
+      limit = 20;
+  Vote.getByUserId(userId, beforeVoteId, limit)
+    .then(res.json.bind(res))
+    .catch(next);
+};
+
 var pollRouter = module.exports = function () {
   
   var router = express.Router();
@@ -198,9 +207,9 @@ var pollRouter = module.exports = function () {
   router.get('/polls/:id/comments', requireToken, getComments);
 
   router.get('/users/:id/polls', requireToken, getUserPolls);
-  router.get('/users/:id/votes');
+  router.get('/users/:id/votes', requireToken, getUserVotes);
 
   router.get('/polls/recommendation');
-  
+
   return router; 
 };

@@ -235,4 +235,36 @@ describe('Poll Router', function () {
     });
   });
 
+  describe('GET /users/:id/votes', function () {
+
+    var userId = mongoose.Types.ObjectId().toString();
+
+    beforeEach(function () { sinon.stub(Vote, 'getByUserId'); });
+    afterEach(function () { Vote.getByUserId.restore(); });  
+
+    it('should require an access token', function (done) {
+      request(app).get('/users/' + userId + '/votes').expect(401, done);
+    });
+
+    it('should send 200 with a poll', function (done) {
+      Vote.getByUserId.withArgs(userId, null, 20)
+        .returns(Promise.resolve({ question: 'poll?' }));
+
+      request(app).get('/users/' + userId + '/votes').query({ limit: 20 })
+        .set('x-access-token', 'testToken')
+        .expect(200, { question: 'poll?'}, done);
+    });
+
+    it('should send 200 with a poll', function (done) {
+      var voteId = mongoose.Types.ObjectId().toString();
+      Vote.getByUserId.withArgs(userId, voteId, 20)
+        .returns(Promise.resolve({ question: 'poll?' }));
+
+      request(app).get('/users/' + userId + '/votes')
+        .query({ before: voteId, limit: 20 })
+        .set('x-access-token', 'testToken')
+        .expect(200, { question: 'poll?'}, done);
+    });
+  });
+
 });
