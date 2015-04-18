@@ -6,18 +6,18 @@ var Promise = require('bluebird'),
     Schema = mongoose.Schema;
  
 var VoteSchema = new Schema({
-  voterId: { type: Schema.Types.ObjectId },
+  _voter: { type: Schema.Types.ObjectId, ref: 'User' },
   answer: { type: Number },
   _poll: { type: Schema.Types.ObjectId, ref: 'Poll' }
 });
 
-VoteSchema.index({'voterId': 1, '_id': -1 });
+VoteSchema.index({'_voter': 1, '_id': -1});
 VoteSchema.index({'poll.id': 1});
 
 VoteSchema.statics.createNew = function (voterId, pollId, answer) {
   var that = this;
   var vote = {
-    voterId: voterId,
+    _voter: voterId,
     answer: answer,
     _poll: pollId,
   };
@@ -29,7 +29,7 @@ VoteSchema.statics.createNew = function (voterId, pollId, answer) {
 };
 
 VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
-  var query = { 'voterId': voterId },
+  var query = { '_voter': voterId },
       options = { sort: { '_id': -1 } };
       options = {};
 
@@ -43,5 +43,7 @@ VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
   return this.find(query, null, options)
     .populate('_poll', 'question').execAsync();
 };
+
+VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};
 
 module.exports = mongoose.model('Vote', VoteSchema);

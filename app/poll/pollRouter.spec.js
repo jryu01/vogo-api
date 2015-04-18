@@ -104,6 +104,16 @@ describe('Poll Router', function () {
           done();
         });
     });
+
+    it('should send 404 with non-existing poll', function (done) {
+      var reqBody = { answer: 1 };
+      Vote.createNew.withArgs(user.id, pollId, 1)
+        .returns(Promise.resolve(null));
+      request(app).post('/polls/' + pollId + '/votes')
+        .set('x-access-token', 'testToken')
+        .send(reqBody)
+        .expect(404, { status: 404, message: 'poll not found or already voted with the user' }, done);
+    });
   });
 
   describe('POST /polls/:id/comments', function () {
@@ -190,6 +200,38 @@ describe('Poll Router', function () {
       request(app).get('/polls/' + pollId)
         .set('x-access-token', 'testToken')
         .expect(200, { id: pollId }, done);
+    });
+  });
+
+  describe('GET /users/:id/polls', function () {
+
+    var userId = mongoose.Types.ObjectId().toString();
+
+    beforeEach(function () { sinon.stub(Poll, 'getByUserId'); });
+    afterEach(function () { Poll.getByUserId.restore(); });  
+
+    it('should require an access token', function (done) {
+      request(app).get('/users/' + userId + '/polls').expect(401, done);
+    });
+
+    it('should send 200 with a poll', function (done) {
+      Poll.getByUserId.withArgs(userId, null, 20)
+        .returns(Promise.resolve({ question: 'poll?' }));
+
+      request(app).get('/users/' + userId + '/polls').query({ limit: 20 })
+        .set('x-access-token', 'testToken')
+        .expect(200, { question: 'poll?'}, done);
+    });
+
+    it('should send 200 with a poll', function (done) {
+      var pollId = mongoose.Types.ObjectId().toString();
+      Poll.getByUserId.withArgs(userId, pollId, 20)
+        .returns(Promise.resolve({ question: 'poll?' }));
+
+      request(app).get('/users/' + userId + '/polls')
+        .query({ before: pollId, limit: 20 })
+        .set('x-access-token', 'testToken')
+        .expect(200, { question: 'poll?'}, done);
     });
   });
 

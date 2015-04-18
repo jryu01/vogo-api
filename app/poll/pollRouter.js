@@ -92,7 +92,7 @@ var getRecommendations = function (req, res) {
 
   // exclude polls with provided ids
   if (exclude && exclude !== 'undefined') {
-    // concat becaulse exlucde can be either single value or array
+    // concat because exlucde can be either single value or array
     query._id = { $nin: [].concat(exclude) };
   }
   return Poll.getRecommendations(query);
@@ -131,8 +131,15 @@ var publish = function (req, res, next) {
 var vote = function (req, res, next) {
   //TODO: input validation
   Vote.createNew(req.user.id, req.params.id, req.body.answer)
-    .then(res.status(201).json.bind(res))
-    .catch(next);
+    .then(function (poll) {
+      if (!poll) {
+        throw { 
+          status: 404, 
+          message: 'poll not found or already voted with the user' 
+        };
+      }
+      res.status(201).json(poll);
+    }).catch(next);
 };
 
 var comment = function (req, res, next) {
@@ -159,6 +166,15 @@ var getPollById = function (req, res, next) {
   Poll.getById(req.params.id).then(res.json.bind(res)).catch(next);
 };
 
+var getUserPolls = function (req, res, next) {
+  var userId = req.params.id,
+      beforePollId = req.query.before || null,
+      limit = 20;
+  Poll.getByUserId(userId, beforePollId, limit)
+    .then(res.json.bind(res))
+    .catch(next);
+};
+
 var pollRouter = module.exports = function () {
   
   var router = express.Router();
@@ -180,10 +196,11 @@ var pollRouter = module.exports = function () {
 
   router.get('/polls/:id', requireToken, getPollById);
   router.get('/polls/:id/comments', requireToken, getComments);
-  router.get('/polls/random');
 
-  router.get('/users/:id/polls');
+  router.get('/users/:id/polls', requireToken, getUserPolls);
   router.get('/users/:id/votes');
 
+  router.get('/polls/recommendation');
+  
   return router; 
 };
