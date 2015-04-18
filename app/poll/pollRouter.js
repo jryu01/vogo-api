@@ -55,6 +55,18 @@ var list = function (req, res, next) {
   return Poll.findAsync(query, projection, options);
 };
 
+var getRecommendations = function (req, res) {
+  var query = { 'votes.voterId': { $ne: req.user.id } },
+      exclude = req.query.exclude;
+
+  // exclude polls with provided ids
+  if (exclude && exclude !== 'undefined') {
+    // concat because exlucde can be either single value or array
+    query._id = { $nin: [].concat(exclude) };
+  }
+  return Poll.getRecommendations(query);
+};
+
 var listMyPoll = function (req, res) {
   var user = req.user;
   var query = { 'createdBy.userId': user.id };
@@ -84,18 +96,6 @@ var getRandom = function (req, res) {
     query._id = { $nin: [].concat(exclude) };
   }
   return Poll.findOneRandomNew(query);
-};
-
-var getRecommendations = function (req, res) {
-  var query = { 'votes.voterId': { $ne: req.user.id } },
-      exclude = req.query.exclude;
-
-  // exclude polls with provided ids
-  if (exclude && exclude !== 'undefined') {
-    // concat because exlucde can be either single value or array
-    query._id = { $nin: [].concat(exclude) };
-  }
-  return Poll.getRecommendations(query);
 };
 
 var createVote = function (req, res) {
@@ -184,6 +184,15 @@ var getUserVotes = function (req, res, next) {
     .catch(next);
 };
 
+var getRecentUnvotedPolls = function (req, res, next) {
+  var user = req.user,
+      exclude = req.query.exclude || [],
+      beforePollId = req.query.before;
+  return Poll.getRecentUnvoted(user, beforePollId, [].concat(exclude))
+    .then(res.json.bind(res))
+    .catch(next);
+};
+
 var pollRouter = module.exports = function () {
   
   var router = express.Router();
@@ -196,7 +205,7 @@ var pollRouter = module.exports = function () {
   // router.get('/polls', res(list));
   // router.get('/polls/random', res(getRandom)); 
   // router.post('/polls/:id/votes', res(createVote));
-
+  // router.get('/polls/recommendation', requireToken, getRecommendations);
 
 /////////////////////////////////////////////
   router.post('/polls', requireToken, publish);
@@ -209,7 +218,8 @@ var pollRouter = module.exports = function () {
   router.get('/users/:id/polls', requireToken, getUserPolls);
   router.get('/users/:id/votes', requireToken, getUserVotes);
 
-  router.get('/polls/recommendation');
+  //Need Test
+  router.get('/polls', requireToken, getRecentUnvotedPolls);
 
   return router; 
 };

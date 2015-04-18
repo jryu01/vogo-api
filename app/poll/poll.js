@@ -167,6 +167,26 @@ PollSchema.statics.getComments = function (pollId, options) {
   });
 };
 
+//TODO: test this
+PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
+  var query = { 
+    'answer1.voters': { $ne: user.id }, 
+    'answer2.voters': { $ne: user.id }
+  };
+  if (exclude.length > 1) {
+    query._id = { $nin: exclude };
+  }
+  if (beforePollId) {
+    query._id = { $lt: mongoose.Types.ObjectId(beforePollId) };
+  }
+  return this.aggregateAsync([
+    { $sort: { '_id': -1 }},
+    { $limit: 1000 },
+    { $match: query },
+    { $limit: 20 }
+  ]);
+};
+
 //VVVVVVVVVVVVVVVVVVVVVVVV Will be depreciated VVVVVVVVVVVVVVVVVVVVV
 PollSchema.methods.addVote = function (voterId, subjectId) {
   var that = this;
@@ -271,8 +291,17 @@ PollSchema.methods.addVote = function (voterId, subjectId) {
     return result[0];
   });
 };
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+// var getRandom = function (req, res) {
+//   var query = { 'votes.voterId': { $ne: req.user.id } },
+//       exclude = req.query.exclude;
 
+//   // exclude polls with provided ids
+//   if (exclude && exclude !== 'undefined') {
+//     // concat becaulse exlucde can be either single value or array
+//     query._id = { $nin: [].concat(exclude) };
+//   }
+//   return Poll.findOneRandomNew(query);
+// };
 //TODO: need test
 PollSchema.statics.getRecommendations = function (query, field) {
   var that = this,
@@ -305,4 +334,5 @@ PollSchema.statics.getRecommendations = function (query, field) {
   });
 };
 
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 module.exports = mongoose.model('Poll', PollSchema);
