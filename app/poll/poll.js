@@ -88,12 +88,23 @@ PollSchema.options.toJSON = {
 // Static methods
 PollSchema.statics.publish = function (user, data) {
   data = data || {};
-  data.createdBy = {
-    name: user.name,
-    userId: user.id,
-    picture: user.picture
+  var poll = {
+    question: data.question,
+    answer1: { 
+      text: data.answer1 && data.answer1.text,
+      picture: data.answer1 && data.answer1.picture
+    },
+    answer2: { 
+      text: data.answer2 && data.answer2.text,
+      picture: data.answer2 && data.answer2.picture
+    },
+    createdBy: {
+      name: user.name,
+      userId: user.id,
+      picture: user.picture
+    }
   };
-  return this.createAsync(data);
+  return this.createAsync(poll);
 };
 
 PollSchema.statics.getByUserId = function (userId, pollId, limit) {
