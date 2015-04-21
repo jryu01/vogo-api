@@ -180,9 +180,10 @@ PollSchema.statics.getComments = function (pollId, options) {
 
 //TODO: test this
 PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
+  var userId = mongoose.Types.ObjectId(user.id);
   var query = { 
-    'answer1.voters': { $ne: user.id }, 
-    'answer2.voters': { $ne: user.id }
+    'answer1.voters': { $ne: userId }, 
+    'answer2.voters': { $ne: userId }
   };
   if (exclude.length > 1) {
     query._id = { $nin: exclude };
