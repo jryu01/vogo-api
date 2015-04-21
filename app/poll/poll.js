@@ -194,7 +194,21 @@ PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
     { $sort: { '_id': -1 }},
     { $limit: 1000 },
     { $match: query },
-    { $limit: 20 }
+    { $limit: 20 },
+    { $project: { 
+      'id': '$_id', 
+      '_id': 0, 
+      'createdBy': 1,
+      'question': 1,
+      'answer1.text': 1,
+      'answer1.picture': 1,
+      'answer1.numVotes': 1,
+      'answer2.text': 1,
+      'answer2.picture': 1,
+      'answer2.numVotes': 1,
+      'totalNumVotes': 1,
+      'numComments': 1
+    } }
   ]);
 };
 
