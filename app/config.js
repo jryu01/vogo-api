@@ -44,7 +44,7 @@ var config = (function (env) {
     aws: {
       bucket: 'dev.vogo',
       accessKey: 'AKIAJWUMKZKKVXADS3DA',
-      secretKey: 'AWS SECRET KEY'
+      secretKey: process.env.AWS_SECRET_KEY
     }
   };
 
@@ -57,7 +57,7 @@ var config = (function (env) {
     aws: {
       bucket: 'AWS S3 BUCKET NAME',
       accessKey: 'AKIAJWUMKZKKVXADS3DA',
-      secretKey: 'AWS SECRET KEY'
+      secretKey: process.env.AWS_SECRET_KEY
     }
   };
 
