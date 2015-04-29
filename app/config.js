@@ -18,11 +18,7 @@ var config = (function (env) {
     port: process.env.PORT || 3000,
     mongo: {},
     jwtsecret: 'jwtrandom secret for this beautiful app',
-    jwtexp: 60 * 24 * 60 * 60 * 1000,
-    aws: {
-      accessKey: 'AWS ACCESS KEY',
-      secretKey: 'AWS SECRET KEY'
-    }
+    jwtexp: 60 * 24 * 60 * 60 * 1000
   };
 
   // Development configuration
@@ -32,7 +28,9 @@ var config = (function (env) {
       url: "mongodb://localhost/voteit-api-dev"
     },
     aws: {
-      bucket: 'AWS S3 BUCKET NAME'
+      bucket: 'dev.vogo',
+      accessKey: 'AKIAJWUMKZKKVXADS3DA',
+      secretKey: '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'
     }
   };
 
@@ -44,7 +42,9 @@ var config = (function (env) {
       url: process.env.MONGOLAB_URI || "mongodb://localhost/voteit-api-test"
     },
     aws: {
-      bucket: 'AWS S3 BUCKET NAME'
+      bucket: 'dev.vogo',
+      accessKey: 'AKIAJWUMKZKKVXADS3DA',
+      secretKey: 'AWS SECRET KEY'
     }
   };
 
@@ -55,7 +55,9 @@ var config = (function (env) {
       url: process.env.MONGOLAB_URI,
     },
     aws: {
-      bucket: 'AWS S3 BUCKET NAME'
+      bucket: 'AWS S3 BUCKET NAME',
+      accessKey: 'AKIAJWUMKZKKVXADS3DA',
+      secretKey: 'AWS SECRET KEY'
     }
   };
 

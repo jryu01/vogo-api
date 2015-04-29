@@ -2,6 +2,7 @@
 var jwt = require('jwt-simple'),
     User = require('./user'), 
     config = require('app/config'),
+    crypto = require('crypto'),
     express = require("express"),
     Promise = require('bluebird'),
     request = Promise.promisify(require("request")),
@@ -184,12 +185,48 @@ var getFollowingCount = function (req, res, next) {
     }).catch(next);
 };
 
+var getS3Info = function (req, res, next) {
+  var expDate = new Date(Date.now() + (120*24*60*60*1000));
+  var s3PolicyDoc = {
+    "expiration": expDate.toISOString(),
+    "conditions": [ 
+      {"bucket": config.aws.bucket}, 
+      ["starts-with", "$key", ""],
+      {"acl": "public-read"},
+      ["starts-with", "$Content-Type", ""],
+      ["content-length-range", 0, 1048576] //1 Mb
+    ]
+  };
+  var s3Policy, hash, s3Signature;
+  try {
+    s3Policy = new Buffer(JSON.stringify(s3PolicyDoc))
+        .toString('base64');
+    hash = crypto.createHmac('sha1', config.aws.secretKey)
+        .update(s3Policy)
+        .digest();
+    s3Signature = new Buffer(hash).toString('base64');
+  } catch (err) {
+    next(err);
+  }
+
+  var info = {
+    bucket: config.aws.bucket,
+    uploadUrl: 'https://s3.amazonaws.com/' + config.aws.bucket + '/',
+    accessKey: config.aws.accessKey,
+    policy: s3Policy,
+    signature: s3Signature
+  };
+  res.json(info);
+};
+
 var userRouter = module.exports = function () {
   
   var router = express.Router();
   router.post('/login', signin);
   router.post('/api/login', signin);
   router.post('/users/signin', signin);
+
+  router.get('/s3info', requireToken, getS3Info); //TODO: need test
   
   router.post('/users', createUser);
   router.get('/users', requireToken, listUsers); // will be depreciated
