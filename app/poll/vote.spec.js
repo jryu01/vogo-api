@@ -125,4 +125,11 @@ describe('Vote', function () {
     });
   });
 
+  it('should have #toJSON to get clean json', function () {
+    var vote = new Vote({ answer: 1});
+    expect(vote.toJSON()).to.have.property('id');
+    expect(vote.toJSON()).to.not.have.property('_id');
+    expect(vote.toJSON()).to.not.have.property('__V');
+  });
+
 });

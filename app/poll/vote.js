@@ -46,4 +46,14 @@ VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
 
 VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};
 
+//Add toJSON option to transform document before returnig the result
+VoteSchema.options.toJSON = {
+  transform: function (doc, ret, options) {
+    ret.id = ret._id;
+    delete ret._id;
+    delete ret.__v;
+  }
+};
+
+
 module.exports = mongoose.model('Vote', VoteSchema);
