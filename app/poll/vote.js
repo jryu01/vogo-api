@@ -41,7 +41,7 @@ VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
   }
 
   return this.find(query, null, options)
-    .populate('_poll', 'question').execAsync();
+    .populate('_poll', '-answer1.voters -answer2.voters -comments -votes').execAsync();
 };
 
 VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};

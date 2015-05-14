@@ -78,6 +78,23 @@ describe('Vote', function () {
     });
   });
 
+  it('should exclude array values on #getByUserId', function () {
+    var promise = Poll.publish(user, createPollData({question: 'poll1'}))
+      .then(function (p) {
+         return Vote.createNew(user.id, p.id, 1);
+      }).then(function () {
+        return Vote.getByUserId(user.id);
+      });
+
+    return expect(promise).to.be.fulfilled.then(function (votes) {
+      expect(votes[0]._poll.answer1.voters).to.be.undefined;
+      expect(votes[0]._poll.answer2.voters).to.be.undefined;
+      expect(votes[0]._poll.comments).to.be.undefined;
+      expect(votes[0]._poll.votes).to.be.undefined;
+    });
+
+  });
+
   it('should limit the number of result', function () {
     var pollList;
     var promise = Promise.all([

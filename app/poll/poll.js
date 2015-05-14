@@ -109,7 +109,12 @@ PollSchema.statics.publish = function (user, data) {
 
 PollSchema.statics.getByUserId = function (userId, pollId, limit) {
   var query = { 'createdBy.userId': userId },
-      projection = {},
+      projection = {
+        'answer1.voters': 0,
+        'answer2.voters': 0,
+        'comments': 0,
+        'votes': 0 
+      },
       options = { sort: { '_id': -1 } };
 
   if (limit > 0) {

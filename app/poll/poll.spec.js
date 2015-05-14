@@ -94,7 +94,24 @@ describe('Poll', function () {
       expect(polls[1].question).to.equal(poll1.question);
     });
   });
+  
+  it('should exclude array values on #getByUserId', function () {
+    var poll1 = createPollData({ question: 'poll1' });
 
+    var promise = Poll.publish(user, poll1).then(function (poll1) {
+    }).then(function () {
+      return Poll.getByUserId(user.id);
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (polls) {
+      expect(polls[0].answer1.voters).to.be.undefined;
+      expect(polls[0].answer2.voters).to.be.undefined;
+      expect(polls[0].comments).to.be.undefined;
+      expect(polls[0].votes).to.be.undefined;
+    });
+
+  });
+  
   it('should limit the number of result', function () {
     var poll1 = createPollData({ question: 'poll1' }),
         poll2 = createPollData({ question: 'poll2' });
