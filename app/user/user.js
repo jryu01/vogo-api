@@ -117,11 +117,10 @@ UserSchema.statics.getFollowingCount = function (userId) {
 //   return this.aggregateAsync([
 //     { 
 //       $match: { 
-//         'followers.userId': mongoose.Types.ObjectId(followerId),
-//         '_id': { '$in': userIds }
+//         '_id': { '$in': userIds },
+//         'followers.userId': mongoose.Types.ObjectId(followerId)
 //       } 
 //     },
-//     { $match: { '_id': { '$in': userIds } } },
 //     { $project: { name: 1, userId: '$_id', _id: 0, picture: 1 } }
 //   ]);
 // };

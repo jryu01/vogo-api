@@ -44,7 +44,18 @@ VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
     .populate('_poll', '-answer1.voters -answer2.voters -comments -votes').execAsync();
 };
 
+//TODO: test
+VoteSchema.statics.getByUserIdAndPollIds = function (userId, pollIds) {
+  var query = { 
+    '_poll': { '$in': pollIds }, 
+    '_voter': userId 
+  };
+
+  return this.findAsync(query);
+};
+
 VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};
+
 
 //Add toJSON option to transform document before returnig the result
 VoteSchema.options.toJSON = {
@@ -54,6 +65,5 @@ VoteSchema.options.toJSON = {
     delete ret.__v;
   }
 };
-
 
 module.exports = mongoose.model('Vote', VoteSchema);

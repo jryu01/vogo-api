@@ -214,7 +214,7 @@ describe('Poll Router', function () {
       request(app).get('/users/' + userId + '/polls').expect(401, done);
     });
 
-    it('should send 200 with a poll', function (done) {
+    it('should send 200 with data', function (done) {
       Poll.getByUserId.withArgs(userId, null, 20)
         .returns(Promise.resolve({ question: 'poll?' }));
 
@@ -223,13 +223,13 @@ describe('Poll Router', function () {
         .expect(200, { question: 'poll?'}, done);
     });
 
-    it('should send 200 with a poll', function (done) {
+    it('should send 200 with before query parameter', function (done) {
       var pollId = mongoose.Types.ObjectId().toString();
       Poll.getByUserId.withArgs(userId, pollId, 20)
         .returns(Promise.resolve({ question: 'poll?' }));
 
       request(app).get('/users/' + userId + '/polls')
-        .query({ before: pollId, limit: 20 })
+        .query({ before: pollId })
         .set('x-access-token', 'testToken')
         .expect(200, { question: 'poll?'}, done);
     });
@@ -239,31 +239,48 @@ describe('Poll Router', function () {
 
     var userId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () { sinon.stub(Vote, 'getByUserId'); });
-    afterEach(function () { Vote.getByUserId.restore(); });  
+    beforeEach(function () { 
+      sinon.stub(Vote, 'getByUserId'); 
+      sinon.stub(Vote, 'getByUserIdAndPollIds'); 
+    });
+    afterEach(function () { 
+      Vote.getByUserId.restore(); 
+      Vote.getByUserIdAndPollIds.restore(); 
+    });  
 
     it('should require an access token', function (done) {
       request(app).get('/users/' + userId + '/votes').expect(401, done);
     });
 
-    it('should send 200 with a poll', function (done) {
+    it('should send 200 with data', function (done) {
       Vote.getByUserId.withArgs(userId, null, 20)
-        .returns(Promise.resolve({ question: 'poll?' }));
+        .returns(Promise.resolve({ id: 1 }));
 
       request(app).get('/users/' + userId + '/votes').query({ limit: 20 })
         .set('x-access-token', 'testToken')
-        .expect(200, { question: 'poll?'}, done);
+        .expect(200, { id: 1 }, done);
     });
 
-    it('should send 200 with a poll', function (done) {
+    it('should send 200 with before query parameter', function (done) {
       var voteId = mongoose.Types.ObjectId().toString();
       Vote.getByUserId.withArgs(userId, voteId, 20)
-        .returns(Promise.resolve({ question: 'poll?' }));
+        .returns(Promise.resolve( { id: 1 }));
 
       request(app).get('/users/' + userId + '/votes')
         .query({ before: voteId, limit: 20 })
         .set('x-access-token', 'testToken')
-        .expect(200, { question: 'poll?'}, done);
+        .expect(200, { id: 1 }, done);
+    });
+
+    it('should send 200 with pollIds query parameter', function (done) {
+      var pollId = mongoose.Types.ObjectId().toString();
+      Vote.getByUserIdAndPollIds.withArgs(userId, [pollId])
+        .returns(Promise.resolve( { id: 2 }));
+
+      request(app).get('/users/' + userId + '/votes')
+        .query({ pollIds: [pollId] })
+        .set('x-access-token', 'testToken')
+        .expect(200, { id: 2 }, done);
     });
   });
 

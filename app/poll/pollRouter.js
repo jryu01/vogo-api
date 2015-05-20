@@ -63,8 +63,14 @@ var getUserPolls = function (req, res, next) {
 
 var getUserVotes = function (req, res, next) {
   var userId = req.params.id,
+      pollIds = req.query.pollIds || [],
       beforeVoteId = req.query.before || null,
       limit = 20;
+  if (pollIds.length > 0) {
+    return Vote.getByUserIdAndPollIds(userId, pollIds)
+      .then(res.json.bind(res))
+      .catch(next);
+  }
   Vote.getByUserId(userId, beforeVoteId, limit)
     .then(res.json.bind(res))
     .catch(next);

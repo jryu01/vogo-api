@@ -53,6 +53,34 @@ describe('Vote', function () {
     return expect(promise).to.eventually.be.null;
   });
 
+  it('should get votes for user by provided pollIds', function () {
+    var pollList, pollIds;
+    var promise = Promise.all([
+      Poll.publish(user, createPollData({ question: 'poll1' }) ), 
+      Poll.publish(user, createPollData({ question: 'poll2' }) ), 
+      Poll.publish(user, createPollData({ question: 'poll3' }) ), 
+    ]).then(function (polls) {
+      pollList = polls;
+      pollIds = pollList.map(function (poll) {
+        return poll.id;
+      });
+      return Vote.createNew(user.id, pollList[0].id, 1);
+    }).then(function () {
+      return Vote.createNew(user.id, pollList[1].id, 2);
+    }).then(function () {
+      return Vote.createNew(user.id, pollList[2].id, 1);
+    }).then(function () {
+      return Vote.getByUserIdAndPollIds(user.id, pollIds);
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (votes) {
+      expect(votes).to.have.length(3);
+      expect(votes[0]._poll.toString()).to.equal(pollIds[2].toString());
+      expect(votes[1]._poll.toString()).to.equal(pollIds[1].toString()); 
+      expect(votes[2]._poll.toString()).to.equal(pollIds[0].toString()); 
+    });
+  });
+
   it('should get votes for a user decending order by _id', function () {
     var pollList;
     var promise = Promise.all([
@@ -62,9 +90,9 @@ describe('Vote', function () {
     ]).then(function (polls) {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
-    }).then(function (polls) {
+    }).then(function () {
       return Vote.createNew(user.id, pollList[1].id, 2);
-    }).then(function (polls) {
+    }).then(function () {
       return Vote.createNew(user.id, pollList[2].id, 1);
     }).then(function () {
       return Vote.getByUserId(user.id);
