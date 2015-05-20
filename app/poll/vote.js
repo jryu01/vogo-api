@@ -6,30 +6,30 @@ var Promise = require('bluebird'),
     Schema = mongoose.Schema;
  
 var VoteSchema = new Schema({
-  _voter: { type: Schema.Types.ObjectId, ref: 'User' },
+  _user: { type: Schema.Types.ObjectId, ref: 'User' },
   answer: { type: Number },
   _poll: { type: Schema.Types.ObjectId, ref: 'Poll' }
 });
 
-VoteSchema.index({'_voter': 1, '_id': -1});
+VoteSchema.index({'_user': 1, '_id': -1});
 VoteSchema.index({'poll.id': 1});
 
-VoteSchema.statics.createNew = function (voterId, pollId, answer) {
+VoteSchema.statics.createNew = function (userId, pollId, answer) {
   var that = this;
   var vote = {
-    _voter: voterId,
+    _user: userId,
     answer: answer,
     _poll: pollId,
   };
-  var promise = Poll.voteAnswer(pollId, voterId, answer).then(function (poll) {
+  var promise = Poll.voteAnswer(pollId, userId, answer).then(function (poll) {
     if (!poll) { return null; }
     return that.createAsync(vote);
   });
   return promise;
 };
 
-VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
-  var query = { '_voter': voterId },
+VoteSchema.statics.getByUserId = function (userId, voteId, limit) {
+  var query = { '_user': userId },
       options = { sort: { '_id': -1 } };
       options = {};
 
@@ -48,7 +48,7 @@ VoteSchema.statics.getByUserId = function (voterId, voteId, limit) {
 VoteSchema.statics.getByUserIdAndPollIds = function (userId, pollIds) {
   var query = { 
     '_poll': { '$in': pollIds }, 
-    '_voter': userId 
+    '_user': userId 
   };
 
   return this.findAsync(query);

@@ -40,7 +40,7 @@ describe('Vote', function () {
       return Vote.createNew(user.id, poll.id, 1);
     });
     return expect(promise).to.eventually.be.fulfilled.then(function (vote) {
-      expect(vote).to.have.property('_voter');
+      expect(vote).to.have.property('_user');
       expect(vote).to.have.property('answer');
       expect(vote).to.have.property('_poll');
     });
