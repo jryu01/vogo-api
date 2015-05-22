@@ -112,18 +112,26 @@ UserSchema.statics.getFollowingCount = function (userId) {
   var query = this.find({ 'followers.userId': userId });
   return query.countAsync();
 };
-//Filter the array of userId and return the array of userId who is followed by the given follower
-// UserSchema.statics.filterByFollowing = function (userIds, followerId) {
-//   return this.aggregateAsync([
-//     { 
-//       $match: { 
-//         '_id': { '$in': userIds },
-//         'followers.userId': mongoose.Types.ObjectId(followerId)
-//       } 
-//     },
-//     { $project: { name: 1, userId: '$_id', _id: 0, picture: 1 } }
-//   ]);
-// };
+// Return the relationships of the source user to the target users. 
+UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
+  var query = {
+    '_id': { '$in': targetUserIds }
+  };
+  var projection = {
+    'name': 1,
+    'followers': { '$elemMatch': {'userId': userId }}
+  };
+  return this.findAsync(query, projection).then(function (users) {
+    return users.map(function (user) {
+      var o = {
+        id: user.id, 
+        name: user.name,
+        following: user.followers.length > 0
+      };
+      return o;
+    });
+  });
+};
 UserSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compareAsync(candidatePassword, this.password);
 };

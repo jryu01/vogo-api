@@ -202,6 +202,42 @@ describe('User', function () {
       return expect(promise).to.eventually.equal(2);
     });
 
+    it('should retrive following relationships (one to one)', function () {
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.getFollowingInfo(users[0].id, [targetUser.id]);
+      });
+      return expect(promise).to.be.fulfilled.then(function (followingInfo) {
+        expect(followingInfo[0]).to.have.property('name', 'Target User');
+        expect(followingInfo[0]).to.have.property('id', targetUser.id.toString());
+        expect(followingInfo[0]).to.have.property('following', true);
+      });
+    });
+
+    it('should retrive following relationships (one to many)', function () {
+      var targetUserIds = [targetUser.id, users[1].id, users[2].id];
+      var promise = User.follow(users[0], targetUser.id).then(function () {
+        return User.follow(users[1], targetUser.id);
+      }).then(function () {
+        return User.follow(users[0], users[2].id);
+      }).then(function () {
+        return User.getFollowingInfo(users[0].id, targetUserIds);
+      });
+      return expect(promise).to.be.fulfilled.then(function (fInfo) {
+        expect(fInfo).to.be.length(3);
+        fInfo.forEach(function (info) {
+          if (info.id.toString() === targetUser.id.toString()) {
+            expect(info).to.have.property('following', true);
+
+          } else if (info.id.toString() === users[1].id.toString()) {
+            expect(info).to.have.property('following', false);
+
+          } else if (info.id.toString() === users[2].id.toString()) {
+            expect(info).to.have.property('following', true);
+          }
+        });
+      });
+      
+    });
   });
 
   describe('#comparePassword', function () {

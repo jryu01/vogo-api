@@ -239,5 +239,6 @@ var userRouter = module.exports = function () {
   router.get('/users/:id/following', requireToken, getFollowing);
   router.get('/users/:id/following-count', requireToken, getFollowingCount);
 
+  // router.get('/relationships/following', requireToken, getFollowingInfo);
   return router;
 };
