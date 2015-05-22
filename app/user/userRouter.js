@@ -185,7 +185,19 @@ var getFollowingCount = function (req, res, next) {
     }).catch(next);
 };
 
+var getFollowingInfo = function (req, res, next) {
+  if (!req.query.userId) {
+     return res.status(400)
+      .json({ status: 400, message: 'userId parameter is required'});
+  }
+  var uids = [].concat(req.query.userId);
+  User.getFollowingInfo(req.user.id, uids)
+    .then(res.json.bind(res))
+    .catch(next);
+};
+
 var getS3Info = function (req, res, next) {
+  //TODO: Test
   var expDate = new Date(Date.now() + (120*24*60*60*1000));
   var s3PolicyDoc = {
     "expiration": expDate.toISOString(),
@@ -239,6 +251,6 @@ var userRouter = module.exports = function () {
   router.get('/users/:id/following', requireToken, getFollowing);
   router.get('/users/:id/following-count', requireToken, getFollowingCount);
 
-  // router.get('/relationships/following', requireToken, getFollowingInfo);
+  router.get('/relationships/following', requireToken, getFollowingInfo);
   return router;
 };

@@ -52,11 +52,11 @@ describe('User Router', function () {
     var path = '/users/signin';
     
     it('should send 400 when no grantType field is provided', function (done) {
-      var resBody = {
+      var resbody = {
         status: 400,
         message: 'grantType field is missing or not valid'
       };
-      app.post(path).send({}).expect(400, resBody, done);
+      app.post(path).send({}).expect(400, resbody, done);
     });
     
     describe('with password', function () {
@@ -500,6 +500,58 @@ describe('User Router', function () {
         .returns(Promise.resolve(2));
       app.get(path).set('x-access-token', 'testToken')
         .expect(200, { numberOfFollowing: 2 }, done);
+    });
+
+  });
+
+  describe('GET /relationships/follwoing', function () {
+
+    beforeEach(function () { sinon.stub(User, 'getFollowingInfo'); });
+    afterEach(function () { User.getFollowingInfo.restore(); });
+
+    it('should require an access_token', function (done) {
+      var path = '/relationships/following';
+      app.get(path).expect(401, done);
+    });
+
+    it('should send 200', function (done) {
+      var path = '/relationships/following',
+          uid = mongoose.Types.ObjectId().toString();
+      User.getFollowingInfo
+        .withArgs(testUser.id, [uid])
+        .returns(Promise.resolve({result: 'result'}));
+      app.get(path)
+        .set('x-access-token', 'testToken')
+        .query({ userId: uid })
+        .expect(200, { result: 'result' }, done);
+    });
+
+    it('should send 200 with array value userId parameter', function (done) {
+      var path = '/relationships/following',
+          uid1 = mongoose.Types.ObjectId().toString(),
+          uid2 = mongoose.Types.ObjectId().toString();
+      User.getFollowingInfo
+        .withArgs(testUser.id, [uid1, uid2])
+        .returns(Promise.resolve({result: 'result'}));
+      app.get(path)
+        .set('x-access-token', 'testToken')
+        .query({ userId: [uid1, uid2] })
+        .expect(200, { result: 'result' }, done);
+    });
+
+    it('should send if userId parameter is missing', function (done) {
+        var resBody = { 
+          status: 400, 
+          message: 'userId parameter is required'
+        };
+        var path = '/relationships/following',
+            uid = mongoose.Types.ObjectId().toString();
+        User.getFollowingInfo
+          .withArgs(testUser.id, [uid])
+          .returns(Promise.resolve({result: 'result'}));
+        app.get(path)
+          .set('x-access-token', 'testToken')
+          .expect(400, resBody, done);
     });
 
   });
