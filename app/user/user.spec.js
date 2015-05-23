@@ -209,6 +209,7 @@ describe('User', function () {
       return expect(promise).to.be.fulfilled.then(function (followingInfo) {
         expect(followingInfo[0]).to.have.property('name', 'Target User');
         expect(followingInfo[0]).to.have.property('userId', targetUser.id.toString());
+        expect(followingInfo[0]).to.have.property('picture', targetUser.picture);
         expect(followingInfo[0]).to.have.property('following', true);
       });
     });

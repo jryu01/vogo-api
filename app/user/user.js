@@ -119,6 +119,7 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
   };
   var projection = {
     'name': 1,
+    'picture': 1,
     'followers': { '$elemMatch': {'userId': userId }}
   };
   return this.findAsync(query, projection).then(function (users) {
@@ -126,6 +127,7 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
       var o = {
         userId: user.id, 
         name: user.name,
+        picture: user.picture,
         following: user.followers.length > 0
       };
       return o;
