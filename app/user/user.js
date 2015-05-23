@@ -124,7 +124,7 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
   return this.findAsync(query, projection).then(function (users) {
     return users.map(function (user) {
       var o = {
-        id: user.id, 
+        userId: user.id, 
         name: user.name,
         following: user.followers.length > 0
       };

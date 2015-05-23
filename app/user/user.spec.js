@@ -208,7 +208,7 @@ describe('User', function () {
       });
       return expect(promise).to.be.fulfilled.then(function (followingInfo) {
         expect(followingInfo[0]).to.have.property('name', 'Target User');
-        expect(followingInfo[0]).to.have.property('id', targetUser.id.toString());
+        expect(followingInfo[0]).to.have.property('userId', targetUser.id.toString());
         expect(followingInfo[0]).to.have.property('following', true);
       });
     });
@@ -225,13 +225,13 @@ describe('User', function () {
       return expect(promise).to.be.fulfilled.then(function (fInfo) {
         expect(fInfo).to.be.length(3);
         fInfo.forEach(function (info) {
-          if (info.id.toString() === targetUser.id.toString()) {
+          if (info.userId.toString() === targetUser.id.toString()) {
             expect(info).to.have.property('following', true);
 
-          } else if (info.id.toString() === users[1].id.toString()) {
+          } else if (info.userId.toString() === users[1].id.toString()) {
             expect(info).to.have.property('following', false);
 
-          } else if (info.id.toString() === users[2].id.toString()) {
+          } else if (info.userId.toString() === users[2].id.toString()) {
             expect(info).to.have.property('following', true);
           }
         });
