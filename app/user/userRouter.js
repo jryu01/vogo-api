@@ -160,7 +160,10 @@ var unfollow = function (req, res, next) {
 };
 
 var getFollowers = function (req, res, next) {
-  User.getFollowers(req.params.id)
+  var options = {};
+  options.skip = parseInt(req.query.skip, 10) || 0; 
+  options.limit = parseInt(req.query.limit, 10) || 100; 
+  User.getFollowers(req.params.id, options)
     .then(res.json.bind(res))
     .catch(next);
 };
@@ -173,7 +176,10 @@ var getFollowerCount = function (req, res, next) {
 };
 
 var getFollowing = function (req, res, next) {
-  User.getFollowing(req.params.id)
+  var options = {};
+  options.skip = parseInt(req.query.skip, 10) || 0; 
+  options.limit = parseInt(req.query.limit, 10) || 100; 
+  User.getFollowing(req.params.id, options)
     .then(res.json.bind(res))
     .catch(next);
 };
@@ -235,8 +241,8 @@ var userRouter = module.exports = function () {
   
   var router = express.Router();
   router.post('/login', signin);
-  router.post('/api/login', signin);
-  router.post('/users/signin', signin);
+  // router.post('/api/login', signin);
+  // router.post('/users/signin', signin);
 
   router.get('/s3info', requireToken, getS3Info); //TODO: need test
   

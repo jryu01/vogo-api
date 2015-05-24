@@ -47,9 +47,9 @@ describe('User Router', function () {
   
   var app = createApp();
   
-  describe('POST /users/signin', function () {
+  describe('POST /login', function () {
     
-    var path = '/users/signin';
+    var path = '/login';
     
     it('should send 400 when no grantType field is provided', function (done) {
       var resbody = {
@@ -434,9 +434,20 @@ describe('User Router', function () {
     it('should send 200 with list of followers', function (done) {
       var path = '/users/' + testUser.id + '/followers';
       User.getFollowers
-        .withArgs(testUser.id)
+        .withArgs(testUser.id, { skip: 0, limit: 100 })
         .returns(Promise.resolve([{ name: 'follower' }]));
       app.get(path).set('x-access-token', 'testToken')
+        .expect(200, [{ name: 'follower' }], done);
+    });
+
+    it('should 200 with pagination parameters', function (done) {
+      var path = '/users/' + testUser.id + '/followers';
+      User.getFollowers
+        .withArgs(testUser.id, { skip: 2, limit: 10 })
+        .returns(Promise.resolve([{ name: 'follower' }]));
+      app.get(path)
+        .set('x-access-token', 'testToken')
+        .query({skip: 2, limit: 10})
         .expect(200, [{ name: 'follower' }], done);
     });
   });
@@ -475,9 +486,20 @@ describe('User Router', function () {
     it('should send 200 with list of following users', function (done) {
       var path = '/users/' + testUser.id + '/following';
       User.getFollowing
-        .withArgs(testUser.id)
+        .withArgs(testUser.id, { skip: 0, limit: 100 })
         .returns(Promise.resolve([{ name: 'user' }]));
       app.get(path).set('x-access-token', 'testToken')
+        .expect(200, [{ name: 'user' }], done);
+    });
+
+    it('should 200 with pagination parameters', function (done) {
+      var path = '/users/' + testUser.id + '/following';
+      User.getFollowing
+        .withArgs(testUser.id, { skip: 2, limit: 10 })
+        .returns(Promise.resolve([{ name: 'user' }]));
+      app.get(path)
+        .set('x-access-token', 'testToken')
+        .query({skip: 2, limit: 10})
         .expect(200, [{ name: 'user' }], done);
     });
 
