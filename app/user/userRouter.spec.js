@@ -212,7 +212,7 @@ describe('User Router', function () {
         app.post(path).send(reqBody).expect(200, function (err, res) {
           if (err) { return done(err); } 
           expect(mockRequest).to.have.been
-            .calledWith('https://graph.facebook.com/v2.3/me?fields=id,email,name,picture&access_token=fakefbtk');
+            .calledWith('https://graph.facebook.com/v2.3/me?fields=id,email,name,picture.type(large)&access_token=fakefbtk');
           done();
         });
       });

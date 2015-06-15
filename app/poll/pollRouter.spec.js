@@ -284,4 +284,50 @@ describe('Poll Router', function () {
     });
   });
 
+  describe('GET /polls/:id/voters', function () {
+
+    var pollId = mongoose.Types.ObjectId().toString();
+
+    beforeEach(function () { 
+      sinon.stub(Vote, 'getVotersFor'); 
+    });
+    afterEach(function () { 
+      Vote.getVotersFor.restore(); 
+    });  
+
+    it('should require an access token', function (done) {
+      request(app).get('/polls/' + pollId + '/voters').expect(401, done);
+    });
+
+    it('should send 200 with data', function (done) {
+      Vote.getVotersFor.withArgs(pollId, 1)
+        .returns(Promise.resolve([{ name: 'user1' }]));
+
+      request(app).get('/polls/' + pollId + '/voters')
+        .query({ answer: 1 })
+        .set('x-access-token', 'testToken')
+        .expect(200, [{ name: 'user1'}], done);
+    });
+
+    it('should paginate with limit and skip', function (done) {
+      Vote.getVotersFor.withArgs(pollId, 2, { limit: 1, skip: 20 })
+        .returns(Promise.resolve([{ name: 'user1' }]));
+
+      request(app).get('/polls/' + pollId + '/voters')
+        .query({ answer: 2, limit: 1, skip: 20 })
+        .set('x-access-token', 'testToken')
+        .expect(200, [{ name: 'user1'}], done);
+    });
+
+    it('should paginate with default limit and skip value', function (done) {
+      Vote.getVotersFor.withArgs(pollId, 2, { limit: 100, skip: 0 })
+        .returns(Promise.resolve([{ name: 'user1' }]));
+
+      request(app).get('/polls/' + pollId + '/voters')
+        .query({ answer: 2 })
+        .set('x-access-token', 'testToken')
+        .expect(200, [{ name: 'user1'}], done);
+    });
+  });
+
 });

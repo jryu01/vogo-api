@@ -67,11 +67,26 @@ var getUserVotes = function (req, res, next) {
       beforeVoteId = req.query.before || null,
       limit = 20;
   if (pollIds) {
+    // if pollids are provided, get provided user's votes on provided pollIds
+    // (it lets you check if a user voted on provided polls)
     return Vote.getByUserIdAndPollIds(userId, [].concat(pollIds))
       .then(res.json.bind(res))
       .catch(next);
   }
   Vote.getByUserId(userId, beforeVoteId, limit)
+    .then(res.json.bind(res))
+    .catch(next);
+};
+
+var getVoters = function (req, res, next) {
+  var pollId = req.params.id,
+      answer = req.query.answer,
+      options = {};
+
+  options.limit = parseInt(req.query.limit || 100, 10);
+  options.skip = parseInt(req.query.skip || 0, 10);
+
+  return Vote.getVotersFor(pollId, parseInt(answer, 10), options)
     .then(res.json.bind(res))
     .catch(next);
 };
@@ -96,6 +111,8 @@ var pollRouter = module.exports = function () {
 
   router.get('/polls/:id', requireToken, getPollById);
   router.get('/polls/:id/comments', requireToken, getComments);
+
+  router.get('/polls/:id/voters', requireToken, getVoters);
 
   router.get('/users/:id/polls', requireToken, getUserPolls);
   router.get('/users/:id/votes', requireToken, getUserVotes);

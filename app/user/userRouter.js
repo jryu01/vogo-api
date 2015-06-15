@@ -19,19 +19,7 @@ var listUsers = function (req, res, next) {
 var getUser = function (req, res, next) {
   User.findByIdAsync(req.params.id, '-followers').then(res.json.bind(res)).catch(next);
 };
-// var test = function (username, password, done) {
-//   User.findOneAsync({ email: username }).then(function (user) {
-//     if (!user) {
-//         return done({status: 401, message: 'Can\'t find a user with that email'});
-//     }
-//     return user.comparePassword(password).then(function (match) {
-//       if (!match) {
-//         return done({ status: 401, message: 'Password is not correct'});
-//       }
-//       return done(null, user);
-//     });
-//   }).catch(done);
-// };
+
 var signinWithPassword = function (req, res, next) {
   if (!req.body.email || !req.body.password) {
     return res.status(401)
@@ -68,7 +56,7 @@ var signinWithFacebook = function (req, res, next) {
       .json({ status: 400, message: 'A facebook access token is required'});
   }
   request('https://graph.facebook.com/v2.3/me?' +
-    'fields=id,email,name,picture&access_token=' + 
+    'fields=id,email,name,picture.type(large)&access_token=' + 
     req.body.facebookAccessToken)
   .spread(function (response, body) {
     var profile;
@@ -97,6 +85,7 @@ var signinWithFacebook = function (req, res, next) {
             picture: picture
           }
         };
+        //TODO: change this to upsert
         return User.createAsync(newUser);
       }
       return user;
@@ -241,8 +230,6 @@ var userRouter = module.exports = function () {
   
   var router = express.Router();
   router.post('/login', signin);
-  // router.post('/api/login', signin);
-  // router.post('/users/signin', signin);
 
   router.get('/s3info', requireToken, getS3Info); //TODO: need test
   

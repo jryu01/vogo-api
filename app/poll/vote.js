@@ -12,7 +12,7 @@ var VoteSchema = new Schema({
 });
 
 VoteSchema.index({'_user': 1, '_id': -1});
-VoteSchema.index({'poll.id': 1});
+VoteSchema.index({'_poll': -1, '_id': -1});
 
 VoteSchema.statics.createNew = function (userId, pollId, answer) {
   var that = this;
@@ -44,14 +44,35 @@ VoteSchema.statics.getByUserId = function (userId, voteId, limit) {
     .populate('_poll', '-answer1.voters -answer2.voters -comments -votes').execAsync();
 };
 
-//TODO: test
 VoteSchema.statics.getByUserIdAndPollIds = function (userId, pollIds) {
   var query = { 
     '_poll': { '$in': pollIds }, 
     '_user': userId 
   };
-
   return this.findAsync(query);
+};
+
+VoteSchema.statics.getVotersFor = function (pollId, answer, options) {
+  var query = { '_poll': pollId, 'answer': answer },
+      opts = { sort: { '_id': -1 } };
+
+  if (options && options.skip) {
+    opts.skip = options.skip;
+  }
+  if (options && options.limit) {
+    opts.limit = options.limit;
+  }
+
+  var mapToUsers = function (votes) {
+    return votes.map(function (vote) {
+      return vote._user;
+    });
+  };
+  
+  return this.find(query, null, opts)
+    .populate('_user', '-followers')
+    .execAsync()
+    .then(mapToUsers);
 };
 
 VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};

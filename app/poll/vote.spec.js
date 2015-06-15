@@ -24,6 +24,18 @@ var createPollData = function (overwrites) {
   return _.extend(defaults, overwrites);
 };
 
+var createUsers = function (numUsers) {
+  var createUserPromises = []; 
+  for (var i = 1; i <= numUsers; i += 1) {
+    createUserPromises.push(User.createAsync({
+      email: 'user' + i + '@test.com',
+      name: 'user' + i, 
+      picture: 'userPic' + i
+    }));
+  }
+  return Promise.all(createUserPromises);
+};
+
 describe('Vote', function () {
 
   var user;
@@ -167,6 +179,56 @@ describe('Vote', function () {
     return expect(promise).to.be.fulfilled.then(function (votes) {
       expect(votes).to.have.length(1);
       expect(votes[0]._poll.question).to.equal('poll2');
+    });
+  });
+  
+  it('should get voters for a pollId by answer', function () {
+    var users = [], 
+        pollId;
+    // create a poll
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      // create users
+      return createUsers(3);
+    }).each(function (user, index) {
+      var answer = (index === 1) ? 2 : 1;
+      return Vote.createNew(user.id, pollId, answer);
+    }).then(function () {
+      return Vote.getVotersFor(pollId, 1); 
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (voters) {
+      expect(voters).to.have.length(2);
+
+      // expect users are sorted ind revers order of the createion of the vote
+      expect(voters[0]).to.have.property('name', 'user3');
+      expect(voters[1]).to.have.property('name', 'user1');
+
+      expect(voters[0]).to.not.have.property('followers');
+    });
+  });
+
+  it('should get voters with pagination', function () {
+    var users = [], 
+        pollId;
+    // create a poll
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      // create users
+      return createUsers(4);
+    }).each(function (user) {
+      return Vote.createNew(user.id, pollId, 2);
+    }).then(function (r) {
+      return Vote.getVotersFor(pollId, 2, { skip: 1, limit: 2 }); 
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (voters) {
+      expect(voters).to.have.length(2);
+
+      // expect users are sorted ind revers order of the createion of the vote
+      expect(voters[0]).to.have.property('name', 'user3');
+      expect(voters[1]).to.have.property('name', 'user2');
+
     });
   });
 
