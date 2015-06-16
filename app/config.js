@@ -18,7 +18,10 @@ var config = (function (env) {
     port: process.env.PORT || 3000,
     mongo: {},
     jwtsecret: 'jwtrandom secret for this beautiful app',
-    jwtexp: 60 * 24 * 60 * 60 * 1000
+    jwtexp: 60 * 24 * 60 * 60 * 1000,
+    bing: {
+      accountKey: process.env.BING_ACC_KEY
+    }
   };
 
   // Development configuration
@@ -30,7 +33,7 @@ var config = (function (env) {
     aws: {
       bucket: 'dev.vogo',
       accessKey: 'AKIAJWUMKZKKVXADS3DA',
-      secretKey: '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'
+      secretKey: process.env.AWS_SECRET_KEY
     }
   };
 
@@ -60,7 +63,7 @@ var config = (function (env) {
       secretKey: process.env.AWS_SECRET_KEY
     }
   };
-
+  
   return _.merge(conf.common, conf[env]);
 
 })(process.env.NODE_ENV || 'development');

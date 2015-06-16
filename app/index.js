@@ -4,6 +4,7 @@ var methodOverride = require('method-override');
 var errorHandler = require('app/middleware/errorHandler.js');
 var userRouter = require('app/user/userRouter');
 var pollRouter = require('app/poll/pollRouter');
+var bingRouter = require('app/bing/router');
 var bodyParser = require('body-parser');
 var express = require('express');
 var logger  = require('morgan'); // HTTP request logger
@@ -28,6 +29,7 @@ app.use('/', function (req, res, next) {
 });
 app.use('/api', userRouter());
 app.use('/api', pollRouter());
+app.use('/api', bingRouter());
 app.use(errorHandler());
 
 module.exports = app;
