@@ -213,7 +213,7 @@ var getS3Info = function (req, res, next) {
         .digest();
     s3Signature = new Buffer(hash).toString('base64');
   } catch (err) {
-    next(err);
+    return next(err);
   }
 
   var info = {
