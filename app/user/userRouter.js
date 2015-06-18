@@ -204,14 +204,21 @@ var getS3Info = function (req, res, next) {
       ["content-length-range", 0, 1048576] //1 Mb
     ]
   };
+  console.log('s3PolicyDoc');
+  console.log(s3PolicyDoc);
   var s3Policy, hash, s3Signature;
   try {
-    s3Policy = new Buffer(JSON.stringify(s3PolicyDoc))
-        .toString('base64');
+    s3Policy = new Buffer(JSON.stringify(s3PolicyDoc)).toString('base64');
+    console.log('s3Policy');
+    console.log(s3Policy);
     hash = crypto.createHmac('sha1', config.aws.secretKey)
         .update(s3Policy)
         .digest();
+    console.log('hash');
+    console.log(hash);
     s3Signature = new Buffer(hash).toString('base64');
+    console.log('s3Signature');
+    console.log(s3Signature);
   } catch (err) {
     return next(err);
   }
