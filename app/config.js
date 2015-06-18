@@ -58,7 +58,7 @@ var config = (function (env) {
       url: process.env.MONGOLAB_URI,
     },
     aws: {
-      bucket: 'AWS S3 BUCKET NAME',
+      bucket: 'app.vogo',
       accessKey: 'AKIAJWUMKZKKVXADS3DA',
       secretKey: process.env.AWS_SECRET_KEY
     }
