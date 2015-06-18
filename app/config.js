@@ -57,6 +57,7 @@ var config = (function (env) {
     mongo: {
       url: process.env.MONGOLAB_URI,
     },
+    jwtsecret: 'jwtrandom prod secret for this beautiful app',
     aws: {
       bucket: 'app.vogo',
       accessKey: 'AKIAJWUMKZKKVXADS3DA',
