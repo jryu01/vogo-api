@@ -3,6 +3,7 @@
 var errorHanlder = module.exports = function () {
   return function (err, req, res, next) {
     // TODO: write test
+    var e = err;
     if (err.name === 'OperationalError') {
       err = err.cause;
     }
@@ -26,8 +27,8 @@ var errorHanlder = module.exports = function () {
         res.json({ message: err.message });
         break;
       default:
-        console.trace(err);
-        console.log(err);
+        console.log(e);
+        console.log(e.stack);
         res.status(err.status || 500);
         res.json({ message: err.message });
     }
