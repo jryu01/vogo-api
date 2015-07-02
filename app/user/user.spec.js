@@ -2,7 +2,9 @@
 /*jshint expr: true*/
 
 var _ = require('lodash'),
+    eb = require('app/eventBus'),
     bcrypt = require('bcrypt'),
+    rewire = require('rewire'),
     mongoose = require('mongoose'),
     testUtil = require('../../test/testUtil');
 
@@ -108,6 +110,27 @@ describe('User', function () {
         expect(followers[0]).to.have.property('picture', 'profilePic1');
         expect(followers[0].userId.toString()).to.equal(users[0].id);
         expect(followers[0]._id).to.be.undefined;
+      });
+    });
+
+    it('should emit follow event', function () {
+      sinon.spy(eb, 'emit');
+      return User.follow(users[0], targetUser._id).then(function () {
+        expect(eb.emit).to.have.been
+          .calledWith('userModel:follow', {
+            userId: users[0].id,
+            toUserId: targetUser._id
+          });
+      }).finally(function () {
+        eb.emit.restore();
+      });
+    });
+
+    it('should not emit follow event on error', function () {
+      sinon.spy(eb, 'emit');
+      return expect(User.follow(users[0], targetUser._id + 'invalid')).to.be.rejected.then(function () {
+        expect(eb.emit).to.have.not.been.called;
+        eb.emit.restore();
       });
     });
 

@@ -3,6 +3,7 @@
 var Promise = require('bluebird'),
     mongoose = Promise.promisifyAll(require('mongoose')),
     bcrypt = Promise.promisifyAll(require('bcrypt')),
+    eb = require('app/eventBus'),
     SALT_WORK_FACTOR = 10,
     Schema = mongoose.Schema;
 
@@ -59,7 +60,9 @@ UserSchema.statics.follow = function (fromUser, toUserId) {
       }
     }
   };
-  return this.findOneAndUpdateAsync(query, update);
+  return this.findOneAndUpdateAsync(query, update).then(function () {
+    eb.emit('userModel:follow', { userId: fromUser.id, toUserId: toUserId });
+  });
 };
 
 UserSchema.statics.unfollow = function (fromUser, toUserId) {

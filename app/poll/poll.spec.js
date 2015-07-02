@@ -3,6 +3,7 @@
 
 var mongoose = require('mongoose'),
     Promise = require('bluebird'),
+    eb = require('app/eventBus'),
     _ = require('lodash');
 
 var Poll = require('./poll');
@@ -204,6 +205,25 @@ describe('Poll', function () {
     });
   });
 
+  it('should emit an event when poll is voted', function () {
+
+    sinon.spy(eb, 'emit');
+
+    var pollId;
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      pollId = poll.id;
+      return Poll.voteAnswer(poll.id, user.id, 1);
+    });
+    return expect(promise).to.be.fulfilled.then(function (poll) {
+      expect(eb.emit).to.have.been.calledWith('pollModel:vote', {
+        userId: user.id,
+        poll: poll
+      });
+    }).finally(function () {
+      eb.emit.restore();
+    });
+  });
+
   it('should add comment to a poll and return updated poll', function () {
     var pollId, poll;
     var id = mongoose.Types.ObjectId();
@@ -228,6 +248,23 @@ describe('Poll', function () {
       expect(comments[0]).to.have.deep.property('createdBy.name', user.name);
       expect(comments[0]).to.have.deep
         .property('createdBy.picture', user.picture);
+    });
+  });
+
+  it('should emit event when comment is created', function () {
+
+    sinon.spy(eb, 'emit');
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      return Poll.comment(poll.id, user, 'new comment');
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (updatedPoll) {
+      expect(eb.emit).to.have.been.calledWith('pollModel:comment', {
+        userId: user.id,
+        poll: updatedPoll 
+      });
+    }).finally(function (e) {
+      eb.emit.restore();
     });
   });
 

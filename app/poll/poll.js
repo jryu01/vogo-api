@@ -1,6 +1,7 @@
 'use strict';
 
 var _ = require('lodash'),
+    eb = require('app/eventBus'),
     Promise = require('bluebird'),
     mongoose = Promise.promisifyAll(require("mongoose")),
     Schema = mongoose.Schema;
@@ -115,7 +116,10 @@ PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
   update.$inc['answer' + answerNumber + '.numVotes'] = 1;
   update.$addToSet['answer'+ answerNumber + '.voters'] = voterId;
 
-  return this.findOneAndUpdateAsync(query, update);
+  return this.findOneAndUpdateAsync(query, update).then(function (poll) {
+    eb.emit('pollModel:vote', { userId: voterId, poll: poll });
+    return poll;
+  });
 };
 
 PollSchema.statics.comment = function (pollId, user, text) {
@@ -135,7 +139,10 @@ PollSchema.statics.comment = function (pollId, user, text) {
       'numComments': 1
     }
   };
-  return this.findByIdAndUpdateAsync(pollId, update);
+  return this.findByIdAndUpdateAsync(pollId, update).then(function (poll) {
+    eb.emit('pollModel:comment', { userId: user.id, poll: poll });
+    return poll;
+  });
 };
 
 PollSchema.statics.getComments = function (pollId, options) {

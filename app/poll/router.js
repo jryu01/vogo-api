@@ -5,7 +5,6 @@ var requireToken = require('app/middleware/requireToken'),
     express = require("express"),
     Poll = require('./poll'),
     Vote = require('./vote'),
-    eb = require('app/eventBus'),
     _ = require('lodash');
 
 var publish = function (req, res, next) {
@@ -18,15 +17,14 @@ var publish = function (req, res, next) {
 var vote = function (req, res, next) {
   //TODO: input validation
   Vote.createNew(req.user.id, req.params.id, req.body.answer)
-    .then(function (poll) {
-      if (!poll) {
+    .then(function (vote) {
+      if (!vote) {
         throw { 
           status: 404, 
           message: 'poll not found or already voted with the user' 
         };
       }
-      res.status(201).json(poll);
-      eb.emit('poll:voteAdded', req.user, poll);
+      res.status(201).json(vote);
     }).catch(next);
 };
 
@@ -39,7 +37,6 @@ var comment = function (req, res, next) {
     }
     var newComment = poll.comments[poll.comments.length - 1];
     res.status(201).json(newComment);
-    eb.emit('poll:commentAdded', req.user, poll);
   }).catch(next);
 };
 
