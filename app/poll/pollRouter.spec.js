@@ -10,7 +10,7 @@ var methodOverride = require('method-override'),
     Poll = require('./poll'),
     Vote = require('./vote');
     
-var router = rewire('./pollRouter');
+var router = rewire('./router');
 
 var user = { 
   id: '507f1f77bcf86cd799439011', 
@@ -26,12 +26,17 @@ var mockRequireToken = function (req, res, next) {
   next();
 };
 
+var mockEventBus = {
+  emit: function () {}
+};
+
 var createApp = function () {
   var app = express(); 
   app.use(bodyParser.json());
   app.use(methodOverride());
   router.__set__({
-    requireToken: mockRequireToken   
+    requireToken: mockRequireToken,
+    eb: mockEventBus
   });
   app.use(router());
   app.use(function (err, req, res, next) {
@@ -79,28 +84,44 @@ describe('Poll Router', function () {
     
     var pollId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () { sinon.stub(Vote, 'createNew'); });
-    afterEach(function () { Vote.createNew.restore(); });  
+    beforeEach(function () { 
+      sinon.stub(Vote, 'createNew'); 
+      sinon.spy(mockEventBus, 'emit');
+    });
+    afterEach(function () { 
+      Vote.createNew.restore(); 
+      mockEventBus.emit.restore();
+    });
 
     it('should require an access token', function (done) {
       request(app).post('/polls/' + pollId + '/votes').expect(401, done);
     });
 
-    it('should send 201 with created vote data', function (done) {
+    it('should send 201 with result', function (done) {
       var reqBody = { answer: 1 };
-      Vote.createNew.withArgs(user.id, pollId, 1).returns(Promise.resolve({
-        voterId: user.id,
-        answer: 1,
-        _poll: 'fakepoll'
-      }));
+      Vote.createNew.withArgs(user.id, pollId, 1).returns(Promise.resolve('result'));
+
       request(app).post('/polls/' + pollId + '/votes')
         .set('x-access-token', 'testToken')
         .send(reqBody)
         .expect(201, function (err, res) {
           if (err) { return done(err); } 
-          expect(res.body).to.have.property('voterId', user.id);
-          expect(res.body).to.have.property('answer', 1);
-          expect(res.body).to.have.property('_poll', 'fakepoll');
+          expect(res.body).to.equal('result');
+          done();
+        });
+    });
+
+    it('should emit event on success', function (done) {
+      var reqBody = { answer: 1 };
+      Vote.createNew.withArgs(user.id, pollId, 1).returns(Promise.resolve('result'));
+
+      request(app).post('/polls/' + pollId + '/votes')
+        .set('x-access-token', 'testToken')
+        .send(reqBody)
+        .expect(201, function (err, res) {
+          if (err) { return done(err); } 
+          expect(mockEventBus.emit).to.have.been
+            .calledWith('poll:voteAdded', user, 'result');
           done();
         });
     });
@@ -120,8 +141,14 @@ describe('Poll Router', function () {
 
     var pollId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () { sinon.stub(Poll, 'comment'); });
-    afterEach(function () { Poll.comment.restore(); });  
+    beforeEach(function () { 
+      sinon.stub(Poll, 'comment'); 
+      sinon.spy(mockEventBus, 'emit');
+    });
+    afterEach(function () { 
+      Poll.comment.restore(); 
+      mockEventBus.emit.restore();
+    });
 
     it('should require an access token', function (done) {
       request(app).post('/polls/' + pollId + '/comments').expect(401, done);
@@ -137,6 +164,24 @@ describe('Poll Router', function () {
         .set('x-access-token', 'testToken')
         .send(reqBody)
         .expect(201, {text: 'new comment'}, done);
+    });
+
+    it('should emit an event when success', function (done) {
+      var reqBody = { text: 'new comment' },
+          poll = {
+            comments: [{text: 'old comment'}, {text: 'new comment'}]
+          };
+      Poll.comment.withArgs(pollId, user, 'new comment')
+        .returns(Promise.resolve(poll));
+      request(app).post('/polls/' + pollId + '/comments')
+        .set('x-access-token', 'testToken')
+        .send(reqBody)
+        .expect(201, {text: 'new comment'}, function (err) {
+          if (err) { return done(err); }
+          expect(mockEventBus.emit).to.have.been
+            .calledWith('poll:commentAdded', user, poll); 
+          done();
+        });
     });
 
     it('should send 404 with non existing poll', function (done) {

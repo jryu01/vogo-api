@@ -11,7 +11,7 @@ var methodOverride = require('method-override'),
     User = require('./user'),
     jwt = require('jwt-simple');
     
-var router = rewire('./userRouter');
+var router = rewire('./router');
 
 var testUser = new User ({
   _id: mongoose.Types.ObjectId(),

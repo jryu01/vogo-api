@@ -131,7 +131,7 @@ var follow = function (req, res, next) {
   }
   User.follow(user, req.params.target).then(function () {
     return res.status(204).end();
-  });
+  }).catch(next);
 };
 
 var unfollow = function (req, res, next) {
@@ -145,7 +145,7 @@ var unfollow = function (req, res, next) {
   }
   User.unfollow(user, req.params.target).then(function (r) {
     return res.status(204).end();
-  });
+  }).catch(next);
 };
 
 var getFollowers = function (req, res, next) {
@@ -229,7 +229,6 @@ var userRouter = module.exports = function () {
   
   var router = express.Router();
   router.post('/login', signin);
-
   router.get('/s3info', requireToken, getS3Info); //TODO: need test
   
   router.post('/users', createUser);

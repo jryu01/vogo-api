@@ -2,8 +2,8 @@
 
 var methodOverride = require('method-override');
 var errorHandler = require('app/middleware/errorHandler.js');
-var userRouter = require('app/user/userRouter');
-var pollRouter = require('app/poll/pollRouter');
+var userRouter = require('app/user/router');
+var pollRouter = require('app/poll/router');
 var bingRouter = require('app/bing/router');
 var bodyParser = require('body-parser');
 var express = require('express');
@@ -27,6 +27,7 @@ app.use('/', function (req, res, next) {
     next();
   }
 });
+
 app.use('/api', userRouter());
 app.use('/api', pollRouter());
 app.use('/api', bingRouter());

@@ -5,6 +5,7 @@ var requireToken = require('app/middleware/requireToken'),
     express = require("express"),
     Poll = require('./poll'),
     Vote = require('./vote'),
+    eb = require('app/eventBus'),
     _ = require('lodash');
 
 var publish = function (req, res, next) {
@@ -25,6 +26,7 @@ var vote = function (req, res, next) {
         };
       }
       res.status(201).json(poll);
+      eb.emit('poll:voteAdded', req.user, poll);
     }).catch(next);
 };
 
@@ -37,6 +39,7 @@ var comment = function (req, res, next) {
     }
     var newComment = poll.comments[poll.comments.length - 1];
     res.status(201).json(newComment);
+    eb.emit('poll:commentAdded', req.user, poll);
   }).catch(next);
 };
 

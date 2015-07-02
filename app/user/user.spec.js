@@ -144,6 +144,11 @@ describe('User', function () {
       });
     });
 
+    it('should retrieve [] on getFollowers for unknown user', function () {
+      var promise = User.getFollowers(mongoose.Types.ObjectId());
+      return expect(promise).to.eventually.be.an('array').that.is.empty; 
+    });
+
     it('should retrive number of followers for a user', function () {
       var promise = User.follow(users[0], targetUser.id).then(function () {
         return User.follow(users[1], targetUser.id);

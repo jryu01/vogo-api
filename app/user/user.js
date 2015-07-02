@@ -59,7 +59,7 @@ UserSchema.statics.follow = function (fromUser, toUserId) {
       }
     }
   };
-  return this.findOneAndUpdateAsync(query, update).then(function () {});
+  return this.findOneAndUpdateAsync(query, update);
 };
 
 UserSchema.statics.unfollow = function (fromUser, toUserId) {
@@ -70,7 +70,7 @@ UserSchema.statics.unfollow = function (fromUser, toUserId) {
       }
     }
   };
-  return this.findByIdAndUpdateAsync(toUserId, update).then(function () {});
+  return this.findByIdAndUpdateAsync(toUserId, update);
 };
 
 UserSchema.statics.getFollowers = function (userId, options) {
@@ -82,8 +82,7 @@ UserSchema.statics.getFollowers = function (userId, options) {
     'followers._id': 0, 
   };
   return this.findByIdAsync(userId, project).then(function (result) {
-    //TODO: handle case when result is null -> return []
-    return result.followers;
+    return result ? result.followers : [];
   });
 };
 
