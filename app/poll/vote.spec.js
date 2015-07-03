@@ -5,6 +5,7 @@ var mongoose = require('mongoose'),
     Promise = require('bluebird'),
     User = require('app/user/user'),
     Poll = require('./poll'),
+    eb = require('app/eventBus'),
     _ = require('lodash');
 
 var Vote = require('./vote');
@@ -45,6 +46,10 @@ describe('Vote', function () {
       name: 'Bob',
       picture: 'profilePic'
     });
+    sinon.stub(eb, 'emit');
+  });
+  afterEach(function () {
+    eb.emit.restore();
   });
 
   it('should create a vote', function () {

@@ -28,6 +28,8 @@ var PollSchema = new Schema({
     voters: [ Schema.Types.ObjectId ],
   },
 
+  subscribers: [ Schema.Types.ObjectId ],
+
   numComments: { type: Number, default: 0 },
   comments: [{
     createdBy: {
@@ -42,6 +44,7 @@ var PollSchema = new Schema({
 
 // Indexes
 PollSchema.index({'createdBy.userId': 1, '_id': -1 });
+PollSchema.index({'subscribers': 1});
 
 //Add toJSON option to transform document before returnig the result
 PollSchema.options.toJSON = {
@@ -66,6 +69,7 @@ PollSchema.statics.publish = function (user, data) {
       text: data.answer2 && data.answer2.text,
       picture: data.answer2 && data.answer2.picture
     },
+    subscribers: [ user.id ],
     createdBy: {
       name: user.name,
       userId: user.id,
@@ -132,8 +136,11 @@ PollSchema.statics.comment = function (pollId, user, text) {
     'text': text
   };
   var update = {
+    '$addToSet': {
+      'subscribers': user.id
+    },
     '$push': {
-      'comments': comment
+      'comments': comment,
     },
     '$inc': {
       'numComments': 1

@@ -33,12 +33,17 @@ describe('Poll', function () {
       picture: 'profilePic',
       id: mongoose.Types.ObjectId()
     };
+    sinon.stub(eb, 'emit');
+  });
+  afterEach(function () {
+    eb.emit.restore();
   });
 
   it('should publish and return a new poll', function () {
     var data = createPollData();
     var expectAndValidate = function (poll) {
       expect(poll.createdBy.userId.toString()).to.equal(user.id.toString());
+      expect(poll.subscribers[0].toString()).to.equal(user.id.toString());
       expect(poll).to.have.deep.property('createdBy.name', 'Bob');
       expect(poll).to.have.deep.property('createdBy.picture', 'profilePic');
 
@@ -207,8 +212,6 @@ describe('Poll', function () {
 
   it('should emit an event when poll is voted', function () {
 
-    sinon.spy(eb, 'emit');
-
     var pollId;
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
       pollId = poll.id;
@@ -219,8 +222,6 @@ describe('Poll', function () {
         userId: user.id,
         poll: poll
       });
-    }).finally(function () {
-      eb.emit.restore();
     });
   });
 
@@ -235,6 +236,8 @@ describe('Poll', function () {
       return Poll.getComments(pollId);
     });
     return expect(promise).to.be.fulfilled.then(function (comments) {
+      expect(poll.subscribers).to.be.length(1);
+
       expect(poll.comments[0]).to.have.property('_id');
       expect(poll.comments[0]).to.have.property('text', 'hello');
       expect(poll.comments[0].createdBy.userId.toString()).to.equal(user.id.toString());
@@ -251,9 +254,25 @@ describe('Poll', function () {
     });
   });
 
+  it('should add comment author to the subscribers', function () {
+    var pollId, poll;
+
+    var cris = {
+      name: 'Cris',
+      picture: 'crisProfilePic',
+      id: mongoose.Types.ObjectId()
+    };
+    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+      return Poll.comment(poll.id, cris, 'hello');
+    });
+    return expect(promise).to.be.fulfilled.then(function (poll) {
+      expect(poll.subscribers).to.be.length(2);
+      expect(poll.subscribers[1].toString()).to.equal(cris.id.toString());
+    });
+  });
+
   it('should emit event when comment is created', function () {
 
-    sinon.spy(eb, 'emit');
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
       return Poll.comment(poll.id, user, 'new comment');
     });
@@ -263,8 +282,6 @@ describe('Poll', function () {
         userId: user.id,
         poll: updatedPoll 
       });
-    }).finally(function (e) {
-      eb.emit.restore();
     });
   });
 

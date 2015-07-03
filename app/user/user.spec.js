@@ -27,7 +27,11 @@ describe('User', function () {
   var User, data;
 
   beforeEach(function () {
+    sinon.stub(eb, 'emit');
     User = require('app/user/user');
+  });
+  afterEach(function () {
+    eb.emit.restore();
   });
 
   it('should create a new user', function () {
@@ -114,7 +118,7 @@ describe('User', function () {
     });
 
     it('should emit follow event', function () {
-      sinon.spy(eb, 'emit');
+      // sinon.spy(eb, 'emit');
       return User.follow(users[0], targetUser._id).then(function () {
         expect(eb.emit).to.have.been
           .calledWith('userModel:follow', {
@@ -122,15 +126,15 @@ describe('User', function () {
             toUserId: targetUser._id
           });
       }).finally(function () {
-        eb.emit.restore();
+        // eb.emit.restore();
       });
     });
 
     it('should not emit follow event on error', function () {
-      sinon.spy(eb, 'emit');
+      // sinon.spy(eb, 'emit');
       return expect(User.follow(users[0], targetUser._id + 'invalid')).to.be.rejected.then(function () {
         expect(eb.emit).to.have.not.been.called;
-        eb.emit.restore();
+        // eb.emit.restore();
       });
     });
 
