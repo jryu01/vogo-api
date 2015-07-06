@@ -10,8 +10,10 @@ var NotificationSchema = new Schema({
   verb: { type: String }, // commented, voted, followed, joined, 
   objectType: { type: String },
   object: { type: Schema.Types.ObjectId },
+  detail: {},
   // createdAt: { type: Date, default: Date.now, expires: 60 }
-  updatedAt: { type: Date, default: Date.now, expires: '30d' }
+  updatedAt: { type: Date, default: Date.now, expires: '30d' },
+  read: { type: Boolean, default: false }
 });
 
 NotificationSchema.index({'user': 1, 'updatedAt': -1});

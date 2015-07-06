@@ -2,14 +2,37 @@
 
 var requireToken = require('app/middleware/requireToken'),
     Notification = require('app/notification/notificationModel'),
+    Promise = require('bluebird'),
     express = require("express"),
+    router = express.Router(),
     eb = require('app/eventBus'),
     _ = require('lodash');
 
+var populate = function (notification) {
+  if (notification.verb === 'follow') {
+    return notification.populateAsync({
+      path: 'actor',
+      select: 'name picture'
+    });
+  }
+  return notification.populate({
+    path: 'actor',
+    select: 'name picture',
+  }).populateAsync({
+    path: 'object',
+    model: 'Poll',
+    select: 'question answer1.picture answer2.picture'
+  });
+};
+
+var notify = function (notification) {
+  console.log('Send Notification!!!');
+  console.log(notification);
+};
 
 var notification = module.exports = function () {
 
-  eb.on('userModel:follow', function (data) {
+  var handleFollowNotification = function (data) {
     setImmediate(function () {
       var userId = data.userId,
           targetUserId = data.toUserId,
@@ -22,31 +45,21 @@ var notification = module.exports = function () {
           options = { new: true, upsert: true };
 
       Notification.findOneAndUpdateAsync(query, newNotification, options)
-      .then(function (notification) {
-        return notification.populateAsync({
-          path: 'user actor',
-          select: 'name picture'
-        });
-      }).then(function (not) {
-        console.log(not);
-        console.log(not.actor.name+' is now following You, ' + not.user.name);
-      }).catch(console.error);
+        .then(populate)
+        .then(notify)
+        .catch(console.error);
     });
-  });
+  };
 
-  eb.on('pollModel:vote', function (data) {
+  var handleVoteNotification = function (data) {
     setImmediate(function () {
       var userId = data.userId.toString(),
           poll = data.poll,
           toUserId = poll.createdBy.userId.toString(),
           numVoted = poll.answer1.voters.length + poll.answer2.voters.length;
 
-
-      // don't notify if user is voting to his own poll   
+      // don't notify if user is voting on his own poll   
       if (userId === toUserId) { return; }
-
-      // only notify first vote and when numVoted is multiple of 5
-      if (numVoted !== 1 || (numVoted % 5 === 0)) { return; }
 
       var query = {
             user: toUserId,
@@ -56,38 +69,79 @@ var notification = module.exports = function () {
           newNotification = _.assign(_.clone(query), {
             actor: userId,
             objectType: 'poll',
+            detail: {
+              totalVote: numVoted,
+              answer: data.answer
+            },
             updatedAt: Date.now()
           }),
           options = { new: true, upsert: true };
 
       Notification.findOneAndUpdateAsync(query, newNotification, options)
-      .then(function (notification) {
-        return notification.populateAsync({
-          path: 'user actor',
-          select: 'name picture',
-        });
-      }).then(function (not) {
-        if (numVoted > 1) {
-          console.log(not.actor.name, 'and', numVoted-1, 'others voted on:', poll.question);
-        } else {
-          console.log(not.actor.name, 'voted on:', poll.question);
-        }
-      }).catch(console.error);
+        .then(populate)
+        .then(notify)
+        .catch(console.error);
     });
-  });
+  };
 
-  eb.on('pollModel:comment', function (data) {
-    var userId = data.userId.toString(),
-        poll = data.poll;
-    //notify all involved users except userId
+  var handleCommentNotification = function (data) {
+    setImmediate(function () {
+      var userId = data.userId.toString(),
+          poll = data.poll,
+          subs = poll.subscribers;
 
-    console.log('comment event');
-    console.log(data);
-  });
-  
-  var router = express.Router();
-  
-  // router.get('/polls', requireToken, getRecentUnvotedPolls);
+      // TODO: optimize loop to async loop later
+      subs.forEach(function (subscriberId) {
+
+        // don't notify user if the user is commenting on his own poll   
+        if (userId === subscriberId.toString()) { return; }
+
+        var newNotification = {
+          actor: userId,
+          user: subscriberId,
+          object: poll._id,
+          objectType: 'poll',
+          verb: 'comment',
+          updatedAt: Date.now()
+        };
+        Notification.createAsync(newNotification)
+          .then(populate)
+          .then(notify)
+          .catch(console.error);
+      });
+    });
+  };
+
+  var getNotifications = function (req, res, next) {
+    var query = { user : req.user.id },
+        options = { sort: { updatedAt: -1 }};
+    options.limit = 100;
+
+    Notification.findAsync(query, null, options).then(function (notis) {
+      return Promise.all(notis.map(populate));
+    }).then(res.status(202).json.bind(res))
+      .catch(next);
+  };
+
+  var getNotificationCount = function (req, res, next) {
+    var query = { user : req.user.id };
+
+    if (req.query.after) {
+      query.updatedAt = { $gt: req.query.after };
+    }
+
+    Notification.where(query)
+      .countAsync(function (err, count) {
+        res.status(200).send({ count: count });
+      }).catch(next);
+  };
+ 
+  eb.on('userModel:follow', handleFollowNotification);
+  eb.on('pollModel:vote', handleVoteNotification);
+  eb.on('pollModel:comment', handleCommentNotification);
+
+  router.get('/notifications', requireToken, getNotifications);
+  router.get('/notifications/count', requireToken, getNotificationCount);
 
   return router; 
 };

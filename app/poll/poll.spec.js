@@ -220,7 +220,8 @@ describe('Poll', function () {
     return expect(promise).to.be.fulfilled.then(function (poll) {
       expect(eb.emit).to.have.been.calledWith('pollModel:vote', {
         userId: user.id,
-        poll: poll
+        poll: poll,
+        answer: 1
       });
     });
   });

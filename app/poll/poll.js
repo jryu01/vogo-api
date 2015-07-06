@@ -121,7 +121,11 @@ PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
   update.$addToSet['answer'+ answerNumber + '.voters'] = voterId;
 
   return this.findOneAndUpdateAsync(query, update).then(function (poll) {
-    eb.emit('pollModel:vote', { userId: voterId, poll: poll });
+    eb.emit('pollModel:vote', { 
+      userId: voterId, 
+      poll: poll, 
+      answer: answerNumber
+    });
     return poll;
   });
 };
