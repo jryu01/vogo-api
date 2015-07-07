@@ -40,28 +40,37 @@ describe('Poll', function () {
   });
 
   it('should publish and return a new poll', function () {
-    var data = createPollData();
-    var expectAndValidate = function (poll) {
-      expect(poll.createdBy.userId.toString()).to.equal(user.id.toString());
-      expect(poll.subscribers[0].toString()).to.equal(user.id.toString());
-      expect(poll).to.have.deep.property('createdBy.name', 'Bob');
-      expect(poll).to.have.deep.property('createdBy.picture', 'profilePic');
-
-      expect(poll).to.have.property('question', 'which sports?');
-      expect(poll).to.have.deep.property('answer1.text', 'basketball');
-      expect(poll).to.have.deep.property('answer1.picture', 'a1picurl');
-      expect(poll).to.have.deep.property('answer1.numVotes', 0);
-      expect(poll).to.have.deep.property('answer2.text', 'soccer');
-      expect(poll).to.have.deep.property('answer2.picture', 'a2picurl');
-      expect(poll).to.have.deep.property('answer2.numVotes', 0);
-    };
+    var data = createPollData(),
+        pollFromCreate;
     var promise = Poll.publish(user, data).then(function (poll) {
-      expectAndValidate(poll);
+      pollFromCreate = poll;
+      console.log(pollFromCreate);
       return Poll.getById(poll.id);
-    }).then(function (poll) {
-      expectAndValidate(poll);
     });
-    return expect(promise).to.eventually.be.fulfilled; 
+    return expect(promise).to.eventually.be.fulfilled.then(function (poll) {
+      var expectAndValidate = function (poll) {
+        expect(poll.createdBy.userId.toString()).to.equal(user.id.toString());
+        expect(poll).to.have.deep.property('createdBy.name', 'Bob');
+        expect(poll).to.have.deep.property('createdBy.picture', 'profilePic');
+
+        expect(poll).to.have.property('question', 'which sports?');
+        expect(poll).to.have.deep.property('answer1.text', 'basketball');
+        expect(poll).to.have.deep.property('answer1.picture', 'a1picurl');
+        expect(poll).to.have.deep.property('answer1.numVotes', 0);
+        expect(poll).to.have.deep.property('answer2.text', 'soccer');
+        expect(poll).to.have.deep.property('answer2.picture', 'a2picurl');
+        expect(poll).to.have.deep.property('answer2.numVotes', 0);
+      };
+      expectAndValidate(pollFromCreate);
+      expect(pollFromCreate.subscribers[0].toString())
+        .to.equal(user.id.toString());
+
+      expectAndValidate(poll);
+      expect(poll).to.not.have.deep.property('answer1.voters');
+      expect(poll).to.not.have.deep.property('answer2.voters');
+      expect(poll).to.not.have.property('comments');
+      expect(poll).to.not.have.property('subscribers');
+    });
   });
   
   it('should get polls in decending order by id for a user', function () {
@@ -156,7 +165,7 @@ describe('Poll', function () {
     }).then(function () {
       return Poll.voteAnswer(pollId, user2.id, 2);
     }).then(function () {
-      return Poll.getById(pollId);
+      return Poll.findByIdAsync(pollId);
     });
     return expect(promise).to.be.fulfilled.then(function (poll) {
       expect(poll.answer1.numVotes).to.equal(1);
@@ -199,7 +208,7 @@ describe('Poll', function () {
     }).then(function () {
       return Poll.voteAnswer(pollId, user.id, 2);
     }).then(function () {
-      return Poll.getById(pollId); 
+      return Poll.findByIdAsync(pollId); 
     });
 
     return expect(promise).to.be.fulfilled.then(function (poll) {

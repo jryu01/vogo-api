@@ -99,8 +99,10 @@ PollSchema.statics.getByUserId = function (userId, pollId, limit) {
   return this.findAsync(query, projection, options);
 };
 
+// remove sub arrays. use findByIdAsync to retrieve with sub arrays
 PollSchema.statics.getById = function (pollId) {
-  return this.findByIdAsync(pollId);
+  var projection = '-answer1.voters -answer2.voters -subscribers -comments';
+  return this.findByIdAsync(pollId, projection);
 };
 
 PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {

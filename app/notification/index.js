@@ -21,7 +21,7 @@ var populate = function (notification) {
   }).populateAsync({
     path: 'object',
     model: 'Poll',
-    select: 'question answer1.picture answer2.picture'
+    select: 'question answer1.picture answer1.text answer2.picture answer2.text'
   });
 };
 
@@ -57,8 +57,7 @@ var notification = module.exports = function () {
           poll = data.poll,
           toUserId = poll.createdBy.userId.toString(),
           numVoted = poll.answer1.voters.length + poll.answer2.voters.length;
-
-      // don't notify if user is voting on his own poll   
+      // don't create notification if user is voting on his own poll   
       if (userId === toUserId) { return; }
 
       var query = {
@@ -89,11 +88,10 @@ var notification = module.exports = function () {
       var userId = data.userId.toString(),
           poll = data.poll,
           subs = poll.subscribers;
-
       // TODO: optimize loop to async loop later
       subs.forEach(function (subscriberId) {
 
-        // don't notify user if the user is commenting on his own poll   
+        // don't create notification if user is commenting on his own poll   
         if (userId === subscriberId.toString()) { return; }
 
         var newNotification = {
