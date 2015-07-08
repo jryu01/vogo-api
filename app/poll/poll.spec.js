@@ -44,7 +44,6 @@ describe('Poll', function () {
         pollFromCreate;
     var promise = Poll.publish(user, data).then(function (poll) {
       pollFromCreate = poll;
-      console.log(pollFromCreate);
       return Poll.getById(poll.id);
     });
     return expect(promise).to.eventually.be.fulfilled.then(function (poll) {
