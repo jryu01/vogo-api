@@ -287,6 +287,29 @@ describe('User Router', function () {
     });
   });
 
+  describe('POST /deviceTokens', function () {
+    
+    var path = '/deviceTokens';
+    
+    it('should send 201', function (done) {
+      sinon.stub(User, 'registerDeviceToken')
+        .returns(Promise.resolve({ userId: 'user1' }));
+      app.post(path)
+        .set('x-access-token', 'testToken')
+        .send({ token: 'testiosdevicetoken' })
+        .expect(201, function (err, res) {
+          if (err) { return done (err); }
+          expect(res.body).to.deep.equal({
+            user: { userId: 'user1' }
+          });
+          expect(User.registerDeviceToken).to.have.been
+            .calledWith(testUser.id, 'testiosdevicetoken'); 
+          User.registerDeviceToken.restore();
+          done();
+        });
+    });
+  });
+
   describe('POST /users', function () {
     
     var path = '/users';

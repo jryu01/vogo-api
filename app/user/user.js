@@ -29,8 +29,13 @@ var UserSchema = new Schema({
     name: String,
     picture: String
   },
-  followers: { type: [ FollowerSchema ] } 
+  followers: { type: [ FollowerSchema ] },
+
+  deviceTokens: [String],
 });
+
+UserSchema.index({'deviceTokens': 1});
+UserSchema.index({'followers.userId': 1});
 
 UserSchema.pre('save', function (next) { 
   var user = this;
@@ -136,6 +141,28 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
     });
   });
 };
+
+UserSchema.statics.registerDeviceToken = function (userId, deviceToken) {
+  var model = this;
+  var addToken = {
+    '$addToSet': {
+      'deviceTokens': deviceToken
+    }
+  };
+  var removeTokenFromPrevUser = this.updateAsync(
+    { 'deviceTokens': deviceToken },
+    {
+      '$pull': {
+        'deviceTokens': deviceToken
+      }
+    },
+    { multi: true }
+  );
+  return removeTokenFromPrevUser.then(function (r) {
+    return model.findByIdAndUpdateAsync(userId, addToken);
+  });
+};
+
 UserSchema.methods.comparePassword = function (candidatePassword) {
   return bcrypt.compareAsync(candidatePassword, this.password);
 };

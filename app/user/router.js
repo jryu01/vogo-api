@@ -225,11 +225,18 @@ var getS3Info = function (req, res, next) {
   res.json(info);
 };
 
+var registerDeviceToken = function (req, res, next) {
+  User.registerDeviceToken(req.user.id, req.body.token).then(function (user) {
+    res.status(201).json({ user: user });
+  }).catch(next);
+};
+
 var userRouter = module.exports = function () {
   
   var router = express.Router();
   router.post('/login', signin);
   router.get('/s3info', requireToken, getS3Info); //TODO: need test
+  router.post('/deviceTokens', requireToken, registerDeviceToken);
   
   router.post('/users', createUser);
   router.get('/users', requireToken, listUsers); // will be depreciated

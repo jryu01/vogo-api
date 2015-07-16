@@ -5,10 +5,11 @@ var _ = require('lodash'),
     eb = require('app/eventBus'),
     bcrypt = require('bcrypt'),
     rewire = require('rewire'),
+    Promise = require('bluebird'),
     mongoose = require('mongoose'),
     testUtil = require('../../test/testUtil');
 
-var dataFactory = {
+var userData = {
   create: function (overwrites) {
     var defaults = {
       email: 'Jhon@jhonhome.com',
@@ -35,7 +36,7 @@ describe('User', function () {
   });
 
   it('should create a new user', function () {
-    data = dataFactory.create();
+    data = userData.create();
     return expect(User.createAsync(data)).to.be.fulfilled.then(function (user){
       expect(user).to.have.property('email', 'jhon@jhonhome.com');
       expect(user).to.have.property('password');
@@ -46,14 +47,14 @@ describe('User', function () {
   });
 
   it('should give an error when email is missing', function () {
-    data = dataFactory.create({ email: null });
+    data = userData.create({ email: null });
     return expect(User.createAsync(data)).to.be.rejected.then(function (e) {
       expect(e).to.match(/email is required!/);
     });
   });
 
   it('should not save duplicate email', function () {
-    data = dataFactory.create();
+    data = userData.create();
     var createUserPromise = User.createAsync(data).then(function (user) {
       return User.createAsync(data);
     });
@@ -63,13 +64,13 @@ describe('User', function () {
   });
 
   it('should save hashed password on creation', function () {
-    data = dataFactory.create();
+    data = userData.create();
     return expect(User.createAsync(data)).to.eventually.have
             .property('password', 'ASFEW24JKSFtestPasswordD12fj#jkdf10');
   });
 
   it('should not hash password if password is not modified', function () {
-    data = dataFactory.create();
+    data = userData.create();
     sinon.spy(bcrypt, 'genSaltAsync');
     var promise = User.createAsync(data).then(function (user) {
       user.firstName = 'bob'; 
@@ -80,6 +81,49 @@ describe('User', function () {
       bcrypt.genSaltAsync.restore();
     });
   });
+
+  it('should register ios device tokens to a user', function () {
+    data = userData.create();
+    var promise = User.createAsync(data).then(function (user) {
+      var tokens = ['userIphoneToken', 'userIphoneToken', 'userIpadToken'];
+      return Promise.resolve(tokens).each(function (token) {
+        return User.registerDeviceToken(user.id, token).then(function (user) {
+          expect(user).to.have.property('name');
+          expect(user).to.have.property('email');
+        });
+      }).then(function () {
+        return User.findByIdAsync(user.id);
+      });
+    });
+
+    return expect(promise).to.be.fulfilled.then(function (user) {
+      expect(user.deviceTokens).to.be.length(2);
+      expect(user.deviceTokens[0]).to.equal('userIphoneToken');
+      expect(user.deviceTokens[1]).to.equal('userIpadToken');
+    });
+  });
+
+  it('should remove same ios device token from previous user when a new user is registering with the same token', function () {
+
+    var u1Data = userData.create({ name: 'Jhon' }),
+        u2Data = userData.create({ email: 'sam@sam.net', name: 'Sam'});
+    var promise = Promise.all([
+      User.createAsync(u1Data),
+      User.createAsync(u2Data)
+    ]).each(function (user) {
+      return User.registerDeviceToken(user.id, 'iphone1Token');
+    }).then(function () {
+      return Promise.all([
+        User.findOneAsync({ name: 'Jhon'}),
+        User.findOneAsync({ name: 'Sam'})
+      ]);
+    });
+    return expect(promise).to.be.fulfilled.then(function (users) {
+      expect(users[0].deviceTokens).to.be.empty;
+      expect(users[1].deviceTokens[0]).to.equal('iphone1Token');
+    });
+  });
+
   describe('(user graph)', function () {
 
     var users, targetUser;
@@ -271,12 +315,13 @@ describe('User', function () {
       });
       
     });
+
   });
 
   describe('#comparePassword', function () {
 
     it('should check for matching password', function () {
-      data = dataFactory.create({ password: "matchingPwd" });
+      data = userData.create({ password: "matchingPwd" });
 
       var isMatching = User.createAsync(data).then(function (user) {
         return user.comparePassword('matchingPwd');
@@ -285,7 +330,7 @@ describe('User', function () {
     });
 
     it('should check for wrong password', function () {
-      data = dataFactory.create({ password: "matchingPwd" });
+      data = userData.create({ password: "matchingPwd" });
       var isMatching = User.createAsync(data).then(function (user) {
         return user.comparePassword('wrong');
       });
@@ -295,7 +340,7 @@ describe('User', function () {
 
   describe('#toJSON', function () {
     it('should return clean json', function () {
-      data = dataFactory.create();
+      data = userData.create();
       var user = new User(data);
       expect(user.toJSON()).to.have.property('id');
       expect(user.toJSON()).to.not.have.property('_id');
