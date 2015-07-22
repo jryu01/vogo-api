@@ -7,7 +7,7 @@ var Promise = require('bluebird'),
 var NotificationSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User' },
   actor: { type: Schema.Types.ObjectId, ref: 'User' },
-  verb: { type: String }, // commented, voted, followed, joined, 
+  verb: { type: String }, // comment, vote, follow, join, 
   objectType: { type: String },
   object: { type: Schema.Types.ObjectId },
   detail: {},

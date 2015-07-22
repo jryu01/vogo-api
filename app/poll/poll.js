@@ -76,7 +76,9 @@ PollSchema.statics.publish = function (user, data) {
       picture: user.picture
     }
   };
-  return this.createAsync(poll);
+  return this.createAsync(poll).then(function (poll) {
+    return poll;
+  });
 };
 
 PollSchema.statics.getByUserId = function (userId, pollId, limit) {
@@ -123,10 +125,12 @@ PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
   update.$addToSet['answer'+ answerNumber + '.voters'] = voterId;
 
   return this.findOneAndUpdateAsync(query, update).then(function (poll) {
-    eb.emit('pollModel:vote', { 
-      userId: voterId, 
-      poll: poll, 
-      answer: answerNumber
+    setImmediate(function () {
+      eb.emit('pollModel:vote', { 
+        userId: voterId, 
+        poll: poll, 
+        answer: answerNumber
+      });
     });
     return poll;
   });
@@ -153,7 +157,9 @@ PollSchema.statics.comment = function (pollId, user, text) {
     }
   };
   return this.findByIdAndUpdateAsync(pollId, update).then(function (poll) {
-    eb.emit('pollModel:comment', { userId: user.id, poll: poll });
+    setImmediate(function () {
+      eb.emit('pollModel:comment', { userId: user.id, poll: poll });
+    });
     return poll;
   });
 };

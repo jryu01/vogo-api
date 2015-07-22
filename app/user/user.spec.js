@@ -161,25 +161,19 @@ describe('User', function () {
       });
     });
 
-    it('should emit follow event', function () {
-      // sinon.spy(eb, 'emit');
-      return User.follow(users[0], targetUser._id).then(function () {
-        expect(eb.emit).to.have.been
-          .calledWith('userModel:follow', {
-            userId: users[0].id,
-            toUserId: targetUser._id
-          });
-      }).finally(function () {
-        // eb.emit.restore();
-      });
-    });
-
-    it('should not emit follow event on error', function () {
-      // sinon.spy(eb, 'emit');
-      return expect(User.follow(users[0], targetUser._id + 'invalid')).to.be.rejected.then(function () {
-        expect(eb.emit).to.have.not.been.called;
-        // eb.emit.restore();
-      });
+    it('should emit follow event', function (done) {
+      User.follow(users[0], targetUser._id).then(function () {
+        expect(eb.emit).to.not.have.been.called;
+        // expect eb.emit called on next event loop cycle
+        setImmediate(function () {
+          expect(eb.emit).to.have.been
+            .calledWith('userModel:follow', {
+              userId: users[0].id,
+              toUserId: targetUser._id
+            });
+            done();
+        });
+      }).catch(done);
     });
 
     it('should not follow same user twice', function () {

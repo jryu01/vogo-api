@@ -5,6 +5,8 @@ var requireToken = require('app/middleware/requireToken'),
     Promise = require('bluebird'),
     express = require("express"),
     router = express.Router(),
+    User = require('app/user/user'),
+    apn = require('apn'),
     eb = require('app/eventBus'),
     _ = require('lodash');
 
@@ -28,85 +30,126 @@ var populate = function (notification) {
 var notify = function (notification) {
   console.log('Send Notification!!!');
   console.log(notification);
+  setImmediate(function () {
+    sendPush(notification);
+  });
 };
 
+var sendPush = function (notification) {
+
+//Note: To find all users with at least one device registered
+//User.find({$and: [{deviceTokens: {$ne: []}}, {deviceTokens: {$ne: null}}]});
+  var actor = notification.actor.name;
+  var question = notification.object && notification.object.question;
+  var msgs = {
+    follow: actor + ' is now following you.',
+    comment: actor + ' commented on\nQ: ' + question,
+    create: actor + ' asked\nQ: ' + question
+  };
+
+  User.findByIdAsync(notification.user).then(function (user) {
+
+    if (!user.deviceTokens) { return; }
+
+    user.deviceTokens.forEach(function (token) {
+      try {
+        var device = new apn.Device(token);
+        var note = new apn.Notification();
+        note.badge = 0;
+        note.contentAvailable = 1;
+        note.sound = 'default';
+        note.alert = {
+          title: 'test title',
+          body : msgs[notification.verb],
+          verb: notification.verb,
+          note: notification
+        };
+        note.device = device;
+
+        var options = {
+          cert: 'vogoPushDevCert.pem',
+          key:  'vogoPushDevKey.pem',
+        };
+        var apnsConnection = new apn.Connection(options);
+        apnsConnection.sendNotification(note);
+      } catch (e) {
+        console.error(e);
+      }
+    });
+  });
+};
+// notification module 
 var notification = module.exports = function () {
 
   var handleFollowNotification = function (data) {
-    setImmediate(function () {
-      var userId = data.userId,
-          targetUserId = data.toUserId,
-          query = {
-            user: targetUserId,
-            actor: userId,
-            verb: 'follow',
-          },
-          newNotification = _.assign(_.clone(query), {updatedAt: Date.now()}),
-          options = { new: true, upsert: true };
+    var userId = data.userId,
+        targetUserId = data.toUserId,
+        query = {
+          user: targetUserId,
+          actor: userId,
+          verb: 'follow',
+        },
+        newNotification = _.assign(_.clone(query), {updatedAt: Date.now()}),
+        options = { new: true, upsert: true };
 
-      Notification.findOneAndUpdateAsync(query, newNotification, options)
-        .then(populate)
-        .then(notify)
-        .catch(console.error);
-    });
+    Notification.findOneAndUpdateAsync(query, newNotification, options)
+      .then(populate)
+      .then(notify)
+      .catch(console.error);
   };
 
   var handleVoteNotification = function (data) {
-    setImmediate(function () {
-      var userId = data.userId.toString(),
-          poll = data.poll,
-          toUserId = poll.createdBy.userId.toString(),
-          numVoted = poll.answer1.voters.length + poll.answer2.voters.length;
-      // don't create notification if user is voting on his own poll   
-      if (userId === toUserId) { return; }
+    var userId = data.userId.toString(),
+        poll = data.poll,
+        toUserId = poll.createdBy.userId.toString(),
+        numVoted = poll.answer1.voters.length + poll.answer2.voters.length;
+    // don't create notification if user is voting on his own poll   
+    if (userId === toUserId) { return; }
 
-      var query = {
-            user: toUserId,
-            object: poll._id,
-            verb: 'vote',
+    var query = {
+          user: toUserId,
+          object: poll._id,
+          verb: 'vote',
+        },
+        newNotification = _.assign(_.clone(query), {
+          actor: userId,
+          objectType: 'poll',
+          detail: {
+            totalVote: numVoted,
+            answer: data.answer
           },
-          newNotification = _.assign(_.clone(query), {
-            actor: userId,
-            objectType: 'poll',
-            detail: {
-              totalVote: numVoted,
-              answer: data.answer
-            },
-            updatedAt: Date.now()
-          }),
-          options = { new: true, upsert: true };
+          updatedAt: Date.now()
+        }),
+        options = { new: true, upsert: true };
 
-      Notification.findOneAndUpdateAsync(query, newNotification, options)
-        .then(populate)
-        .then(notify)
-        .catch(console.error);
-    });
+    Notification.findOneAndUpdateAsync(query, newNotification, options)
+      .then(populate)
+      .then(notify)
+      .catch(console.error);
   };
 
   var handleCommentNotification = function (data) {
-    setImmediate(function () {
-      var userId = data.userId.toString(),
-          poll = data.poll,
-          subs = poll.subscribers;
-      // TODO: optimize loop to async loop later
-      subs.forEach(function (subscriberId) {
+    var userId = data.userId.toString(),
+        poll = data.poll,
+        subs = poll.subscribers;
+    // TODO: optimize loop to async loop later
+    subs.forEach(function (subscriberId) {
 
-        // don't create notification if user is commenting on his own poll   
-        if (userId === subscriberId.toString()) { return; }
+      // don't create notification if user is commenting on his own poll   
+      if (userId === subscriberId.toString()) { return; }
 
-        var newNotification = {
-          actor: userId,
-          user: subscriberId,
-          object: poll._id,
-          objectType: 'poll',
-          verb: 'comment',
-          updatedAt: Date.now()
-        };
-        Notification.createAsync(newNotification)
-          .then(populate)
-          .then(notify)
-          .catch(console.error);
-      });
+      var newNotification = {
+        actor: userId,
+        user: subscriberId,
+        object: poll._id,
+        objectType: 'poll',
+        verb: 'comment',
+        updatedAt: Date.now()
+      };
+      Notification.createAsync(newNotification)
+        .then(populate)
+        .then(notify)
+        .catch(console.error);
     });
   };
 

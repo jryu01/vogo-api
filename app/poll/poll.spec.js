@@ -218,20 +218,26 @@ describe('Poll', function () {
     });
   });
 
-  it('should emit an event when poll is voted', function () {
+  it('should emit an event when poll is voted', function (done) {
 
     var pollId;
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
       pollId = poll.id;
       return Poll.voteAnswer(poll.id, user.id, 1);
     });
-    return expect(promise).to.be.fulfilled.then(function (poll) {
-      expect(eb.emit).to.have.been.calledWith('pollModel:vote', {
-        userId: user.id,
-        poll: poll,
-        answer: 1
+
+    expect(promise).to.be.fulfilled.then(function (poll) {
+      // expect eb.emit called on next event loop cycle
+      expect(eb.emit).to.have.not.been.called;
+      setImmediate(function () {
+        expect(eb.emit).to.have.been.calledWith('pollModel:vote', {
+          userId: user.id,
+          poll: poll,
+          answer: 1
+        });
+        done();
       });
-    });
+    }).catch(done);
   });
 
   it('should add comment to a poll and return updated poll', function () {
@@ -280,18 +286,23 @@ describe('Poll', function () {
     });
   });
 
-  it('should emit event when comment is created', function () {
+  it('should emit event after comment is created', function (done) {
 
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
       return Poll.comment(poll.id, user, 'new comment');
     });
 
     return expect(promise).to.be.fulfilled.then(function (updatedPoll) {
-      expect(eb.emit).to.have.been.calledWith('pollModel:comment', {
-        userId: user.id,
-        poll: updatedPoll 
+      // should emit on next event loop cycle
+      expect(eb.emit).to.not.have.been.called;
+      setImmediate(function () {
+        expect(eb.emit).to.have.been.calledWith('pollModel:comment', {
+          userId: user.id,
+          poll: updatedPoll 
+        });
       });
-    });
+      done();
+    }).catch(done);
   });
 
   it('should update number of comments of the poll', function () {

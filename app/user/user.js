@@ -66,7 +66,9 @@ UserSchema.statics.follow = function (fromUser, toUserId) {
     }
   };
   return this.findOneAndUpdateAsync(query, update).then(function () {
-    eb.emit('userModel:follow', { userId: fromUser.id, toUserId: toUserId });
+    setImmediate(function () {
+      eb.emit('userModel:follow', { userId: fromUser.id, toUserId: toUserId });
+    });
   });
 };
 
