@@ -71,6 +71,22 @@ describe('Poll', function () {
       expect(poll).to.not.have.property('subscribers');
     });
   });
+
+  it('should emit an event when poll is published', function (done) {
+    var data = createPollData();
+
+    expect(Poll.publish(user, data)).to.be.fulfilled.then(function (poll) {
+      // expect eb.emit called on next event loop cycle
+      expect(eb.emit).to.have.not.been.calledWith('pollModel:publish');
+      setImmediate(function () {
+        expect(eb.emit).to.have.been.calledWith('pollModel:publish', {
+          user: user,
+          poll: poll
+        });
+        done();
+      });
+    }).catch(done);
+  });
   
   it('should get polls in decending order by id for a user', function () {
     var poll1 = createPollData({ question: 'poll1' }),
@@ -228,7 +244,7 @@ describe('Poll', function () {
 
     expect(promise).to.be.fulfilled.then(function (poll) {
       // expect eb.emit called on next event loop cycle
-      expect(eb.emit).to.have.not.been.called;
+      expect(eb.emit).to.have.not.been.calledWith('pollModel:vote');
       setImmediate(function () {
         expect(eb.emit).to.have.been.calledWith('pollModel:vote', {
           userId: user.id,
@@ -294,7 +310,7 @@ describe('Poll', function () {
 
     return expect(promise).to.be.fulfilled.then(function (updatedPoll) {
       // should emit on next event loop cycle
-      expect(eb.emit).to.not.have.been.called;
+      expect(eb.emit).to.not.have.been.calledWith('pollModel:comment');
       setImmediate(function () {
         expect(eb.emit).to.have.been.calledWith('pollModel:comment', {
           userId: user.id,

@@ -77,6 +77,9 @@ PollSchema.statics.publish = function (user, data) {
     }
   };
   return this.createAsync(poll).then(function (poll) {
+    setImmediate(function () {
+      eb.emit('pollModel:publish', { user: user, poll: poll });
+    });
     return poll;
   });
 };

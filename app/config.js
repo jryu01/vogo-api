@@ -21,6 +21,10 @@ var config = (function (env) {
     jwtexp: 60 * 24 * 60 * 60 * 1000,
     bing: {
       accountKey: process.env.BING_ACC_KEY
+    },
+    apns: {
+      cert: 'vogoPushDevCert.pem',
+      key: 'vogoPushDevKey.pem'
     }
   };
 
@@ -62,6 +66,10 @@ var config = (function (env) {
       bucket: 'app.vogo',
       accessKey: 'AKIAJWUMKZKKVXADS3DA',
       secretKey: process.env.AWS_SECRET_KEY
+    },
+    apns: {
+      cert: 'vogoPushCert.pem',
+      key: 'vogoPushKey.pem'
     }
   };
   
