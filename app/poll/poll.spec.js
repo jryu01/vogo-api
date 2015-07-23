@@ -256,6 +256,18 @@ describe('Poll', function () {
     }).catch(done);
   });
 
+  it('should not emit an event when voted on invalid poll', function (done) {
+    var promise = Poll.voteAnswer(mongoose.Types.ObjectId(), user.id, 1);
+
+    expect(promise).to.be.fulfilled.then(function (poll) {
+      expect(poll).to.be.null;
+      setImmediate(function () {
+        expect(eb.emit).to.have.not.been.called;
+        done();
+      });
+    }).catch(done);
+  });
+
   it('should add comment to a poll and return updated poll', function () {
     var pollId, poll;
     var id = mongoose.Types.ObjectId();
@@ -316,6 +328,19 @@ describe('Poll', function () {
           userId: user.id,
           poll: updatedPoll 
         });
+      });
+      done();
+    }).catch(done);
+  });
+
+  it('should not emit event when commenting on invalid poll', function (done) {
+
+    var promise = Poll.comment(mongoose.Types.ObjectId(), user, 'new comment');
+
+    return expect(promise).to.be.fulfilled.then(function (poll) {
+      expect(poll).to.be.null;
+      setImmediate(function () {
+        expect(eb.emit).to.have.not.been.called;
       });
       done();
     }).catch(done);

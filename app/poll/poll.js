@@ -128,13 +128,15 @@ PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
   update.$addToSet['answer'+ answerNumber + '.voters'] = voterId;
 
   return this.findOneAndUpdateAsync(query, update).then(function (poll) {
-    setImmediate(function () {
-      eb.emit('pollModel:vote', { 
-        userId: voterId, 
-        poll: poll, 
-        answer: answerNumber
+    if (poll) {
+      setImmediate(function () {
+        eb.emit('pollModel:vote', { 
+          userId: voterId, 
+          poll: poll, 
+          answer: answerNumber
+        });
       });
-    });
+    }
     return poll;
   });
 };
@@ -160,9 +162,11 @@ PollSchema.statics.comment = function (pollId, user, text) {
     }
   };
   return this.findByIdAndUpdateAsync(pollId, update).then(function (poll) {
-    setImmediate(function () {
-      eb.emit('pollModel:comment', { userId: user.id, poll: poll });
-    });
+    if (poll) {
+      setImmediate(function () {
+        eb.emit('pollModel:comment', { userId: user.id, poll: poll });
+      });
+    }
     return poll;
   });
 };
