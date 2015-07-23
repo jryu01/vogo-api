@@ -185,8 +185,8 @@ var notification = module.exports = function () {
         options = { sort: { updatedAt: -1 }};
     options.limit = 100;
 
-    Notification.findAsync(query, null, options).then(function (notis) {
-      return Promise.all(notis.map(populate));
+    Notification.findAsync(query, null, options).then(function (notes) {
+      return Promise.all(notes.map(populate));
     }).then(res.status(202).json.bind(res))
       .catch(next);
   };
