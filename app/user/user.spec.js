@@ -82,14 +82,21 @@ describe('User', function () {
     });
   });
 
-  it('should register ios device tokens to a user', function () {
+  it('should register device tokens to a user', function () {
     data = userData.create();
     var promise = User.createAsync(data).then(function (user) {
-      var tokens = ['userIphoneToken', 'userIphoneToken', 'userIpadToken'];
+      var tokens = [
+        { token: 'userIphoneToken', os: 'ios' },
+        { token: 'userIphoneToken', os: 'ios' },
+        { token: 'userAndroidToken', os: 'android' }
+      ];
+      // var tokens = ['userIphoneToken', 'userIphoneToken', 'userIpadToken'];
       return Promise.resolve(tokens).each(function (token) {
-        return User.registerDeviceToken(user.id, token).then(function (user) {
-          expect(user).to.have.property('name');
-          expect(user).to.have.property('email');
+        return User.registerDeviceToken(user.id, token.token, token.os)
+        .then(function (token) {
+          expect(token).to.have.property('userId', user.id);
+          expect(token).to.have.property('token');
+          expect(token).to.have.property('os');
         });
       }).then(function () {
         return User.findByIdAsync(user.id);
@@ -98,12 +105,14 @@ describe('User', function () {
 
     return expect(promise).to.be.fulfilled.then(function (user) {
       expect(user.deviceTokens).to.be.length(2);
-      expect(user.deviceTokens[0]).to.equal('userIphoneToken');
-      expect(user.deviceTokens[1]).to.equal('userIpadToken');
+      expect(user.deviceTokens[0].token).to.equal('userIphoneToken');
+      expect(user.deviceTokens[0].os).to.equal('ios');
+      expect(user.deviceTokens[1].token).to.equal('userAndroidToken');
+      expect(user.deviceTokens[1].os).to.equal('android');
     });
   });
 
-  it('should remove same ios device token from previous user when a new user is registering with the same token', function () {
+  it('should remove same device token from previous user when a new user is registering with the same token', function () {
 
     var u1Data = userData.create({ name: 'Jhon' }),
         u2Data = userData.create({ email: 'sam@sam.net', name: 'Sam'});
@@ -111,7 +120,7 @@ describe('User', function () {
       User.createAsync(u1Data),
       User.createAsync(u2Data)
     ]).each(function (user) {
-      return User.registerDeviceToken(user.id, 'iphone1Token');
+      return User.registerDeviceToken(user.id, 'iphone1Token', 'ios');
     }).then(function () {
       return Promise.all([
         User.findOneAsync({ name: 'Jhon'}),
@@ -120,7 +129,7 @@ describe('User', function () {
     });
     return expect(promise).to.be.fulfilled.then(function (users) {
       expect(users[0].deviceTokens).to.be.empty;
-      expect(users[1].deviceTokens[0]).to.equal('iphone1Token');
+      expect(users[1].deviceTokens[0].token).to.equal('iphone1Token');
     });
   });
 

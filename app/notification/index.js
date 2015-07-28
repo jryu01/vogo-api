@@ -33,7 +33,6 @@ var notify = function (notification) {
 };
 
 var sendPush = function (notification) {
-
 //Note: To find all users with at least one device registered
 //User.find({$and: [{deviceTokens: {$ne: []}}, {deviceTokens: {$ne: null}}]});
 
@@ -47,28 +46,30 @@ var sendPush = function (notification) {
   User.findByIdAsync(notification.user).then(function (user) {
     if (!user.deviceTokens) { return; }
     user.deviceTokens.forEach(function (token) {
-      try {
-        var device = new apn.Device(token);
-        var note = new apn.Notification();
-        note.badge = 0;
-        note.contentAvailable = 1;
-        note.sound = 'default';
-        note.alert = {
-          body : msgs[notification.verb],
-          verb: notification.verb,
-          objectType: notification.objectType,
-          objectId: notification.verb === 'follow' ? notification.object: notification.object.id
-        };
-        note.device = device;
+      if (token.os === 'ios') {
+        try {
+          var device = new apn.Device(token.token);
+          var note = new apn.Notification();
+          note.badge = 0;
+          note.contentAvailable = 1;
+          note.sound = 'default';
+          note.alert = {
+            body : msgs[notification.verb],
+            verb: notification.verb,
+            objectType: notification.objectType,
+            objectId: notification.verb === 'follow' ? notification.object: notification.object.id
+          };
+          note.device = device;
 
-        var options = {
-          cert: config.apns.cert,
-          key:  config.apns.key
-        };
-        var apnsConnection = new apn.Connection(options);
-        apnsConnection.sendNotification(note);
-      } catch (e) {
-        console.error(e);
+          var options = {
+            cert: config.apns.cert,
+            key:  config.apns.key
+          };
+          var apnsConnection = new apn.Connection(options);
+          apnsConnection.sendNotification(note);
+        } catch (e) {
+          console.error(e);
+        }
       }
     });
   });

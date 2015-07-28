@@ -293,17 +293,15 @@ describe('User Router', function () {
     
     it('should send 201', function (done) {
       sinon.stub(User, 'registerDeviceToken')
-        .returns(Promise.resolve({ userId: 'user1' }));
+        .returns(Promise.resolve('returned token'));
       app.post(path)
         .set('x-access-token', 'testToken')
-        .send({ token: 'testiosdevicetoken' })
+        .send({ token: 'testiosdevicetoken', os: 'ios' })
         .expect(201, function (err, res) {
           if (err) { return done (err); }
-          expect(res.body).to.deep.equal({
-            user: { userId: 'user1' }
-          });
+          expect(res.body).to.equal('returned token');
           expect(User.registerDeviceToken).to.have.been
-            .calledWith(testUser.id, 'testiosdevicetoken'); 
+            .calledWith(testUser.id, 'testiosdevicetoken', 'ios'); 
           User.registerDeviceToken.restore();
           done();
         });

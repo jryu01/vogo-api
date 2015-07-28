@@ -13,6 +13,11 @@ var FollowerSchema = new Schema({
   name: String,
 });
 
+var DeviceTokenSchema = new Schema({
+  token: String,
+  os: String
+});
+
 var UserSchema = new Schema({
   email: { 
     type: String, 
@@ -31,10 +36,10 @@ var UserSchema = new Schema({
   },
   followers: { type: [ FollowerSchema ] },
 
-  deviceTokens: [String],
+  deviceTokens: [ DeviceTokenSchema ],
 });
 
-UserSchema.index({'deviceTokens': 1});
+UserSchema.index({'deviceTokens.token': 1});
 UserSchema.index({'followers.userId': 1});
 
 UserSchema.pre('save', function (next) { 
@@ -144,24 +149,29 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
   });
 };
 
-UserSchema.statics.registerDeviceToken = function (userId, deviceToken) {
+UserSchema.statics.registerDeviceToken = function (userId, deviceToken, os) {
   var model = this;
+  var query = { _id: userId, 'deviceTokens.token': { $ne: deviceToken } };
   var addToken = {
-    '$addToSet': {
-      'deviceTokens': deviceToken
+    '$push': {
+      'deviceTokens': { token: deviceToken, os: os }
     }
   };
+
   var removeTokenFromPrevUser = this.updateAsync(
-    { 'deviceTokens': deviceToken },
+    { 'deviceTokens.token': deviceToken },
     {
       '$pull': {
-        'deviceTokens': deviceToken
+        'deviceTokens': { token: deviceToken } 
       }
     },
     { multi: true }
   );
-  return removeTokenFromPrevUser.then(function (r) {
-    return model.findByIdAndUpdateAsync(userId, addToken);
+
+  return removeTokenFromPrevUser.then(function () {
+    return model.findOneAndUpdateAsync(query, addToken).then(function () {
+      return { userId: userId, token: deviceToken, os: os };
+    });
   });
 };
 

@@ -226,9 +226,8 @@ var getS3Info = function (req, res, next) {
 };
 
 var registerDeviceToken = function (req, res, next) {
-  User.registerDeviceToken(req.user.id, req.body.token).then(function (user) {
-    res.status(201).json({ user: user });
-  }).catch(next);
+  User.registerDeviceToken(req.user.id, req.body.token, req.body.os || 'ios')
+    .then(res.status(201).json.bind(res)).catch(next);
 };
 
 var userRouter = module.exports = function () {
