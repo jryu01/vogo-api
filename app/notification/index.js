@@ -36,7 +36,7 @@ var notify = function (notification) {
 var sendPush = function (notification) {
 //Note: To find all users with at least one device registered
 //User.find({$and: [{deviceTokens: {$ne: []}}, {deviceTokens: {$ne: null}}]});
-
+  console.log(notification);
   var actor = notification.actor.name;
   var question = notification.object && notification.object.question;
   var msgs = {
@@ -64,7 +64,7 @@ var sendPush = function (notification) {
           var note = new apn.Notification();
           note.badge = 0;
           note.contentAvailable = 1;
-          note.sound = 'default';
+          note.sound = payload.verb === 'vote' ? '' : 'default';
           note.alert = payload;
           note.device = device;
 
@@ -175,7 +175,6 @@ var notification = module.exports = function () {
           updatedAt: Date.now()
         }),
         options = { new: true, upsert: true };
-
     Notification.findOneAndUpdateAsync(query, newNotification, options)
       .then(populate)
       .then(notify)
