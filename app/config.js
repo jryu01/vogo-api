@@ -22,6 +22,9 @@ var config = (function (env) {
     bing: {
       accountKey: process.env.BING_ACC_KEY
     },
+    google: {
+      apiKey: process.env.GOOGLE_API_KEY
+    },
     apns: {
       cert: 'vogoPushDevCert.pem',
       key: 'vogoPushDevKey.pem'

@@ -8,6 +8,7 @@ var requireToken = require('app/middleware/requireToken'),
     config = require('app/config'),
     User = require('app/user/user'),
     apn = require('apn'),
+    gcm = require('node-gcm'),
     eb = require('app/eventBus'),
     _ = require('lodash');
 
@@ -43,8 +44,19 @@ var sendPush = function (notification) {
     comment: actor + ' commented on the question: "' + question + '"', 
     create: actor + ' asked: "' + question + '"'
   };
+  var payload = {
+    title: 'Vogo',
+    body : msgs[notification.verb],
+    verb: notification.verb,
+    objectType: notification.objectType,
+    objectId: notification.verb === 'follow' ? notification.object: notification.object.id
+  };
   User.findByIdAsync(notification.user).then(function (user) {
+
+    var androidDevices = [];
+
     if (!user.deviceTokens) { return; }
+
     user.deviceTokens.forEach(function (token) {
       if (token.os === 'ios') {
         try {
@@ -53,12 +65,7 @@ var sendPush = function (notification) {
           note.badge = 0;
           note.contentAvailable = 1;
           note.sound = 'default';
-          note.alert = {
-            body : msgs[notification.verb],
-            verb: notification.verb,
-            objectType: notification.objectType,
-            objectId: notification.verb === 'follow' ? notification.object: notification.object.id
-          };
+          note.alert = payload;
           note.device = device;
 
           var options = {
@@ -70,9 +77,28 @@ var sendPush = function (notification) {
         } catch (e) {
           console.error(e);
         }
+      } else if (token.os === 'android') {
+        androidDevices.push(token.token);
       }
     });
-  });
+    
+    if (androidDevices.length < 1) { return; } 
+
+    // send push to android devices
+
+    var message = new gcm.Message();
+
+    message.addData(_.assign(payload, { 
+      message: payload.body 
+    }));
+
+    // Set up the sender with you API key
+    var sender = new gcm.Sender(config.google.apiKey); 
+    //Now the sender can be used to send messages
+    sender.send(message, androidDevices, 4, function (err, result) {
+      if (err) { console.error(err); }
+    });
+  }).catch(console.error);
 };
 // notification module 
 var notification = module.exports = function () {
