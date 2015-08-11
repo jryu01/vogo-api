@@ -29,14 +29,9 @@ var populate = function (notification) {
   });
 };
 
-var notify = function (notification) {
-  sendPush(notification);
-};
-
 var sendPush = function (notification) {
 //Note: To find all users with at least one device registered
 //User.find({$and: [{deviceTokens: {$ne: []}}, {deviceTokens: {$ne: null}}]});
-  console.log(notification);
   var actor = notification.actor.name;
   var question = notification.object && notification.object.question;
   var msgs = {
@@ -100,6 +95,7 @@ var sendPush = function (notification) {
     });
   }).catch(console.error);
 };
+
 // notification module 
 var notification = module.exports = function () {
 
@@ -120,7 +116,7 @@ var notification = module.exports = function () {
 
     Notification.findOneAndUpdateAsync(query, newNotification, options)
       .then(populate)
-      .then(notify)
+      .then(sendPush)
       .catch(console.error);
   };
 
@@ -143,7 +139,7 @@ var notification = module.exports = function () {
 
         Notification.createAsync(newNotification)
           .then(populate)
-          .then(notify)
+          .then(sendPush)
           .catch(console.error);
 
         i += 1;
@@ -177,7 +173,7 @@ var notification = module.exports = function () {
         options = { new: true, upsert: true };
     Notification.findOneAndUpdateAsync(query, newNotification, options)
       .then(populate)
-      .then(notify)
+      .then(sendPush)
       .catch(console.error);
   };
 
@@ -201,7 +197,7 @@ var notification = module.exports = function () {
       };
       Notification.createAsync(newNotification)
         .then(populate)
-        .then(notify)
+        .then(sendPush)
         .catch(console.error);
     });
   };
