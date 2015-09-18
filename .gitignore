@@ -1,4 +1,5 @@
 startDev
+dbScript.js
 
 # DS_Store file
 .DS_Store
