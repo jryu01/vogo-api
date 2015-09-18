@@ -36,6 +36,8 @@ var UserSchema = new Schema({
   },
   followers: { type: [ FollowerSchema ] },
 
+  _updated: Boolean,
+
   deviceTokens: [ DeviceTokenSchema ],
 });
 

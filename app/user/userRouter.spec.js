@@ -164,12 +164,14 @@ describe('User Router', function () {
     
     describe('with facebook access token', function () {
       
-      var revert, mockRequest, user;
+      var revert, mockRequest, mockPUploader, user;
       
       beforeEach(function (done) {
         var userData = {
           email: 'test@vogo.com',
           name: 'Test Vogo',
+          picture: 'ppic',
+          _updated: true,
           facebook: {
             id: 'fbtestid123',
             name: 'Test Vogo'
@@ -184,8 +186,10 @@ describe('User Router', function () {
       
       beforeEach(function () {
         mockRequest = sinon.stub();
+        mockPUploader = sinon.stub();
         revert = router.__set__({
-          request: mockRequest
+          request: mockRequest,
+          pUploader: mockPUploader
         });
         mockRequest.returns(Promise.resolve([{
           statusCode: 200
@@ -269,20 +273,62 @@ describe('User Router', function () {
         '   "picture": {"data": { "url": "profileUrl" } }' + 
         '}'
         ]));
+        mockPUploader.withArgs('profileUrl')
+          .returns(Promise.resolve('s3ProfileUrl'));
         
         app.post(path).send(reqBody).expect(200, function (err, res) {
           if (err) { return done(err); } 
           expect(res.body).to.have.property('access_token').that.is.an('string');
           expect(res.body.user).to.have.property('name', 'Sam Power');
           expect(res.body.user).to.have.property('email', 'sam@home.net');
-          expect(res.body.user).to.have.property('picture', 'profileUrl');
+          expect(res.body.user).to.have.property('picture', 's3ProfileUrl');
           expect(res.body.user.facebook).to.have.property('id', 'newFbId12345');
           expect(res.body.user.facebook).to.have.property('email', 'sam@home.net');
           expect(res.body.user.facebook).to.have.property('name', 'Sam Power');
-          expect(res.body.user.facebook).to.have
-              .property('picture', 'profileUrl');
           done();
         });  
+      });
+
+      it('should send 200 and update profile picture of existing user',
+        function (done) {
+        var existingUser = {
+          email: 'test2@vogo.com',
+          name: 'Test Vogo2',
+          picture: 'previousProfilePic',
+          facebook: {
+            id: 'fbtestidpicturetest',
+            name: 'Test Vogo2'
+          }
+        };
+        User.create(existingUser, function (err, user) {
+          if (err) { return done(err); } 
+
+          var reqBody = {grantType: 'facebook', facebookAccessToken: 'anotherfakefbtk'};
+
+          mockRequest.returns(Promise.resolve([{
+            statusCode: 200
+          },
+          '{' + 
+          '   "id": "fbtestidpicturetest",' +
+          '   "email": "test2@vogo.com",' + 
+          '   "name": "Test Vogo2",' +
+          '   "picture": {"data": { "url": "previousProfilePic" } }' + 
+          '}'
+          ]));
+          mockPUploader.withArgs('previousProfilePic')
+            .returns(Promise.resolve('s3ProfileUrl'));
+          
+          app.post(path).send(reqBody).expect(200, function (err, res) {
+            if (err) { return done(err); } 
+            expect(res.body).to.have.property('access_token').that.is.an('string');
+            expect(res.body.user).to.have.property('name', 'Test Vogo2');
+            expect(res.body.user).to.have.property('email', 'test2@vogo.com');
+            expect(res.body.user).to.have.property('picture', 's3ProfileUrl');
+            expect(res.body.user.facebook).to.have.property('id', 'fbtestidpicturetest');
+            expect(res.body.user.facebook).to.have.property('name', 'Test Vogo2');
+            done();
+          });  
+        });
       });
     });
   });

@@ -34,7 +34,6 @@ var errorHandler = require('app/middleware/errorHandler.js'),
 app.use('/api', userRouter());
 app.use('/api', pollRouter());
 app.use('/api', bingRouter());
-app.use('/api', bingRouter());
 app.use('/api', notification());
 app.use(errorHandler());
 

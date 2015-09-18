@@ -44,6 +44,7 @@ var PollSchema = new Schema({
 
 // Indexes
 PollSchema.index({'createdBy.userId': 1, '_id': -1 });
+PollSchema.index({'comments.createdBy.userId': 1});
 PollSchema.index({'subscribers': 1});
 
 //Add toJSON option to transform document before returnig the result

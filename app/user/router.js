@@ -6,7 +6,8 @@ var jwt = require('jwt-simple'),
     express = require("express"),
     Promise = require('bluebird'),
     request = Promise.promisify(require("request")),
-    requireToken = require('app/middleware/requireToken');
+    requireToken = require('app/middleware/requireToken'),
+    pUploader = require('./pUploader');
 
 var createUser = function (req, res, next) {
   User.createAsync(req.body).then(res.status(201).json.bind(res)).catch(next);
@@ -71,22 +72,26 @@ var signinWithFacebook = function (req, res, next) {
   }).then(function (fbProfile) {
     return User.findOneAsync({ 'facebook.id': fbProfile.id }, '-followers')
     .then(function (user) {
-      if (!user) {
-        var picture = fbProfile.picture && fbProfile.picture.data && 
-            fbProfile.picture.data.url;
-        var newUser = {
+      if (!user || !user._updated) {
+        var usr = user || new User({
           email: fbProfile.email,
           name: fbProfile.name,
-          picture: picture,
           facebook: { 
             id: fbProfile.id,
             email: fbProfile.email,
-            name: fbProfile.name,
-            picture: picture
+            name: fbProfile.name
           }
-        };
-        //TODO: change this to upsert
-        return User.createAsync(newUser);
+        });
+        var picture = fbProfile.picture && fbProfile.picture.data && 
+            fbProfile.picture.data.url;
+        return pUploader(picture, usr.id).then(function (uploadedUrl) {
+          usr.picture = uploadedUrl;
+          
+          // return User.createOrUpdate()
+          return User.findOneAndUpdateAsync(
+            { _id: usr.id }, usr.toJSON(), { upsert: true }
+          );
+        });
       }
       return user;
     });
@@ -249,5 +254,6 @@ var userRouter = module.exports = function () {
   router.get('/users/:id/following-count', requireToken, getFollowingCount);
 
   router.get('/relationships/following', requireToken, getFollowingInfo);
+
   return router;
 };
