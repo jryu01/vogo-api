@@ -35,6 +35,45 @@ describe('User', function () {
     eb.emit.restore();
   });
 
+  describe('.createOrUpdate', function () {
+    it('should create a new user', function () {
+      var user = new User({
+        email: 'testuser@test.net',
+        name: 'test user',
+        facebook: { 
+          id: 'fbfakeid123',
+          email: 'testUser@test.net',
+          name: 'test user'
+        }
+      });
+      return expect(User.createOrUpdate(user.id, user.toJSON())).to.be.fulfilled.then(function (user) {
+        expect(user).to.have.property('id', user.id);
+        expect(user).to.have.property('email', 'testuser@test.net');
+      });
+    });
+
+    it('should update existing user', function () {
+      var user = new User({
+        email: 'testuser@test.net',
+        name: 'test user',
+        facebook: { 
+          id: 'fbfakeid123',
+          email: 'testUser@test.net',
+          name: 'test user'
+        }
+      });
+      var p = User.createAsync(user).then(function () {
+        var update = user.toJSON();
+        update.name = 'updated user';
+        return User.createOrUpdate(user.id, update); 
+      });
+      return expect(p).to.be.fulfilled.then(function (user) {
+        expect(user).to.have.property('id', user.id);
+        expect(user).to.have.property('name', 'updated user');
+      });
+    });
+  });
+
   it('should create a new user', function () {
     data = userData.create();
     return expect(User.createAsync(data)).to.be.fulfilled.then(function (user){
@@ -131,6 +170,7 @@ describe('User', function () {
       expect(users[0].deviceTokens).to.be.empty;
       expect(users[1].deviceTokens[0].token).to.equal('iphone1Token');
     });
+
   });
 
   describe('(user graph)', function () {

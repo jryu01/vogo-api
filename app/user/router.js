@@ -85,12 +85,10 @@ var signinWithFacebook = function (req, res, next) {
         var picture = fbProfile.picture && fbProfile.picture.data && 
             fbProfile.picture.data.url;
         return pUploader(picture, usr.id).then(function (uploadedUrl) {
+          usr._updated = true;
           usr.picture = uploadedUrl;
-          
-          // return User.createOrUpdate()
-          return User.findOneAndUpdateAsync(
-            { _id: usr.id }, usr.toJSON(), { upsert: true }
-          );
+
+          return User.createOrUpdate(usr.id, usr.toJSON());
         });
       }
       return user;

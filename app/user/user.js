@@ -3,6 +3,7 @@
 var Promise = require('bluebird'),
     mongoose = Promise.promisifyAll(require('mongoose')),
     bcrypt = Promise.promisifyAll(require('bcrypt')),
+    Poll = require('app/poll/poll'),
     eb = require('app/eventBus'),
     SALT_WORK_FACTOR = 10,
     Schema = mongoose.Schema;
@@ -151,6 +152,69 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
   });
 };
 
+////////////
+
+// this needs test
+var updateUserData = function (userModel, user) {
+  var setUpdatedToFalse = function () {
+    userModel.updateAsync({ _id: userId }, {'$set': {'_updated': false}});
+  };
+
+  var userId = user.id;
+  var options = { multi: true };
+  // update the user in poll collection
+  Poll.updateAsync(
+    { 'createdBy.userId': userId }, 
+    { '$set': {'createdBy.picture': user.picture} }, 
+    options
+  ).then(setUpdatedToFalse)
+  .catch(setUpdatedToFalse);
+
+  // update the user in followers lists 
+  userModel.updateAsync(
+    { 'followers.userId': userId }, 
+    { '$set': {'followers.$.picture': user.picture} }, 
+    options
+  ).catch(setUpdatedToFalse);
+
+  Poll.find({'comments.createdBy.userId': userId}).stream()
+    .on('data', function (poll) {
+      poll.comments.forEach(function (comment) {
+        if (!comment.createdBy) { return; }
+        if (comment.createdBy.userId.equals(userId)) {
+          comment.createdBy.picture = user.picture;
+        }
+      });
+      poll.save();
+    })
+    .on('error', setUpdatedToFalse);
+};
+
+UserSchema.statics.createOrUpdate = function (userId, userData) {
+  var that = this;
+  return new Promise(function (resolve, reject) {
+    that.findOneAndUpdate(
+      { _id: userId },
+      userData, 
+      { 'new': true, upsert: true, 'passRawResult': true },
+      function (err, user, raw) {
+        if (err) { reject(err); }
+
+        // Need Test ///////////
+        var updatedExisting = raw && raw.lastErrorObject &&
+            raw.lastErrorObject.updatedExisting;
+        if (updatedExisting) {
+          updateUserData(that, user);
+        }
+        //////////////////////////
+
+        return resolve(user);
+      }
+    );
+
+  });
+};
+
 UserSchema.statics.registerDeviceToken = function (userId, deviceToken, os) {
   var model = this;
   var query = { _id: userId, 'deviceTokens.token': { $ne: deviceToken } };
@@ -190,5 +254,5 @@ UserSchema.options.toJSON = {
     delete ret.password;
   }
 };
- 
+
 module.exports = mongoose.model('User', UserSchema);

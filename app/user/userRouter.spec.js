@@ -324,6 +324,7 @@ describe('User Router', function () {
             expect(res.body.user).to.have.property('name', 'Test Vogo2');
             expect(res.body.user).to.have.property('email', 'test2@vogo.com');
             expect(res.body.user).to.have.property('picture', 's3ProfileUrl');
+            expect(res.body.user).to.have.property('_updated', true);
             expect(res.body.user.facebook).to.have.property('id', 'fbtestidpicturetest');
             expect(res.body.user.facebook).to.have.property('name', 'Test Vogo2');
             done();

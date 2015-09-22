@@ -128,7 +128,7 @@ PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
   update.$inc['answer' + answerNumber + '.numVotes'] = 1;
   update.$addToSet['answer'+ answerNumber + '.voters'] = voterId;
 
-  return this.findOneAndUpdateAsync(query, update).then(function (poll) {
+  return this.findOneAndUpdateAsync(query, update, {'new': true}).then(function (poll) {
     if (poll) {
       setImmediate(function () {
         eb.emit('pollModel:vote', { 
@@ -162,7 +162,7 @@ PollSchema.statics.comment = function (pollId, user, text) {
       'numComments': 1
     }
   };
-  return this.findByIdAndUpdateAsync(pollId, update).then(function (poll) {
+  return this.findByIdAndUpdateAsync(pollId, update, {'new': true}).then(function (poll) {
     if (poll) {
       setImmediate(function () {
         eb.emit('pollModel:comment', { userId: user.id, poll: poll });
