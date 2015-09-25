@@ -1,4 +1,5 @@
-startDev
+run.sh
+runDev.sh
 dbScript.js
 
 # DS_Store file
