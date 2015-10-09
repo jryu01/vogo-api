@@ -1,16 +1,22 @@
-'use strict';
+  'use strict';
 
 var methodOverride = require('method-override'),
     bodyParser = require('body-parser'),
     express = require('express'),
-    logger  = require('morgan'), // HTTP request logger
+    morgan  = require('morgan'), // HTTP request logger
     config = require('./config'),
     app = express();
 
 app.use(bodyParser.json());
 app.use(methodOverride());
+
+// set up logging
 if (config.env === 'development') {
-  app.use(logger('dev'));
+  app.use(morgan('dev'));
+} else {
+  app.use(morgan('combined', {
+    skip: function (req, res) { return res.statusCode < 400; }
+  }));
 }
 
 app.use('/', function (req, res, next) {
