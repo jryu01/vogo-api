@@ -44,7 +44,6 @@ var useMock = function (originalModule, mock) {
   originalModule._originalProperties = _.clone(originalModule);
   originalModule._isMockedObj = true;
 
-
   _.assign(originalModule, mock);
 
   originalModule.restoreOriginal = function () {
@@ -54,30 +53,31 @@ var useMock = function (originalModule, mock) {
     delete this._isMockedObj;
     delete this.restoreOriginal;
   };
-
 };
 
-// setup
-
-// db connection
-before(function (done) {
-  // connect database
+var connectDb = function (callback) {
   if (mongoose.connection.readyState === 0) {
     mongoose.connect(config.mongo.url, function (err) {
       if (err) {
         throw err;
       }
-      return done();
+      return callback();
     });
   } else {
-    return done();
+    return callback();
   }
+};
+
+// global setup and teardown
+
+before(function (done) {
+  useMock(bcrypt, mockBcrypt);
+  connectDb(done);
 });
 
-// setup mocks 
-before(function () {
-  //use mockBcrypt for entire testing because hashing is too expensive
-  useMock(bcrypt, mockBcrypt);
+after(function (done) {
+  bcrypt.restoreOriginal();
+  mongoose.disconnect(done);
 });
 
 // cleanup db
@@ -87,11 +87,4 @@ beforeEach(function (done) {
     mongoose.connection.collections[i].remove(function () {});
   } 
   return done();
-});
-
-// teardown
-
-// afterEach();
-after(function () {
-  bcrypt.restoreOriginal();
 });
