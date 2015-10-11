@@ -62,6 +62,7 @@ describe('Poll Router', function () {
       }));
       request(app).post('/polls')
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .send(reqBody)
         .expect(201, function (err, res) {
           if (err) { return done(err); } 
@@ -88,6 +89,7 @@ describe('Poll Router', function () {
 
       request(app).post('/polls/' + pollId + '/votes')
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .send(reqBody)
         .expect(201, function (err, res) {
           if (err) { return done(err); } 
@@ -97,13 +99,14 @@ describe('Poll Router', function () {
     });
 
     it('should send 404 with non-existing poll', function (done) {
-      var reqBody = { answer: 1 };
+      var reqBody = { answer: 1 },
+          expected = /poll not found or already voted with the user/;
       Vote.createNew.withArgs(user.id, pollId, 1)
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/votes')
         .set('x-access-token', 'testToken')
         .send(reqBody)
-        .expect(404, { status: 404, message: 'poll not found or already voted with the user' }, done);
+        .expect(404, expected, done);
     });
   });
 
@@ -126,18 +129,21 @@ describe('Poll Router', function () {
         }));
       request(app).post('/polls/' + pollId + '/comments')
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .send(reqBody)
         .expect(201, {text: 'new comment'}, done);
     });
 
     it('should send 404 with non existing poll', function (done) {
-      var reqBody = { text: 'new comment' };
+      var reqBody = { text: 'new comment' },
+          expected = /poll not found/;
       Poll.comment.withArgs(pollId, user, 'new comment')
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/comments')
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .send(reqBody)
-        .expect(404, { status: 404, message: 'poll not found' }, done);
+        .expect(404, expected, done);
     });
   });
 
@@ -154,6 +160,7 @@ describe('Poll Router', function () {
 
       request(app).get('/polls/' + pollId + '/comments')
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .expect(200, [{text: 'comment1'}, {text: 'comment2'}], done);
     });
 
@@ -163,6 +170,7 @@ describe('Poll Router', function () {
         
       request(app).get('/polls/' + pollId + '/comments')
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .query({ skip: 20, limit: 2 })
         .expect(200, [{text: 'comment1'}, {text: 'comment2'}], done);
     });
@@ -182,6 +190,7 @@ describe('Poll Router', function () {
 
       request(app).get('/polls/' + pollId)
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .expect(200, { id: pollId }, done);
     });
   });
@@ -199,6 +208,7 @@ describe('Poll Router', function () {
 
       request(app).get('/users/' + userId + '/polls').query({ limit: 20 })
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
         .expect(200, { question: 'poll?'}, done);
     });
 
@@ -208,8 +218,9 @@ describe('Poll Router', function () {
         .returns(Promise.resolve({ question: 'poll?' }));
 
       request(app).get('/users/' + userId + '/polls')
-        .query({ before: pollId })
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ before: pollId })
         .expect(200, { question: 'poll?'}, done);
     });
   });
@@ -231,8 +242,10 @@ describe('Poll Router', function () {
       Vote.getByUserId.withArgs(userId, null, 20)
         .returns(Promise.resolve({ id: 1 }));
 
-      request(app).get('/users/' + userId + '/votes').query({ limit: 20 })
+      request(app).get('/users/' + userId + '/votes')
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ limit: 20})
         .expect(200, { id: 1 }, done);
     });
 
@@ -242,8 +255,9 @@ describe('Poll Router', function () {
         .returns(Promise.resolve( { id: 1 }));
 
       request(app).get('/users/' + userId + '/votes')
-        .query({ before: voteId, limit: 20 })
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ before: voteId, limit: 20 })
         .expect(200, { id: 1 }, done);
     });
 
@@ -253,8 +267,9 @@ describe('Poll Router', function () {
         .returns(Promise.resolve( { id: 2 }));
 
       request(app).get('/users/' + userId + '/votes')
-        .query({ pollIds: [pollId] })
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ pollIds: [pollId] })
         .expect(200, { id: 2 }, done);
     });
   });
@@ -275,8 +290,9 @@ describe('Poll Router', function () {
         .returns(Promise.resolve([{ name: 'user1' }]));
 
       request(app).get('/polls/' + pollId + '/voters')
-        .query({ answer: 1 })
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ answer: 1 })
         .expect(200, [{ name: 'user1'}], done);
     });
 
@@ -285,8 +301,9 @@ describe('Poll Router', function () {
         .returns(Promise.resolve([{ name: 'user1' }]));
 
       request(app).get('/polls/' + pollId + '/voters')
-        .query({ answer: 2, limit: 1, skip: 20 })
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ answer: 2, limit: 1, skip: 20 })
         .expect(200, [{ name: 'user1'}], done);
     });
 
@@ -295,8 +312,9 @@ describe('Poll Router', function () {
         .returns(Promise.resolve([{ name: 'user1' }]));
 
       request(app).get('/polls/' + pollId + '/voters')
-        .query({ answer: 2 })
         .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ answer: 2 })
         .expect(200, [{ name: 'user1'}], done);
     });
   });

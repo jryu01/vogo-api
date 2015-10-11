@@ -1,6 +1,7 @@
 'use strict';
 
 var requireToken = require('app/middleware/requireToken'),
+    errorhandler = require('api-error-handler'),
     mongoose = require('mongoose'),
     express = require("express"),
     Poll = require('./poll'),
@@ -19,10 +20,10 @@ var vote = function (req, res, next) {
   Vote.createNew(req.user.id, req.params.id, req.body.answer)
     .then(function (vote) {
       if (!vote) {
-        res.status(404).json({
+        throw {
           status: 404, 
           message: 'poll not found or already voted with the user' 
-        });
+        };
       }
       res.status(201).json(vote);
     }).catch(next);
@@ -33,7 +34,7 @@ var comment = function (req, res, next) {
   var pollId = req.params.id;
   Poll.comment(pollId, req.user, req.body.text).then(function (poll) {
     if (!poll) {
-      res.status(404).json({ status: 404, message: 'poll not found' });
+      throw { status: 404, message: 'poll not found' };
     }
     var newComment = poll.comments[poll.comments.length - 1];
     res.status(201).json(newComment);
@@ -122,5 +123,6 @@ var pollRouter = module.exports = function () {
   //Need Test
   router.get('/polls', getRecentUnvotedPolls);
 
+  router.use(errorhandler());
   return router; 
 };
