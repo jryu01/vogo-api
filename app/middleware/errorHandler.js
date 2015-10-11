@@ -27,8 +27,8 @@ var errorHanlder = module.exports = function () {
         res.json({ message: err.message });
         break;
       default:
-        console.log(e);
-        console.log(e.stack);
+        // console.log(e);
+        // console.log(e.stack);
         res.status(err.status || 500);
         res.json({ message: err.message });
     }

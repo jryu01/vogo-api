@@ -115,13 +115,14 @@ describe('User', function () {
 
   it('should hash with higher salt work factor in production', function () {
     var originalEnv = config.env;
-    sinon.spy(bcrypt, 'hashAsync');
+    var hashAsync = sinon.stub(bcrypt, 'hashAsync');
+    hashAsync.returns(Promise.resolve({}));
     config.env = 'production';
     return User.createAsync(data).then(function (user) {
       expect(bcrypt.hashAsync).to.be.calledWith(data.password, 10);
     }).finally(function () {
       config.env = originalEnv;
-      bcrypt.hashAsync.restore();
+      hashAsync.restore();
     });
   });
 

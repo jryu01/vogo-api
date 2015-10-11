@@ -36,10 +36,10 @@ var createApp = function () {
     requireToken: mockRequireToken   
   });
   app.use(router());
-  app.use(function (err, req, res, next) {
-    res.status(err.status);
-    res.json(err);
-  });
+  // app.use(function (err, req, res, next) {
+  //   res.status(err.status);
+  //   res.json(err);
+  // });
   return request(app);
 };
 
