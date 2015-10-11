@@ -104,21 +104,23 @@ var getRecentUnvotedPolls = function (req, res, next) {
 var pollRouter = module.exports = function () {
   
   var router = express.Router();
+
+  router.use(requireToken); 
   
-  router.post('/polls', requireToken, publish);
-  router.post('/polls/:id/votes', requireToken, vote);
-  router.post('/polls/:id/comments', requireToken, comment);
+  router.post('/polls', publish);
+  router.post('/polls/:id/votes', vote);
+  router.post('/polls/:id/comments', comment);
 
-  router.get('/polls/:id', requireToken, getPollById);
-  router.get('/polls/:id/comments', requireToken, getComments);
+  router.get('/polls/:id', getPollById);
+  router.get('/polls/:id/comments', getComments);
 
-  router.get('/polls/:id/voters', requireToken, getVoters);
+  router.get('/polls/:id/voters', getVoters);
 
-  router.get('/users/:id/polls', requireToken, getUserPolls);
-  router.get('/users/:id/votes', requireToken, getUserVotes);
+  router.get('/users/:id/polls', getUserPolls);
+  router.get('/users/:id/votes', getUserVotes);
 
   //Need Test
-  router.get('/polls', requireToken, getRecentUnvotedPolls);
+  router.get('/polls', getRecentUnvotedPolls);
 
   return router; 
 };

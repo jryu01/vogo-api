@@ -46,14 +46,14 @@ describe('Poll Router', function () {
   
   var app = createApp();
 
+  it('should require a jwt', function (done) {
+    request(app).post('/anyRoute').expect(401, done);
+  });
+
   describe('POST /polls', function () {
 
     beforeEach(function () { sinon.stub(Poll, 'publish'); });
     afterEach(function () { Poll.publish.restore(); });  
-
-    it('should require an access token', function (done) {
-      request(app).post('/polls').expect(401, done);
-    });
 
     it('should send 201 with created poll data', function (done) {
       var reqBody = {
@@ -84,10 +84,6 @@ describe('Poll Router', function () {
     });
     afterEach(function () { 
       Vote.createNew.restore(); 
-    });
-
-    it('should require an access token', function (done) {
-      request(app).post('/polls/' + pollId + '/votes').expect(401, done);
     });
 
     it('should send 201 with result', function (done) {
@@ -126,10 +122,6 @@ describe('Poll Router', function () {
       Poll.comment.restore(); 
     });
 
-    it('should require an access token', function (done) {
-      request(app).post('/polls/' + pollId + '/comments').expect(401, done);
-    });
-
     it('should send 201 with created comments', function (done) {
       var reqBody = { text: 'new comment' };
       Poll.comment.withArgs(pollId, user, 'new comment')
@@ -160,10 +152,6 @@ describe('Poll Router', function () {
     beforeEach(function () { sinon.stub(Poll, 'getComments'); });
     afterEach(function () { Poll.getComments.restore(); });  
 
-    it('should require an access token', function (done) {
-      request(app).get('/polls/' + pollId + '/comments').expect(401, done);
-    });
-
     it('should send 200 with comments', function (done) {
       Poll.getComments.withArgs(pollId, { skip: 0, limit: 20 })
         .returns(Promise.resolve([{text: 'comment1'}, {text: 'comment2'}]));
@@ -192,10 +180,6 @@ describe('Poll Router', function () {
     beforeEach(function () { sinon.stub(Poll, 'getById'); });
     afterEach(function () { Poll.getById.restore(); });  
 
-    it('should require an access token', function (done) {
-      request(app).get('/polls/' + pollId).expect(401, done);
-    });
-
     it('should send 200 with a poll', function (done) {
       Poll.getById.withArgs(pollId)
         .returns(Promise.resolve({ id: pollId }));
@@ -212,10 +196,6 @@ describe('Poll Router', function () {
 
     beforeEach(function () { sinon.stub(Poll, 'getByUserId'); });
     afterEach(function () { Poll.getByUserId.restore(); });  
-
-    it('should require an access token', function (done) {
-      request(app).get('/users/' + userId + '/polls').expect(401, done);
-    });
 
     it('should send 200 with data', function (done) {
       Poll.getByUserId.withArgs(userId, null, 20)
@@ -250,10 +230,6 @@ describe('Poll Router', function () {
       Vote.getByUserId.restore(); 
       Vote.getByUserIdAndPollIds.restore(); 
     });  
-
-    it('should require an access token', function (done) {
-      request(app).get('/users/' + userId + '/votes').expect(401, done);
-    });
 
     it('should send 200 with data', function (done) {
       Vote.getByUserId.withArgs(userId, null, 20)
@@ -297,10 +273,6 @@ describe('Poll Router', function () {
     afterEach(function () { 
       Vote.getVotersFor.restore(); 
     });  
-
-    it('should require an access token', function (done) {
-      request(app).get('/polls/' + pollId + '/voters').expect(401, done);
-    });
 
     it('should send 200 with data', function (done) {
       Vote.getVotersFor.withArgs(pollId, 1)
