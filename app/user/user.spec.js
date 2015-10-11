@@ -6,8 +6,7 @@ var _ = require('lodash'),
     bcrypt = require('bcrypt'),
     rewire = require('rewire'),
     Promise = require('bluebird'),
-    mongoose = require('mongoose'),
-    testUtil = require('../../test/testUtil');
+    mongoose = require('mongoose');
 
 var userData = {
   create: function (overwrites) {
@@ -104,8 +103,10 @@ describe('User', function () {
 
   it('should save hashed password on creation', function () {
     data = userData.create();
-    return expect(User.createAsync(data)).to.eventually.have
-            .property('password', 'ASFEW24JKSFtestPasswordD12fj#jkdf10');
+    var passwordCompare = User.createAsync(data).then(function (user) {
+      return bcrypt.compareSync(data.password, user.password);
+    });
+    return expect(passwordCompare).to.be.eventually.true;
   });
 
   it('should not hash password if password is not modified', function () {
