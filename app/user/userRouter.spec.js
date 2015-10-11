@@ -42,6 +42,10 @@ var createApp = function () {
 describe('User Router', function () {
   
   var app = createApp();
+
+  it('should require authentication token', function (done) {
+    app.post('/').expect(401, done);
+  });
   
   describe('POST /login', function () {
     
@@ -377,10 +381,6 @@ describe('User Router', function () {
       });
     });
 
-    it('should return 401 without an accessToken', function (done) {
-      app.get(path).expect(401, done); 
-    });
-
     it('should retreive array of users', function (done) {
       app.get(path)
         .set('x-access-token', 'testToken')
@@ -419,12 +419,6 @@ describe('User Router', function () {
 
   describe('PUT /users/{userId}/follwoing/{target}', function () {
 
-    it('should require an access_token', function (done) {
-      var path = '/users/' + testUser.id +
-        '/following/507f1f77bcf86cd799439012';
-      app.put(path).expect(401, done);
-    });
-
     it('should send 403 if current user is not authorized', function (done) {
       var OTHER_USER_ID = mongoose.Types.ObjectId(),
           TARGET_ID = mongoose.Types.ObjectId(),
@@ -451,12 +445,6 @@ describe('User Router', function () {
   });
 
   describe('DELETE /users/{userId}/follwoing/{target}', function () {
-
-    it('should require an access_token', function (done) {
-      var path = '/users/' + testUser.id +
-        '/following/507f1f77bcf86cd799439012';
-      app.del(path).expect(401, done);
-    });
 
     it('should send 403 if current user is not authorized', function (done) {
       var OTHER_USER_ID = mongoose.Types.ObjectId(),
@@ -490,11 +478,6 @@ describe('User Router', function () {
     beforeEach(function () { sinon.stub(User, 'getFollowers'); });
     afterEach(function () { User.getFollowers.restore(); });
 
-    it('should require an access_token', function (done) {
-      var path = '/users/' + testUser.id + '/followers';
-      app.get(path).expect(401, done);
-    });
-
     it('should send 200 with list of followers', function (done) {
       var path = '/users/' + testUser.id + '/followers';
       User.getFollowers
@@ -521,11 +504,6 @@ describe('User Router', function () {
     beforeEach(function () { sinon.stub(User, 'getFollowerCount'); });
     afterEach(function () { User.getFollowerCount.restore(); });
 
-    it('should require an access_token', function (done) {
-      var path = '/users/' + testUser.id + '/followers-count';
-      app.get(path).expect(401, done);
-    });
-
     it('should send 200 with followers count', function (done) {
       var path = '/users/' + testUser.id + '/followers-count';
       User.getFollowerCount
@@ -541,11 +519,6 @@ describe('User Router', function () {
 
     beforeEach(function () { sinon.stub(User, 'getFollowing'); });
     afterEach(function () { User.getFollowing.restore(); });
-
-    it('should require an access_token', function (done) {
-      var path = '/users/' + testUser.id + '/following';
-      app.get(path).expect(401, done);
-    });
 
     it('should send 200 with list of following users', function (done) {
       var path = '/users/' + testUser.id + '/following';
@@ -574,11 +547,6 @@ describe('User Router', function () {
     beforeEach(function () { sinon.stub(User, 'getFollowingCount'); });
     afterEach(function () { User.getFollowingCount.restore(); });
 
-    it('should require an access_token', function (done) {
-      var path = '/users/' + testUser.id + '/following-count';
-      app.get(path).expect(401, done);
-    });
-
     it('should send 200 with following count', function (done) {
       var path = '/users/' + testUser.id + '/following-count';
       User.getFollowingCount
@@ -594,11 +562,6 @@ describe('User Router', function () {
 
     beforeEach(function () { sinon.stub(User, 'getFollowingInfo'); });
     afterEach(function () { User.getFollowingInfo.restore(); });
-
-    it('should require an access_token', function (done) {
-      var path = '/relationships/following';
-      app.get(path).expect(401, done);
-    });
 
     it('should send 200', function (done) {
       var path = '/relationships/following',

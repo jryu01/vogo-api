@@ -226,23 +226,27 @@ var registerDeviceToken = function (req, res, next) {
 var userRouter = module.exports = function () {
   
   var router = express.Router();
-  
+
   router.post('/login', signin);
-  router.get('/s3info', requireToken, getS3Info); //TODO: need test
-  router.post('/deviceTokens', requireToken, registerDeviceToken);
-  
   router.post('/users', createUser);
-  router.get('/users', requireToken, listUsers); // will be depreciated
-  router.get('/users/:id', requireToken, getUser);
 
-  router.put('/users/:id/following/:target', requireToken, follow);
-  router.delete('/users/:id/following/:target', requireToken, unfollow);
-  router.get('/users/:id/followers', requireToken, getFollowers);
-  router.get('/users/:id/followers-count', requireToken, getFollowerCount);
-  router.get('/users/:id/following', requireToken, getFollowing);
-  router.get('/users/:id/following-count', requireToken, getFollowingCount);
+  // Below routes require authentication tokens
+  router.use(requireToken);  
 
-  router.get('/relationships/following', requireToken, getFollowingInfo);
+  router.get('/s3info', getS3Info); //TODO: need test
+  router.post('/deviceTokens', registerDeviceToken);
+  
+  router.get('/users', listUsers); // will be depreciated
+  router.get('/users/:id', getUser);
+
+  router.put('/users/:id/following/:target', follow);
+  router.delete('/users/:id/following/:target', unfollow);
+  router.get('/users/:id/followers', getFollowers);
+  router.get('/users/:id/followers-count', getFollowerCount);
+  router.get('/users/:id/following', getFollowing);
+  router.get('/users/:id/following-count', getFollowingCount);
+
+  router.get('/relationships/following', getFollowingInfo);
 
   router.use(errorhandler());
 
