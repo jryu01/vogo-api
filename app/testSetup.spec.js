@@ -38,13 +38,8 @@ var connectDb = function (callback) {
 };
 
 // global setup and teardown
-before(function (done) {
-  connectDb(done);
-});
-
-after(function (done) {
-  mongoose.disconnect(done);
-});
+before(connectDb);
+after(mongoose.disconnect.bind(mongoose));
 
 // cleanup db
 beforeEach(function (done) {
