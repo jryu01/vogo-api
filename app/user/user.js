@@ -3,9 +3,9 @@
 var Promise = require('bluebird'),
     mongoose = Promise.promisifyAll(require('mongoose')),
     bcrypt = Promise.promisifyAll(require('bcrypt')),
+    config = require('app/config'),
     Poll = require('app/poll/poll'),
     eb = require('app/eventBus'),
-    SALT_WORK_FACTOR = (process.env === 'production') ? 10 : 1,
     Schema = mongoose.Schema;
 
 var FollowerSchema = new Schema({
@@ -46,10 +46,12 @@ UserSchema.index({'deviceTokens.token': 1});
 UserSchema.index({'followers.userId': 1});
 
 UserSchema.pre('save', function (next) { 
-  var user = this;
+  var user = this,
+      saltWorkFactor = (config.env === 'production') ? 10 : 1;
+      
   if (!user.isModified('password')) { return next(); }
 
-  bcrypt.hashAsync(user.password, SALT_WORK_FACTOR).then(function (hash) {
+  bcrypt.hashAsync(user.password, saltWorkFactor).then(function (hash) {
     user.password = hash;
     next();
   });
@@ -198,7 +200,7 @@ UserSchema.statics.createOrUpdate = function (userId, userData) {
       function (err, user, raw) {
         if (err) { reject(err); }
 
-        // Need Test ///////////
+        // TODO: Need Test ///////////
         var updatedExisting = raw && raw.lastErrorObject &&
             raw.lastErrorObject.updatedExisting;
         if (updatedExisting) {

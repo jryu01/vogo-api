@@ -3,6 +3,7 @@
 
 var _ = require('lodash'),
     eb = require('app/eventBus'),
+    config = require('app/config'),
     bcrypt = require('bcrypt'),
     rewire = require('rewire'),
     Promise = require('bluebird'),
@@ -103,23 +104,37 @@ describe('User', function () {
 
   it('should save hashed password on creation', function () {
     data = userData.create();
+    sinon.spy(bcrypt, 'hashAsync');
     var passwordCompare = User.createAsync(data).then(function (user) {
+      expect(bcrypt.hashAsync).to.be.calledWith(data.password, 1);
+      bcrypt.hashAsync.restore();
       return bcrypt.compareSync(data.password, user.password);
     });
     return expect(passwordCompare).to.be.eventually.true;
   });
 
+  it('should hash with higher salt work factor in production', function () {
+    var originalEnv = config.env;
+    sinon.spy(bcrypt, 'hashAsync');
+    config.env = 'production';
+    return User.createAsync(data).then(function (user) {
+      expect(bcrypt.hashAsync).to.be.calledWith(data.password, 10);
+    }).finally(function () {
+      config.env = originalEnv;
+      bcrypt.hashAsync.restore();
+    });
+  });
+
   it('should not hash password if password is not modified', function () {
     data = userData.create();
     sinon.spy(bcrypt, 'hashAsync');
-    var promise = User.createAsync(data).then(function (user) {
+
+    return User.createAsync(data).then(function (user) {
       user.firstName = 'bob'; 
       return user.saveAsync();
-    });
-    return expect(promise).to.be.fulfilled.then(function () {
+    }).then(function () {
       expect(bcrypt.hashAsync).to.have.been.calledOnce;
-      bcrypt.hashAsync.restore();
-    });
+    }).finally(bcrypt.hashAsync.restore.bind(bcrypt.hashAsync));
   });
 
   it('should register device tokens to a user', function () {
