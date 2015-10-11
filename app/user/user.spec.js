@@ -111,14 +111,14 @@ describe('User', function () {
 
   it('should not hash password if password is not modified', function () {
     data = userData.create();
-    sinon.spy(bcrypt, 'genSaltAsync');
+    sinon.spy(bcrypt, 'hashAsync');
     var promise = User.createAsync(data).then(function (user) {
       user.firstName = 'bob'; 
       return user.saveAsync();
     });
     return expect(promise).to.be.fulfilled.then(function () {
-      expect(bcrypt.genSaltAsync).to.have.been.calledOnce;
-      bcrypt.genSaltAsync.restore();
+      expect(bcrypt.hashAsync).to.have.been.calledOnce;
+      bcrypt.hashAsync.restore();
     });
   });
 

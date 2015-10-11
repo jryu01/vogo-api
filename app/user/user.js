@@ -5,7 +5,7 @@ var Promise = require('bluebird'),
     bcrypt = Promise.promisifyAll(require('bcrypt')),
     Poll = require('app/poll/poll'),
     eb = require('app/eventBus'),
-    SALT_WORK_FACTOR = 10,
+    SALT_WORK_FACTOR = (process.env === 'production') ? 10 : 1,
     Schema = mongoose.Schema;
 
 var FollowerSchema = new Schema({
@@ -49,9 +49,7 @@ UserSchema.pre('save', function (next) {
   var user = this;
   if (!user.isModified('password')) { return next(); }
 
-  bcrypt.genSaltAsync(SALT_WORK_FACTOR).then(function (salt) {
-    return bcrypt.hashAsync(user.password, salt);
-  }).then(function (hash) {
+  bcrypt.hashAsync(user.password, SALT_WORK_FACTOR).then(function (hash) {
     user.password = hash;
     next();
   });
