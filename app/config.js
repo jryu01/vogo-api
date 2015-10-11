@@ -35,7 +35,7 @@ var config = (function (env) {
   conf.development = {
     env: "development",
     mongo: {
-      url: "mongodb://localhost/voteit-api-dev"
+      url: process.env.MONGO_URI || "mongodb://localhost/voteit-api-dev"
     },
     aws: {
       bucket: 'dev.vogo',
@@ -44,12 +44,12 @@ var config = (function (env) {
     }
   };
 
-  // Test configuration
+  // Test (staging) configuration
   conf.test = {
     env: "test",
     port: process.env.PORT || 3030,
     mongo: {
-      url: process.env.MONGOLAB_URI || "mongodb://localhost/voteit-api-test"
+      url: process.env.MONGOLAB_URI
     },
     aws: {
       bucket: 'dev.vogo',

@@ -37,7 +37,7 @@ var createApp = function () {
   });
   app.use(router());
   app.use(function (err, req, res, next) {
-    res.status(err.status || 500);
+    res.status(err.status);
     res.json(err);
   });
   return request(app);

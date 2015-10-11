@@ -2,17 +2,18 @@
 /*jshint expr: true*/
 /*global -sinon*/
 
-// ensure the NODE_ENV is set to 'test'
-process.env.NODE_ENV = 'test';
+// ensure the MONGOLAB_URI is set to use test db
+process.env.MONGO_URI = 'mongodb://localhost/voteit-api-test';
 
 var _ = require('lodash'),
     chai = require('chai'),
     sinon = require('sinon'),
-    config = require('app/config'),
     bcrypt = require('bcrypt'),
     mongoose = require('mongoose'),
     sinonChai = require('sinon-chai'),
     chaiAsPromised = require("chai-as-promised");
+
+var DB_URI = process.env.MONGO_URI;
 
 chai.use(sinonChai);
 chai.use(chaiAsPromised);
@@ -57,7 +58,7 @@ var useMock = function (originalModule, mock) {
 
 var connectDb = function (callback) {
   if (mongoose.connection.readyState === 0) {
-    mongoose.connect(config.mongo.url, function (err) {
+    mongoose.connect(DB_URI, function (err) {
       if (err) {
         throw err;
       }
@@ -69,7 +70,6 @@ var connectDb = function (callback) {
 };
 
 // global setup and teardown
-
 before(function (done) {
   useMock(bcrypt, mockBcrypt);
   connectDb(done);
