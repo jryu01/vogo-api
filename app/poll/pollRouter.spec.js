@@ -17,6 +17,7 @@ var user = {
   email: 'test@user.com', 
   name: 'Test User' 
 };
+
 var mockRequireToken = function (req, res, next) {
   var token = req.headers['x-access-token'];
   if (token !== 'testToken') { 
@@ -29,15 +30,10 @@ var mockRequireToken = function (req, res, next) {
 var createApp = function () {
   var app = express(); 
   app.use(bodyParser.json());
-  app.use(methodOverride());
   router.__set__({
     requireToken: mockRequireToken
   });
   app.use(router());
-  app.use(function (err, req, res, next) {
-    res.status(err.status);
-    res.json(err);
-  });
   return app;
 };
 
@@ -46,7 +42,7 @@ describe('Poll Router', function () {
   
   var app = createApp();
 
-  it('should require a jwt', function (done) {
+  it('should require authentication token', function (done) {
     request(app).post('/anyRoute').expect(401, done);
   });
 
