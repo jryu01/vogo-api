@@ -230,7 +230,7 @@ describe('Vote', function () {
     return expect(promise).to.be.fulfilled.then(function (voters) {
       expect(voters).to.have.length(2);
 
-      // expect users are sorted ind revers order of the createion of the vote
+      // expect users are sorted ind reverse order of the createion of the vote
       expect(voters[0]).to.have.property('name', 'user3');
       expect(voters[1]).to.have.property('name', 'user2');
 
