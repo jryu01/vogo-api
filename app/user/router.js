@@ -7,6 +7,7 @@ var jwt = require('jwt-simple'),
     Promise = require('bluebird'),
     request = Promise.promisify(require("request")),
     requireToken = require('app/middleware/requireToken'),
+    errorhandler = require('api-error-handler'),
     pUploader = require('./pUploader');
 
 var createUser = function (req, res, next) {
@@ -23,19 +24,16 @@ var getUser = function (req, res, next) {
 
 var signinWithPassword = function (req, res, next) {
   if (!req.body.email || !req.body.password) {
-    return res.status(401)
-              .json({ status: 401, message: 'Invalid credentials'});
+    return next({ status: 401, message: 'Invalid credentials'});
   }
   User.findOneAsync({ email: req.body.email }, '-followers')
   .then(function (user) {
     if (!user) {
-      res.status(401)
-        .json({status: 401, message: 'Can\'t find a user with that email'});
+      throw {status: 401, message: 'Can\'t find a user with that email'};
     }
     return user.comparePassword(req.body.password).then(function (match) {
       if (!match) {
-        return res.status(401)
-                  .json({ status: 401, message: 'Password is not correct'});
+       throw { status: 401, message: 'Password is not correct'};
       }
       return user;
     });
@@ -53,8 +51,7 @@ var signinWithPassword = function (req, res, next) {
 
 var signinWithFacebook = function (req, res, next) {
   if (!req.body.facebookAccessToken) {
-    return res.status(400)
-      .json({ status: 400, message: 'A facebook access token is required'});
+    return next({status: 400, message: 'A facebook access token is required'});
   }
   request('https://graph.facebook.com/v2.3/me?' +
     'fields=id,email,name,picture.type(large)&access_token=' + 
@@ -111,15 +108,15 @@ var signinWithFacebook = function (req, res, next) {
 };
 
 var signin = function (req, res, next) {
-  if (req.body.grantType === 'password') {
+  switch (req.body.grantType) {
+  case 'password':
     signinWithPassword(req, res, next);
-  } else if (req.body.grantType === 'facebook') {
-    signinWithFacebook(req, res, next);
-  } else {
-    return res.status(400).json({
-      status: 400,
-      message: 'grantType field is missing or not valid'
-    });
+    break;
+  case 'facebook':
+    signinWithFacebook(req, res, next); 
+    break;
+  default:  
+    next({ status: 400, message: 'grantType field is missing or not valid' });
   }
 };
 
@@ -127,10 +124,7 @@ var follow = function (req, res, next) {
   var user = req.user,
       update;
   if (req.params.id !== user.id.toString()) {
-    return res.status(403).json({
-      status: 403,
-      message: 'Not authorized!'
-    });
+    return next({ status: 403 });
   }
   User.follow(user, req.params.target).then(function () {
     return res.status(204).end();
@@ -141,13 +135,10 @@ var unfollow = function (req, res, next) {
   var user = req.user,
       update;
   if (req.params.id !== user.id.toString()) {
-    return res.status(403).json({
-      status: 403,
-      message: 'Not authorized!'
-    });
+    return next({ status: 403 });
   }
   User.unfollow(user, req.params.target).then(function (r) {
-    return res.status(204).end();
+    res.status(204).end();
   }).catch(next);
 };
 
@@ -185,8 +176,7 @@ var getFollowingCount = function (req, res, next) {
 
 var getFollowingInfo = function (req, res, next) {
   if (!req.query.userId) {
-     return res.status(400)
-      .json({ status: 400, message: 'userId parameter is required'});
+     return next({ status: 400, message: 'userId parameter is required'});
   }
   var uids = [].concat(req.query.userId);
   User.getFollowingInfo(req.user.id, uids)
@@ -236,6 +226,7 @@ var registerDeviceToken = function (req, res, next) {
 var userRouter = module.exports = function () {
   
   var router = express.Router();
+  
   router.post('/login', signin);
   router.get('/s3info', requireToken, getS3Info); //TODO: need test
   router.post('/deviceTokens', requireToken, registerDeviceToken);
@@ -252,6 +243,8 @@ var userRouter = module.exports = function () {
   router.get('/users/:id/following-count', requireToken, getFollowingCount);
 
   router.get('/relationships/following', requireToken, getFollowingInfo);
+
+  router.use(errorhandler());
 
   return router;
 };
