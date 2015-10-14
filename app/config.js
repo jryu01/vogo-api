@@ -5,10 +5,10 @@
 
 'use strict';
 
-var _ = require('lodash');
+const _ = require('lodash');
 
-var config = (function (env) {
-  var conf = {};
+const config = (function (env) {
+  const conf = {};
 
   // Common configuration
   conf.common = {

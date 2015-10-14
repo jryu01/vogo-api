@@ -1,3 +1,4 @@
+//Note: This file should be es5
 var mongoose = require('mongoose');
 
 // use babel for subsequent require

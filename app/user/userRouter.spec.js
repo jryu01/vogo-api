@@ -1,5 +1,5 @@
 'use strict';
-/* jshint expr: true */
+
 var methodOverride = require('method-override'),
     bodyParser = require('body-parser'),
     mongoose = require('mongoose'),
@@ -32,14 +32,14 @@ var createApp = function () {
   var app = express();
   app.use(bodyParser.json());
   app.use(methodOverride());
-  router.__set__({
-    requireToken: mockRequireToken
-  });
-  app.use(router());
+  // router.__set__({
+  //   requireToken: mockRequireToken
+  // });
+  app.use(router(mockRequireToken));
   return request(app);
 };
 
-describe('User Router', function () {
+describe.only('User Router', function () {
   var app = createApp();
 
   it('should require authentication token', function (done) {

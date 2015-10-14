@@ -1,24 +1,18 @@
-'use strict';
+import 'babel-core/register';
+import gulp from 'gulp';
+import mocha from 'gulp-mocha';
+import eslint from 'gulp-eslint';
 
-require('babel-core/register');
+const NODE_FILES = ['*.js', 'app/**/*.js', 'bin/**/*.js'];
+const NODE_TEST_FILES = ['app/**/*.spec.js', '*.spec.js'];
 
-const gulp = require('gulp');
-const mocha = require('gulp-mocha');
-const eslint = require('gulp-eslint');
+gulp.task('lint', () => gulp.src(NODE_FILES)
+  .pipe(eslint())
+  .pipe(eslint.format())
+  .pipe(eslint.failAfterError()));
 
-var NODE_FILES = ['*.js', 'app/**/*.js', 'bin/**/*.js'],
-    NODE_TEST_FILES = ['app/**/*.spec.js', '*.spec.js'];
-
-gulp.task('lint', function () {
-  return gulp.src(NODE_FILES)
-    .pipe(eslint())
-    .pipe(eslint.format())
-    .pipe(eslint.failAfterError());
-});
-
-gulp.task('test', function () {
-  return gulp.src(NODE_TEST_FILES).pipe(mocha({ reporter: 'spec' }));
-});
+gulp.task('test', () => gulp.src(NODE_TEST_FILES)
+    .pipe(mocha({ reporter: 'spec'})));
 
 gulp.task('default', ['test']);
 

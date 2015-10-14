@@ -1,10 +1,15 @@
-  'use strict';
+import methodOverride from 'method-override';
+import bodyParser from 'body-parser';
+import express from 'express';
+import morgan from 'morgan';
+import config from './config';
 
-const methodOverride = require('method-override');
-const bodyParser = require('body-parser');
-const express = require('express');
-const morgan = require('morgan'); // HTTP request logger
-const config = require('./config');
+import errorHandler from 'app/middleware/errorHandler.js'
+import userRouter from 'app/user/router'
+import pollRouter from 'app/poll/router'
+import bingRouter from 'app/bing/router'
+import notification from 'app/notification'
+
 const app = express();
 
 app.use(bodyParser.json());
@@ -15,11 +20,11 @@ if (config.env === 'development') {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined', {
-    skip: function (req, res) { return res.statusCode < 400; }
+    skip(req, res) { return res.statusCode < 400; }
   }));
 }
 
-app.use('/', function (req, res, next) {
+app.use('/', (req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-type,Accept,X-Access-Token');
@@ -31,12 +36,6 @@ app.use('/', function (req, res, next) {
 });
 
 // Mount express sub app/routers
-var errorHandler = require('app/middleware/errorHandler.js'),
-    userRouter = require('app/user/router'),
-    pollRouter = require('app/poll/router'),
-    bingRouter = require('app/bing/router'),
-    notification = require('app/notification');
-
 app.use('/api', userRouter());
 app.use('/api', pollRouter());
 app.use('/api', bingRouter());
