@@ -1,7 +1,6 @@
-#!/usr/bin/env node
 var mongoose = require('mongoose');
-var config = require('../app/config');
-var app = require('../app');
+var config = require('app/config');
+var app = require('app');
 
 app.set('port', config.port);
 
