@@ -1,7 +1,9 @@
 'use strict';
 
-var gulp = require('gulp'),
-    mocha = require('gulp-mocha');
+require('babel-core/register');
+
+const gulp = require('gulp');
+const mocha = require('gulp-mocha');
 
 var NODE_FILES = ['*.js', 'app/**/*.js', 'bin/**/*.js'],
     NODE_TEST_FILES = ['app/**/*.spec.js', '*.spec.js'];

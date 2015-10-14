@@ -42,6 +42,7 @@
     "request": "^2.51.0"
   },
   "devDependencies": {
+    "babel-core": "^5.8.25",
     "chai": "^1.9.1",
     "chai-as-promised": "^4.1.1",
     "gulp": "^3.9.0",

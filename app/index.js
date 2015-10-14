@@ -1,11 +1,11 @@
   'use strict';
 
-var methodOverride = require('method-override'),
-    bodyParser = require('body-parser'),
-    express = require('express'),
-    morgan  = require('morgan'), // HTTP request logger
-    config = require('./config'),
-    app = express();
+const methodOverride = require('method-override');
+const bodyParser = require('body-parser')
+const express = require('express');
+const morgan  = require('morgan'); // HTTP request logger
+const config = require('./config');
+const app = express();
 
 app.use(bodyParser.json());
 app.use(methodOverride());
