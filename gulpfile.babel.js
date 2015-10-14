@@ -4,13 +4,23 @@ require('babel-core/register');
 
 const gulp = require('gulp');
 const mocha = require('gulp-mocha');
+const eslint = require('gulp-eslint');
 
 var NODE_FILES = ['*.js', 'app/**/*.js', 'bin/**/*.js'],
     NODE_TEST_FILES = ['app/**/*.spec.js', '*.spec.js'];
 
-gulp.task('test', function () {
+gulp.task('lint', function () {
+  return gulp.src(NODE_FILES)
+    .pipe(eslint())
+    .pipe(eslint.format())
+    .pipe(eslint.failAfterError());
+});
+
+gulp.task('test', ['lint'], function () {
   return gulp.src(NODE_TEST_FILES).pipe(mocha({ reporter: 'spec' }));
 });
+
+gulp.task('default', ['test']);
 
 // var gulp = require('gulp'),
 //     exec = require('child_process').exec,

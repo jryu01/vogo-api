@@ -156,12 +156,13 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
 
 // this needs test
 var updateUserData = function (userModel, user) {
+  var userId = user.id;
+  var options = { multi: true };
+  
   var setUpdatedToFalse = function () {
     userModel.updateAsync({ _id: userId }, {'$set': {'_updated': false}});
   };
 
-  var userId = user.id;
-  var options = { multi: true };
   // update the user in poll collection
   Poll.updateAsync(
     { 'createdBy.userId': userId }, 
