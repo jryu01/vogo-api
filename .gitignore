@@ -1,6 +1,6 @@
 run.sh
 runDev.sh
-dbScript.js
+db_scripts
 todo.txt
 
 # DS_Store file
