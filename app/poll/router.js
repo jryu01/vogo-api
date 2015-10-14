@@ -3,26 +3,26 @@
 var requireToken = require('app/middleware/requireToken'),
     errorhandler = require('api-error-handler'),
     mongoose = require('mongoose'),
-    express = require("express"),
+    express = require('express'),
     Poll = require('./poll'),
     Vote = require('./vote'),
     _ = require('lodash');
 
 var publish = function (req, res, next) {
-  //TODO: input validation with req.body
+  // TODO: input validation with req.body
   Poll.publish(req.user, req.body)
     .then(res.status(201).json.bind(res))
     .catch(next);
 };
 
 var vote = function (req, res, next) {
-  //TODO: input validation
+  // TODO: input validation
   Vote.createNew(req.user.id, req.params.id, req.body.answer)
     .then(function (vote) {
       if (!vote) {
         throw {
-          status: 404, 
-          message: 'poll not found or already voted with the user' 
+          status: 404,
+          message: 'poll not found or already voted with the user'
         };
       }
       res.status(201).json(vote);
@@ -30,7 +30,7 @@ var vote = function (req, res, next) {
 };
 
 var comment = function (req, res, next) {
-  //TODO: input validation
+  // TODO: input validation
   var pollId = req.params.id;
   Poll.comment(pollId, req.user, req.body.text).then(function (poll) {
     if (!poll) {
@@ -43,9 +43,9 @@ var comment = function (req, res, next) {
 
 var getComments = function (req, res, next) {
   var pollId = req.params.id;
-  var options = {};  
+  var options = {};
   options.skip = parseInt(req.query.skip, 10) || 0;
-  options.limit = parseInt(req.query.limit, 10) || 20; 
+  options.limit = parseInt(req.query.limit, 10) || 20;
   Poll.getComments(pollId, options).then(res.json.bind(res)).catch(next);
 };
 
@@ -92,7 +92,7 @@ var getVoters = function (req, res, next) {
     .catch(next);
 };
 
-//TODO: test
+// TODO: test
 var getRecentUnvotedPolls = function (req, res, next) {
   var user = req.user,
       exclude = req.query.exclude || [],
@@ -103,11 +103,10 @@ var getRecentUnvotedPolls = function (req, res, next) {
 };
 
 var pollRouter = module.exports = function () {
-  
   var router = express.Router();
 
-  router.use(requireToken); 
-  
+  router.use(requireToken);
+
   router.post('/polls', publish);
   router.post('/polls/:id/votes', vote);
   router.post('/polls/:id/comments', comment);
@@ -120,9 +119,9 @@ var pollRouter = module.exports = function () {
   router.get('/users/:id/polls', getUserPolls);
   router.get('/users/:id/votes', getUserVotes);
 
-  //Need Test
+  // Need Test
   router.get('/polls', getRecentUnvotedPolls);
 
   router.use(errorhandler());
-  return router; 
+  return router;
 };

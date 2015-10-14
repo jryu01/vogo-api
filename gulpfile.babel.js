@@ -16,7 +16,7 @@ gulp.task('lint', function () {
     .pipe(eslint.failAfterError());
 });
 
-gulp.task('test', ['lint'], function () {
+gulp.task('test', function () {
   return gulp.src(NODE_TEST_FILES).pipe(mocha({ reporter: 'spec' }));
 });
 
@@ -62,7 +62,7 @@ gulp.task('default', ['test']);
 //   if (actual[0] === expected[0] && actual[1] === expected[1] && actual[2] < expected[2]) {
 //     return done(failError);
 //   }
-//   return done(); 
+//   return done();
 // });
 
 // // Generates a test directory

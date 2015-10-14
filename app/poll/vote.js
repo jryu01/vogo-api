@@ -1,10 +1,10 @@
 'use strict';
 
 var Promise = require('bluebird'),
-    mongoose = Promise.promisifyAll(require("mongoose")),
+    mongoose = Promise.promisifyAll(require('mongoose')),
     Poll = require('./poll'),
     Schema = mongoose.Schema;
- 
+
 var VoteSchema = new Schema({
   _user: { type: Schema.Types.ObjectId, ref: 'User' },
   answer: { type: Number },
@@ -33,8 +33,8 @@ VoteSchema.statics.getByUserId = function (userId, voteId, limit) {
       options = { sort: { '_id': -1 } };
 
   if (limit > 0) {
-    options.limit = limit; 
-  }   
+    options.limit = limit;
+  }
   if (voteId) {
     query._id = { $lt: voteId };
   }
@@ -44,9 +44,9 @@ VoteSchema.statics.getByUserId = function (userId, voteId, limit) {
 };
 
 VoteSchema.statics.getByUserIdAndPollIds = function (userId, pollIds) {
-  var query = { 
-    '_poll': { '$in': pollIds }, 
-    '_user': userId 
+  var query = {
+    '_poll': { '$in': pollIds },
+    '_user': userId
   };
   return this.findAsync(query);
 };
@@ -67,7 +67,7 @@ VoteSchema.statics.getVotersFor = function (pollId, answer, options) {
       return vote._user;
     });
   };
-  
+
   return this.find(query, null, opts)
     .populate('_user', '-followers')
     .execAsync()
@@ -77,7 +77,7 @@ VoteSchema.statics.getVotersFor = function (pollId, answer, options) {
 VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};
 
 
-//Add toJSON option to transform document before returnig the result
+// Add toJSON option to transform document before returnig the result
 VoteSchema.options.toJSON = {
   transform: function (doc, ret, options) {
     ret.id = ret._id;

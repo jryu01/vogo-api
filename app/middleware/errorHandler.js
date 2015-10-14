@@ -10,12 +10,12 @@ var errorHanlder = module.exports = function () {
     switch (err.name) {
       case 'ValidationError':
         var msgs = [];
-        for (var error in err.errors) {
-          msgs.push(err.errors[error].message);
-        }
+        Object.keys(err.errors).forEach(function (key) {
+          msgs.push(err.errors[key].message);
+        });
         res.status(400);
         res.json({ message: msgs.join() });
-        break; 
+        break;
       case 'MongoError':
         if (err.code === 11000 || err.code === 11001) {
           err.status = 400;

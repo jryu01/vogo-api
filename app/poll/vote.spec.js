@@ -1,5 +1,5 @@
 'use strict';
-/*jshint expr: true*/
+/* jshint expr: true */
 
 var mongoose = require('mongoose'),
     Promise = require('bluebird'),
@@ -20,17 +20,17 @@ var createPollData = function (overwrites) {
     answer2: {
       text: 'soccer',
       picture: 'a2picurl'
-    } 
+    }
   };
   return _.extend(defaults, overwrites);
 };
 
 var createUsers = function (numUsers) {
-  var createUserPromises = []; 
+  var createUserPromises = [];
   for (var i = 1; i <= numUsers; i += 1) {
     createUserPromises.push(User.createAsync({
       email: 'user' + i + '@test.com',
-      name: 'user' + i, 
+      name: 'user' + i,
       picture: 'userPic' + i
     }));
   }
@@ -38,7 +38,6 @@ var createUsers = function (numUsers) {
 };
 
 describe('Vote', function () {
-
   var user;
 
   beforeEach(function () {
@@ -73,9 +72,9 @@ describe('Vote', function () {
   it('should get votes for user by provided pollIds', function () {
     var pollList, pollIds;
     var promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll2' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll3' }) ), 
+      Poll.publish(user, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user, createPollData({ question: 'poll3' }) ),
     ]).then(function (polls) {
       pollList = polls;
       pollIds = pollList.map(function (poll) {
@@ -93,17 +92,17 @@ describe('Vote', function () {
     return expect(promise).to.be.fulfilled.then(function (votes) {
       expect(votes).to.have.length(3);
       expect(votes[0]._poll.toString()).to.equal(pollIds[2].toString());
-      expect(votes[1]._poll.toString()).to.equal(pollIds[1].toString()); 
-      expect(votes[2]._poll.toString()).to.equal(pollIds[0].toString()); 
+      expect(votes[1]._poll.toString()).to.equal(pollIds[1].toString());
+      expect(votes[2]._poll.toString()).to.equal(pollIds[0].toString());
     });
   });
 
   it('should get votes for a user decending order by _id', function () {
     var pollList;
     var promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll2' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll3' }) ), 
+      Poll.publish(user, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user, createPollData({ question: 'poll3' }) ),
     ]).then(function (polls) {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
@@ -118,8 +117,8 @@ describe('Vote', function () {
     return expect(promise).to.be.fulfilled.then(function (votes) {
       expect(votes).to.have.length(3);
       expect(votes[0]._poll.question).to.equal('poll3');
-      expect(votes[1]._poll.question).to.equal('poll2'); 
-      expect(votes[2]._poll.question).to.equal('poll1'); 
+      expect(votes[1]._poll.question).to.equal('poll2');
+      expect(votes[2]._poll.question).to.equal('poll1');
     });
   });
 
@@ -137,15 +136,14 @@ describe('Vote', function () {
       expect(votes[0]._poll.comments).to.be.undefined;
       expect(votes[0]._poll.votes).to.be.undefined;
     });
-
   });
 
   it('should limit the number of result', function () {
     var pollList;
     var promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll2' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll3' }) ), 
+      Poll.publish(user, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user, createPollData({ question: 'poll3' }) ),
     ]).then(function (polls) {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
@@ -163,10 +161,10 @@ describe('Vote', function () {
   it('should get votes before provided vote id with limit', function () {
     var pollList, voteId;
     var promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll2' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll3' }) ), 
-      Poll.publish(user, createPollData({ question: 'poll4' }) ), 
+      Poll.publish(user, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user, createPollData({ question: 'poll3' }) ),
+      Poll.publish(user, createPollData({ question: 'poll4' }) ),
     ]).then(function (polls) {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
@@ -186,9 +184,9 @@ describe('Vote', function () {
       expect(votes[0]._poll.question).to.equal('poll2');
     });
   });
-  
+
   it('should get voters for a pollId by answer', function () {
-    var users = [], 
+    var users = [],
         pollId;
     // create a poll
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
@@ -199,7 +197,7 @@ describe('Vote', function () {
       var answer = (index === 1) ? 2 : 1;
       return Vote.createNew(user.id, pollId, answer);
     }).then(function () {
-      return Vote.getVotersFor(pollId, 1); 
+      return Vote.getVotersFor(pollId, 1);
     });
 
     return expect(promise).to.be.fulfilled.then(function (voters) {
@@ -214,7 +212,7 @@ describe('Vote', function () {
   });
 
   it('should get voters with pagination', function () {
-    var users = [], 
+    var users = [],
         pollId;
     // create a poll
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
@@ -224,7 +222,7 @@ describe('Vote', function () {
     }).each(function (user) {
       return Vote.createNew(user.id, pollId, 2);
     }).then(function (r) {
-      return Vote.getVotersFor(pollId, 2, { skip: 1, limit: 2 }); 
+      return Vote.getVotersFor(pollId, 2, { skip: 1, limit: 2 });
     });
 
     return expect(promise).to.be.fulfilled.then(function (voters) {
@@ -233,7 +231,6 @@ describe('Vote', function () {
       // expect users are sorted ind reverse order of the createion of the vote
       expect(voters[0]).to.have.property('name', 'user3');
       expect(voters[1]).to.have.property('name', 'user2');
-
     });
   });
 
@@ -243,5 +240,4 @@ describe('Vote', function () {
     expect(vote.toJSON()).to.not.have.property('_id');
     expect(vote.toJSON()).to.not.have.property('__V');
   });
-
 });

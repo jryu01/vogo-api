@@ -1,5 +1,5 @@
 'use strict';
-/*jshint expr: true*/
+/* jshint expr: true */
 
 var _ = require('lodash'),
     eb = require('app/eventBus'),
@@ -24,7 +24,6 @@ var userData = {
 };
 
 describe('User', function () {
-
   var User, data;
 
   beforeEach(function () {
@@ -40,7 +39,7 @@ describe('User', function () {
       var user = new User({
         email: 'testuser@test.net',
         name: 'test user',
-        facebook: { 
+        facebook: {
           id: 'fbfakeid123',
           email: 'testUser@test.net',
           name: 'test user'
@@ -56,7 +55,7 @@ describe('User', function () {
       var user = new User({
         email: 'testuser@test.net',
         name: 'test user',
-        facebook: { 
+        facebook: {
           id: 'fbfakeid123',
           email: 'testUser@test.net',
           name: 'test user'
@@ -65,7 +64,7 @@ describe('User', function () {
       var p = User.createAsync(user).then(function () {
         var update = user.toJSON();
         update.name = 'updated user';
-        return User.createOrUpdate(user.id, update); 
+        return User.createOrUpdate(user.id, update);
       });
       return expect(p).to.be.fulfilled.then(function (user) {
         expect(user).to.have.property('id', user.id);
@@ -76,7 +75,7 @@ describe('User', function () {
 
   it('should create a new user', function () {
     data = userData.create();
-    return expect(User.createAsync(data)).to.be.fulfilled.then(function (user){
+    return expect(User.createAsync(data)).to.be.fulfilled.then(function (user) {
       expect(user).to.have.property('email', 'jhon@jhonhome.com');
       expect(user).to.have.property('password');
       expect(user).to.have.property('name', 'Jhon Bob');
@@ -131,7 +130,7 @@ describe('User', function () {
     sinon.spy(bcrypt, 'hashAsync');
 
     return User.createAsync(data).then(function (user) {
-      user.firstName = 'bob'; 
+      user.firstName = 'bob';
       return user.saveAsync();
     }).then(function () {
       expect(bcrypt.hashAsync).to.have.been.calledOnce;
@@ -169,7 +168,6 @@ describe('User', function () {
   });
 
   it('should remove same device token from previous user when a new user is registering with the same token', function () {
-
     var u1Data = userData.create({ name: 'Jhon' }),
         u2Data = userData.create({ email: 'sam@sam.net', name: 'Sam'});
     var promise = Promise.all([
@@ -187,11 +185,9 @@ describe('User', function () {
       expect(users[0].deviceTokens).to.be.empty;
       expect(users[1].deviceTokens[0].token).to.equal('iphone1Token');
     });
-
   });
 
   describe('(user graph)', function () {
-
     var users, targetUser;
 
     beforeEach(function () {
@@ -261,7 +257,7 @@ describe('User', function () {
     });
 
     it('should limit and skip list of followers on getFollowers', function () {
-      var options = { skip: 1 , limit: 1 };
+      var options = { skip: 1, limit: 1 };
       var promise = User.follow(users[0], targetUser.id).then(function () {
         return User.follow(users[1], targetUser.id);
       }).then(function () {
@@ -277,7 +273,7 @@ describe('User', function () {
 
     it('should retrieve [] on getFollowers for unknown user', function () {
       var promise = User.getFollowers(mongoose.Types.ObjectId());
-      return expect(promise).to.eventually.be.an('array').that.is.empty; 
+      return expect(promise).to.eventually.be.an('array').that.is.empty;
     });
 
     it('should retrive number of followers for a user', function () {
@@ -364,24 +360,19 @@ describe('User', function () {
         fInfo.forEach(function (info) {
           if (info.userId.toString() === targetUser.id.toString()) {
             expect(info).to.have.property('following', true);
-
           } else if (info.userId.toString() === users[1].id.toString()) {
             expect(info).to.have.property('following', false);
-
           } else if (info.userId.toString() === users[2].id.toString()) {
             expect(info).to.have.property('following', true);
           }
         });
       });
-      
     });
-
   });
 
   describe('#comparePassword', function () {
-
     it('should check for matching password', function () {
-      data = userData.create({ password: "matchingPwd" });
+      data = userData.create({ password: 'matchingPwd' });
 
       var isMatching = User.createAsync(data).then(function (user) {
         return user.comparePassword('matchingPwd');
@@ -390,7 +381,7 @@ describe('User', function () {
     });
 
     it('should check for wrong password', function () {
-      data = userData.create({ password: "matchingPwd" });
+      data = userData.create({ password: 'matchingPwd' });
       var isMatching = User.createAsync(data).then(function (user) {
         return user.comparePassword('wrong');
       });

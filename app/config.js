@@ -11,9 +11,9 @@ var config = (function (env) {
   var conf = {};
 
   // Common configuration
-  conf.common =  {
+  conf.common = {
     app: {
-      name: "voteit-api"
+      name: 'voteit-api'
     },
     port: process.env.PORT || 3000,
     mongo: {},
@@ -33,9 +33,9 @@ var config = (function (env) {
 
   // Development configuration
   conf.development = {
-    env: "development",
+    env: 'development',
     mongo: {
-      url: process.env.MONGO_URI || "mongodb://localhost/voteit-api-dev"
+      url: process.env.MONGO_URI || 'mongodb://localhost/voteit-api-dev'
     },
     aws: {
       bucket: 'dev.vogo',
@@ -46,7 +46,7 @@ var config = (function (env) {
 
   // Test (staging) configuration
   conf.test = {
-    env: "test",
+    env: 'test',
     port: process.env.PORT || 3030,
     mongo: {
       url: process.env.MONGOLAB_URI
@@ -60,7 +60,7 @@ var config = (function (env) {
 
   // Production configuration
   conf.production = {
-    env: "production",
+    env: 'production',
     mongo: {
       url: process.env.MONGOLAB_URI,
     },
@@ -75,9 +75,8 @@ var config = (function (env) {
       key: 'vogoPushKey.pem'
     }
   };
-  
-  return _.merge(conf.common, conf[env]);
 
+  return _.merge(conf.common, conf[env]);
 })(process.env.NODE_ENV || 'development');
 
 module.exports = config;

@@ -1,5 +1,5 @@
 'use strict';
-/*jshint expr: true*/
+/* jshint expr: true */
 var methodOverride = require('method-override'),
     bodyParser = require('body-parser'),
     mongoose = require('mongoose'),
@@ -10,10 +10,10 @@ var methodOverride = require('method-override'),
     config = require('app/config'),
     User = require('./user'),
     jwt = require('jwt-simple');
-    
+
 var router = rewire('./router');
 
-var testUser = new User ({
+var testUser = new User({
   _id: mongoose.Types.ObjectId(),
   email: 'test@vogo.vogo',
   name: 'Test Vogo'
@@ -21,7 +21,7 @@ var testUser = new User ({
 
 var mockRequireToken = function (req, res, next) {
   var token = req.headers['x-access-token'];
-  if (token !== 'testToken') { 
+  if (token !== 'testToken') {
     return res.status(401).end();
   }
   req.user = testUser;
@@ -29,28 +29,26 @@ var mockRequireToken = function (req, res, next) {
 };
 
 var createApp = function () {
-  var app = express(); 
+  var app = express();
   app.use(bodyParser.json());
   app.use(methodOverride());
   router.__set__({
-    requireToken: mockRequireToken   
+    requireToken: mockRequireToken
   });
   app.use(router());
   return request(app);
 };
 
 describe('User Router', function () {
-  
   var app = createApp();
 
   it('should require authentication token', function (done) {
     app.post('/').expect(401, done);
   });
-  
+
   describe('POST /login', function () {
-    
     var path = '/login';
-    
+
     it('should send 400 when no grantType field is provided', function (done) {
       var resbody = {
         status: 400,
@@ -58,51 +56,50 @@ describe('User Router', function () {
       };
       app.post(path).send({}).expect(400, resbody, done);
     });
-    
+
     describe('with password', function () {
       var user;
-      
+
       beforeEach(function (done) {
         var data = {
           email: 'test@vogo.com',
           password: 'testpwd'
         };
         User.create(data, function (err, newUser) {
-          if (err) { return done(err); } 
+          if (err) { return done(err); }
           user = newUser;
           done();
         });
       });
-      
+
       it('should send 200 with user object', function (done) {
         var reqBody = {
           email: 'test@vogo.com',
           grantType: 'password',
           password: 'testpwd'
         };
-        app.post(path).send(reqBody).expect(200, function(err, res) {
+        app.post(path).send(reqBody).expect(200, function (err, res) {
           if (err) { return done(err); }
           expect(res.body.user.email).to.equal('test@vogo.com');
           done();
         });
       });
-      
+
       it('should send 200 with access_token', function (done) {
-        
         sinon.stub(Date, 'now').returns(1417876057391);
-        
+
         var ACCESS_TOKEN = jwt.encode({
           iss: user.id,
           exp: Date.now() + config.jwtexp
         }, config.jwtsecret);
-        
+
         var reqBody = {
           email: 'test@vogo.com',
           grantType: 'password',
           password: 'testpwd'
         };
-        
-        app.post(path).send(reqBody).expect(200, function(err, res) {
+
+        app.post(path).send(reqBody).expect(200, function (err, res) {
           Date.now.restore();
           if (err) { return done(err); }
           expect(res.body).to.have.deep.property('access_token', ACCESS_TOKEN);
@@ -110,7 +107,7 @@ describe('User Router', function () {
           done();
         });
       });
-      
+
       it('should send 401 when email is missing', function (done) {
         var reqBody = {
           grantType: 'password',
@@ -122,7 +119,7 @@ describe('User Router', function () {
         };
         app.post(path).send(reqBody).expect(401, resBody, done);
       });
-      
+
       it('should send 401 when password is missing', function (done) {
         var reqBody = {
           email: 'test@vogo.com',
@@ -161,11 +158,10 @@ describe('User Router', function () {
         app.post(path).send(reqBody).expect(401, resBody, done);
       });
     });
-    
+
     describe('with facebook access token', function () {
-      
       var revert, mockRequest, mockPUploader, user;
-      
+
       beforeEach(function (done) {
         var userData = {
           email: 'test@vogo.com',
@@ -178,12 +174,12 @@ describe('User Router', function () {
           }
         };
         User.create(userData, function (err, newUser) {
-          if (err) { return done(err); } 
+          if (err) { return done(err); }
           user = newUser;
-          done(); 
+          done();
         });
       });
-      
+
       beforeEach(function () {
         mockRequest = sinon.stub();
         mockPUploader = sinon.stub();
@@ -197,15 +193,15 @@ describe('User Router', function () {
         '{ "id": "fbtestid123", "email": "test@vogo.com", "name": "Test Vogo"}'
         ]));
       });
-      
+
       afterEach(function () {
         revert();
       });
 
       it('should send 400 when facebook token is missing', function (done) {
         var reqBody = { grantType: 'facebook' };
-        var resBody = { 
-          status: 400, 
+        var resBody = {
+          status: 400,
           message: 'A facebook access token is required'
         };
         app.post(path).send(reqBody).expect(400, resBody, done);
@@ -214,35 +210,34 @@ describe('User Router', function () {
       it('should send request to facebook to get profile', function (done) {
         var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
         app.post(path).send(reqBody).expect(200, function (err, res) {
-          if (err) { return done(err); } 
+          if (err) { return done(err); }
           expect(mockRequest).to.have.been
             .calledWith('https://graph.facebook.com/v2.3/me?fields=id,email,name,picture.type(large)&access_token=fakefbtk');
           done();
         });
       });
 
-      it('should send 500 when it fails to get profile from facebook',
-        function (done) {
-        mockRequest.returns(Promise.resolve([{ statusCode: 400 },'{}']));
+      it('should send 500 when it fails to get profile from facebook', function (done) {
+        mockRequest.returns(Promise.resolve([{ statusCode: 400 }, '{}']));
         var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
         var resBody = {
           name: 'FacebookGraphAPIError',
-          message: "Failed to fetch facebook user profile",
-          status: 500 
-        }; 
+          message: 'Failed to fetch facebook user profile',
+          status: 500
+        };
         app.post(path).send(reqBody).expect(500, resBody, done);
       });
-      
+
       it('should send 200 with user object', function (done) {
         var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
-        app.post(path).send(reqBody).expect(200, function(err, res) {
+        app.post(path).send(reqBody).expect(200, function (err, res) {
           if (err) { return done(err); }
           expect(res.body.user.id).to.equal(user.id);
           expect(res.body.user.email).to.equal('test@vogo.com');
           done();
         });
       });
-      
+
       it('should send 200 with access_token', function (done) {
         sinon.stub(Date, 'now').returns(1417876057391);
         var ACCESS_TOKEN = jwt.encode({
@@ -250,7 +245,7 @@ describe('User Router', function () {
           exp: Date.now() + config.jwtexp
         }, config.jwtsecret);
         var reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
-        app.post(path).send(reqBody).expect(200, function(err, res) {
+        app.post(path).send(reqBody).expect(200, function (err, res) {
           Date.now.restore();
           if (err) { return done(err); }
           expect(res.body).to.have.deep.property('access_token', ACCESS_TOKEN);
@@ -266,18 +261,18 @@ describe('User Router', function () {
         mockRequest.returns(Promise.resolve([{
           statusCode: 200
         },
-        '{' + 
+        '{' +
         '   "id": "newFbId12345",' +
-        '   "email": "sam@home.net",' + 
+        '   "email": "sam@home.net",' +
         '   "name": "Sam Power",' +
-        '   "picture": {"data": { "url": "profileUrl" } }' + 
+        '   "picture": {"data": { "url": "profileUrl" } }' +
         '}'
         ]));
         mockPUploader.withArgs('profileUrl')
           .returns(Promise.resolve('s3ProfileUrl'));
-        
+
         app.post(path).send(reqBody).expect(200, function (err, res) {
-          if (err) { return done(err); } 
+          if (err) { return done(err); }
           expect(res.body).to.have.property('access_token').that.is.an('string');
           expect(res.body.user).to.have.property('name', 'Sam Power');
           expect(res.body.user).to.have.property('email', 'sam@home.net');
@@ -286,11 +281,10 @@ describe('User Router', function () {
           expect(res.body.user.facebook).to.have.property('email', 'sam@home.net');
           expect(res.body.user.facebook).to.have.property('name', 'Sam Power');
           done();
-        });  
+        });
       });
 
-      it('should send 200 and update profile picture of existing user',
-        function (done) {
+      it('should send 200 and update profile picture of existing user', function (done) {
         var existingUser = {
           email: 'test2@vogo.com',
           name: 'Test Vogo2',
@@ -301,25 +295,24 @@ describe('User Router', function () {
           }
         };
         User.create(existingUser, function (err, user) {
-          if (err) { return done(err); } 
-
+          if (err) { return done(err); }
           var reqBody = {grantType: 'facebook', facebookAccessToken: 'anotherfakefbtk'};
 
           mockRequest.returns(Promise.resolve([{
             statusCode: 200
           },
-          '{' + 
+          '{' +
           '   "id": "fbtestidpicturetest",' +
-          '   "email": "test2@vogo.com",' + 
+          '   "email": "test2@vogo.com",' +
           '   "name": "Test Vogo2",' +
-          '   "picture": {"data": { "url": "previousProfilePic" } }' + 
+          '   "picture": {"data": { "url": "previousProfilePic" } }' +
           '}'
           ]));
           mockPUploader.withArgs('previousProfilePic')
             .returns(Promise.resolve('s3ProfileUrl'));
-          
+
           app.post(path).send(reqBody).expect(200, function (err, res) {
-            if (err) { return done(err); } 
+            if (err) { return done(err); }
             expect(res.body).to.have.property('access_token').that.is.an('string');
             expect(res.body.user).to.have.property('name', 'Test Vogo2');
             expect(res.body.user).to.have.property('email', 'test2@vogo.com');
@@ -328,16 +321,15 @@ describe('User Router', function () {
             expect(res.body.user.facebook).to.have.property('id', 'fbtestidpicturetest');
             expect(res.body.user.facebook).to.have.property('name', 'Test Vogo2');
             done();
-          });  
+          });
         });
       });
     });
   });
 
   describe('POST /deviceTokens', function () {
-    
     var path = '/deviceTokens';
-    
+
     it('should send 201', function (done) {
       sinon.stub(User, 'registerDeviceToken')
         .returns(Promise.resolve('returned token'));
@@ -345,10 +337,10 @@ describe('User Router', function () {
         .set('x-access-token', 'testToken')
         .send({ token: 'testiosdevicetoken', os: 'ios' })
         .expect(201, function (err, res) {
-          if (err) { return done (err); }
+          if (err) { return done(err); }
           expect(res.body).to.equal('returned token');
           expect(User.registerDeviceToken).to.have.been
-            .calledWith(testUser.id, 'testiosdevicetoken', 'ios'); 
+            .calledWith(testUser.id, 'testiosdevicetoken', 'ios');
           User.registerDeviceToken.restore();
           done();
         });
@@ -356,14 +348,13 @@ describe('User Router', function () {
   });
 
   describe('POST /users', function () {
-    
     var path = '/users';
-    
+
     it('should send 201 with user data', function (done) {
       app.post(path)
         .send({ email: 'testuser@vogo.com' })
         .expect(201, function (err, res) {
-          if (err) { return done (err); }
+          if (err) { return done(err); }
           expect(res.body).to.have.property('email', 'testuser@vogo.com');
           done();
         });
@@ -371,9 +362,8 @@ describe('User Router', function () {
   });
 
   describe('GET /users', function () {
-
     var path = '/users';
-    
+
     beforeEach(function (done) {
       var users = [{email: 'bob@vogo.vogo'}, {email: 'sam@vogo.vogo'}];
       app.post(path).send(users[0]).expect(201, function () {
@@ -392,18 +382,16 @@ describe('User Router', function () {
           done();
         });
     });
-
   });
 
   describe('GET /users/{userId}', function () {
-
     var path = '/users';
-    
+
     it('should retreive a specific user with id', function (done) {
       var userId;
       app.post(path)
         .send({ email: 'bob@vogo.vogo' })
-        .expect(201, function(err, res) {
+        .expect(201, function (err, res) {
           if (err) { return done(err); }
           userId = res.body.id;
           app.get(path + '/' + userId)
@@ -418,7 +406,6 @@ describe('User Router', function () {
   });
 
   describe('PUT /users/{userId}/follwoing/{target}', function () {
-
     it('should send 403 if current user is not authorized', function (done) {
       var OTHER_USER_ID = mongoose.Types.ObjectId(),
           TARGET_ID = mongoose.Types.ObjectId(),
@@ -445,7 +432,6 @@ describe('User Router', function () {
   });
 
   describe('DELETE /users/{userId}/follwoing/{target}', function () {
-
     it('should send 403 if current user is not authorized', function (done) {
       var OTHER_USER_ID = mongoose.Types.ObjectId(),
           TARGET_ID = mongoose.Types.ObjectId(),
@@ -470,11 +456,9 @@ describe('User Router', function () {
           done();
         });
     });
-
   });
 
   describe('GET /users/{userId}/followers', function () {
-
     beforeEach(function () { sinon.stub(User, 'getFollowers'); });
     afterEach(function () { User.getFollowers.restore(); });
 
@@ -500,7 +484,6 @@ describe('User Router', function () {
   });
 
   describe('GET /users/{userId}/followers-count', function () {
-
     beforeEach(function () { sinon.stub(User, 'getFollowerCount'); });
     afterEach(function () { User.getFollowerCount.restore(); });
 
@@ -512,11 +495,9 @@ describe('User Router', function () {
       app.get(path).set('x-access-token', 'testToken')
         .expect(200, { numberOfFollowers: 3 }, done);
     });
-
   });
 
   describe('GET /users/{userId}/following', function () {
-
     beforeEach(function () { sinon.stub(User, 'getFollowing'); });
     afterEach(function () { User.getFollowing.restore(); });
 
@@ -539,11 +520,9 @@ describe('User Router', function () {
         .query({skip: 2, limit: 10})
         .expect(200, [{ name: 'user' }], done);
     });
-
   });
 
   describe('GET /users/{userId}/following-count', function () {
-
     beforeEach(function () { sinon.stub(User, 'getFollowingCount'); });
     afterEach(function () { User.getFollowingCount.restore(); });
 
@@ -555,11 +534,9 @@ describe('User Router', function () {
       app.get(path).set('x-access-token', 'testToken')
         .expect(200, { numberOfFollowing: 2 }, done);
     });
-
   });
 
   describe('GET /relationships/follwoing', function () {
-
     beforeEach(function () { sinon.stub(User, 'getFollowingInfo'); });
     afterEach(function () { User.getFollowingInfo.restore(); });
 
@@ -589,8 +566,8 @@ describe('User Router', function () {
     });
 
     it('should send if userId parameter is missing', function (done) {
-        var resBody = { 
-          status: 400, 
+        var resBody = {
+          status: 400,
           message: 'userId parameter is required'
         };
         var path = '/relationships/following',
@@ -602,6 +579,5 @@ describe('User Router', function () {
           .set('x-access-token', 'testToken')
           .expect(400, resBody, done);
     });
-
   });
 });

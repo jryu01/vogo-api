@@ -1,6 +1,6 @@
 'use strict';
-/*jshint expr: true*/
-/*global -sinon*/
+/* jshint expr: true */
+/* global -sinon */
 
 // ensure the MONGOLAB_URI is set to use test db
 process.env.MONGO_URI = 'mongodb://localhost/voteit-api-test';
@@ -10,7 +10,7 @@ var _ = require('lodash'),
     sinon = require('sinon'),
     mongoose = require('mongoose'),
     sinonChai = require('sinon-chai'),
-    chaiAsPromised = require("chai-as-promised");
+    chaiAsPromised = require('chai-as-promised');
 
 var DB_URI = process.env.MONGO_URI;
 
@@ -20,7 +20,7 @@ chai.use(chaiAsPromised);
 mongoose.models = {};
 mongoose.modelSchemas = {};
 
-// set globals 
+// set globals
 global.sinon = sinon;
 global.expect = chai.expect;
 
@@ -44,8 +44,8 @@ after(mongoose.disconnect.bind(mongoose));
 // cleanup db
 beforeEach(function (done) {
   // clear database
-  for (var i in mongoose.connection.collections) {
-    mongoose.connection.collections[i].remove(function () {});
-  } 
+  Object.keys(mongoose.connection.collections).forEach(function (name) {
+    mongoose.connection.collections[name].remove(function () {});
+  });
   return done();
 });

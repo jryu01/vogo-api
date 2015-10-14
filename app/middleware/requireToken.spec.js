@@ -6,30 +6,16 @@ var express = require('express'),
     Promise = require('bluebird'),
     rewire = require('rewire');
 
-
-
 describe('Middleware: requiresToken', function () {
-  
   var app, reqObj;
-  
-  app = express();
-  app.use(bodyParser.json());
-  app.use(function (req, res) {
-    requiresToken(req, res, function (err) {
-      reqObj = req;
-      res.statusCode = err ? (err.status || 500) : 200;
-      res.end(err ? err.message : JSON.stringify(req.body));
-    });
-  });
-  
+
   // setup mocks
   var requiresToken, mockJwt, mockUser, mockConfig, TOKEN;
 
   beforeEach(function () {
-
     mockJwt = { decode: sinon.stub(), encode: sinon.stub() };
-    mockConfig = { 
-      jwtsecret: 'testsecret', 
+    mockConfig = {
+      jwtsecret: 'testsecret',
       aws: {
         bucket: 'dev.voteit',
         secretKey: 'testSecretKey'
@@ -42,6 +28,16 @@ describe('Middleware: requiresToken', function () {
       User: mockUser,
       config: mockConfig
     });
+
+    app = express();
+    app.use(bodyParser.json());
+    app.use(function (req, res) {
+      requiresToken(req, res, function (err) {
+        reqObj = req;
+        res.statusCode = err ? (err.status || 500) : 200;
+        res.end(err ? err.message : JSON.stringify(req.body));
+      });
+    });
   });
 
   beforeEach(function () {
@@ -49,13 +45,12 @@ describe('Middleware: requiresToken', function () {
     // set default behaviour of mocks
     mockJwt.decode
       .withArgs(TOKEN, 'testsecret').returns({
-        iss: 321, //user id
-        exp: Date.now() + (60*24*60*60*1000)
+        iss: 321, // user id
+        exp: Date.now() + (60 * 24 * 60 * 60 * 1000)
       });
   });
 
   describe('with valid token', function () {
-
     beforeEach(function () {
       mockUser.findByIdAsync.withArgs(321)
           .returns(Promise.resolve({ user: 'json'}));
@@ -88,22 +83,21 @@ describe('Middleware: requiresToken', function () {
 
       request(app).get('/')
         .set('x-access-token', TOKEN)
-        .expect(401, 
+        .expect(401,
           '{"status":401,"message":"User not found with the token!"}', done);
     });
   });
 
  describe('with an Invalid token', function () {
-
     it('should response with 401 with missing token', function (done) {
       request(app).get('/')
-        .expect(401, 
+        .expect(401,
           '{"status":401,"message":"Access token is missing!"}', done);
     });
 
     it('should response with 401 with decoding error', function (done) {
       mockJwt.decode.withArgs('invalidToken', 'testsecret')
-      .throws(new Error("decode err"));
+      .throws(new Error('decode err'));
 
       request(app).get('/')
         .set('x-access-token', 'invalidToken')
@@ -114,8 +108,8 @@ describe('Middleware: requiresToken', function () {
 
     it('should response with 401 when token is expired', function (done) {
       var expTokenDecoded = {
-        iss: 123, 
-        exp: Date.now() - (60*24*60*60*1000)
+        iss: 123,
+        exp: Date.now() - (60 * 24 * 60 * 60 * 1000)
       };
       mockJwt.decode.withArgs('expToken', 'testsecret')
         .returns(expTokenDecoded);

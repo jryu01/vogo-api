@@ -1,8 +1,8 @@
 'use strict';
 var config = require('app/config'),
-    express = require("express"),
+    express = require('express'),
     Promise = require('bluebird'),
-    request = Promise.promisify(require("request")),
+    request = Promise.promisify(require('request')),
     requireToken = require('app/middleware/requireToken');
 
 
@@ -16,16 +16,16 @@ var searchImage = function (req, res, next) {
   opts.reqTimeout = 5000;
 
   var reqUrl = 'https://api.datamarket.azure.com/Bing/Search/v1/Image?' +
-    'Query=%27' + query + '%27' + 
-    '&Adult=%27Strict%27' + 
+    'Query=%27' + query + '%27' +
+    '&Adult=%27Strict%27' +
     '&ImageFilters=%27Size%3AMedium%2BAspect%3ASquare%27' +
-    '&$format=json' + 
+    '&$format=json' +
     '&$skip=' + opts.skip;
   request({
     uri: reqUrl,
     method: 'GET',
     headers: {
-        "User-Agent": opts.userAgent
+        'User-Agent': opts.userAgent
     },
     auth: {
         user: opts.accKey,
@@ -44,7 +44,6 @@ var searchImage = function (req, res, next) {
 };
 
 var userRouter = module.exports = function () {
-  
   var router = express.Router();
 
   router.get('/bing/search/image', requireToken, searchImage);

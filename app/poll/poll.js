@@ -3,9 +3,9 @@
 var _ = require('lodash'),
     eb = require('app/eventBus'),
     Promise = require('bluebird'),
-    mongoose = Promise.promisifyAll(require("mongoose")),
+    mongoose = Promise.promisifyAll(require('mongoose')),
     Schema = mongoose.Schema;
- 
+
 var PollSchema = new Schema({
 
   createdBy: {
@@ -47,7 +47,7 @@ PollSchema.index({'createdBy.userId': 1, '_id': -1 });
 PollSchema.index({'comments.createdBy.userId': 1});
 PollSchema.index({'subscribers': 1});
 
-//Add toJSON option to transform document before returnig the result
+// Add toJSON option to transform document before returnig the result
 PollSchema.options.toJSON = {
   transform: function (doc, ret, options) {
     ret.id = ret._id;
@@ -62,11 +62,11 @@ PollSchema.statics.publish = function (user, data) {
   data = data || {};
   var poll = {
     question: data.question,
-    answer1: { 
+    answer1: {
       text: data.answer1 && data.answer1.text,
       picture: data.answer1 && data.answer1.picture
     },
-    answer2: { 
+    answer2: {
       text: data.answer2 && data.answer2.text,
       picture: data.answer2 && data.answer2.picture
     },
@@ -91,13 +91,13 @@ PollSchema.statics.getByUserId = function (userId, pollId, limit) {
         'answer1.voters': 0,
         'answer2.voters': 0,
         'comments': 0,
-        'votes': 0 
+        'votes': 0
       },
       options = { sort: { '_id': -1 } };
 
   if (limit > 0) {
-    options.limit = limit; 
-  }   
+    options.limit = limit;
+  }
   if (pollId) {
     query._id = { $lt: pollId };
   }
@@ -112,28 +112,28 @@ PollSchema.statics.getById = function (pollId) {
 };
 
 PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
-  var query = { 
+  var query = {
     '_id': pollId,
     'answer1.voters': { $ne: voterId },
     'answer2.voters': { $ne: voterId }
   };
   var update = { $inc: {}, $addToSet: {} };
 
-  if(answerNumber !== 1 && answerNumber !== 2) {
+  if (answerNumber !== 1 && answerNumber !== 2) {
     return Promise.reject(
       new Error('Invalid answer: answer must be either number 1 or 2')
     );
   }
 
   update.$inc['answer' + answerNumber + '.numVotes'] = 1;
-  update.$addToSet['answer'+ answerNumber + '.voters'] = voterId;
+  update.$addToSet['answer' + answerNumber + '.voters'] = voterId;
 
   return this.findOneAndUpdateAsync(query, update, {'new': true}).then(function (poll) {
     if (poll) {
       setImmediate(function () {
-        eb.emit('pollModel:vote', { 
-          userId: voterId, 
-          poll: poll, 
+        eb.emit('pollModel:vote', {
+          userId: voterId,
+          poll: poll,
           answer: answerNumber
         });
       });
@@ -176,19 +176,19 @@ PollSchema.statics.getComments = function (pollId, options) {
   options = options || {};
   options.skip = options.skip || 0;
   options.limit = options.limit || 100;
-  var project = { 
+  var project = {
     'comments': { $slice: [options.skip, options.limit] }
   };
   return this.findByIdAsync(pollId, project).then(function (poll) {
-    return poll ? poll.comments: [];
+    return poll ? poll.comments : [];
   });
 };
 
-//TODO: test this
+// TODO: test this
 PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
   var userId = mongoose.Types.ObjectId(user.id);
-  var query = { 
-    'answer1.voters': { $ne: userId }, 
+  var query = {
+    'answer1.voters': { $ne: userId },
     'answer2.voters': { $ne: userId }
   };
   if (exclude.length > 1) {
@@ -205,9 +205,9 @@ PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
     { $limit: 1000 },
     { $match: query },
     { $limit: 20 },
-    { $project: { 
-      'id': '$_id', 
-      '_id': 0, 
+    { $project: {
+      'id': '$_id',
+      '_id': 0,
       'createdBy': 1,
       'question': 1,
       'answer1.text': 1,

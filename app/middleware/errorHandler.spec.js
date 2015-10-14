@@ -1,5 +1,5 @@
 'use strict';
-/*jshint expr: true*/
+/* jshint expr: true */
 
 var chai = require('chai');
 var sinon = require('sinon');
@@ -10,7 +10,6 @@ chai.use(sinonChai);
 var errorHandler = require('./errorHandler');
 
 describe('Middleware: errorHandler', function () {
-
   var eHandler = errorHandler();
   var err, req, res, next;
 
@@ -19,7 +18,7 @@ describe('Middleware: errorHandler', function () {
     err = {};
     req = {};
     res = { json: sinon.spy(), status: sinon.spy() };
-    next = {}; 
+    next = {};
   });
 
   it('should be a function', function () {
@@ -33,7 +32,7 @@ describe('Middleware: errorHandler', function () {
   });
 
   it('should respond with error message', function () {
-    err = new Error('Unexpected server error'); 
+    err = new Error('Unexpected server error');
     eHandler(err, req, res, next);
     expect(res.json).to.have.been.calledOnce;
     expect(res.json).to.have.been.calledWith({
@@ -41,7 +40,7 @@ describe('Middleware: errorHandler', function () {
     });
   });
 
-  it('should respond with status with provided error status code', 
+  it('should respond with status with provided error status code',
     function () {
     err = { status: 400, message: 'some error' };
     eHandler(err, req, res, next);
@@ -49,7 +48,6 @@ describe('Middleware: errorHandler', function () {
   });
 
   describe('with MongoError', function () {
-
     it('should respond with status 400 error when code is E11000', function () {
       err = { name: 'MongoError', code: 11000, message: 'some error'};
       eHandler(err, req, res, next);
@@ -89,26 +87,24 @@ describe('Middleware: errorHandler', function () {
         message: 'some error'
       });
     });
-
   });
 
   describe('with mongoose ValidationError', function () {
     beforeEach(function () {
       // mongoose error obj
-      err = { 
+      err = {
         message: 'Validation failed',
         name: 'ValidationError',
         errors: {
-          name: { 
+          name: {
             message: 'name is required!',
             name: 'ValidatorError',
             path: 'name',
             type: 'required',
-            value: undefined 
+            value: undefined
           }
         }
       };
-
     });
 
     it('should respond with status 400', function () {
@@ -119,7 +115,7 @@ describe('Middleware: errorHandler', function () {
     it('should respond with a error message', function () {
       eHandler(err, req, res, next);
       expect(res.json).to.have.been.calledWith({ message: 'name is required!'});
-    });  
+    });
 
     it('should respond with a message containing error messages' +
       ' seperated by comma when there are multiple errors', function () {
@@ -128,14 +124,12 @@ describe('Middleware: errorHandler', function () {
         name: 'ValidatorError',
         path: 'email',
         type: 'required',
-        value: undefined 
+        value: undefined
       };
       eHandler(err, req, res, next);
       expect(res.json).to.have.been.calledWith({
-        message:'name is required!,email is required!'
+        message: 'name is required!,email is required!'
       });
     });
-
   });
-
 });

@@ -1,9 +1,9 @@
   'use strict';
 
 const methodOverride = require('method-override');
-const bodyParser = require('body-parser')
+const bodyParser = require('body-parser');
 const express = require('express');
-const morgan  = require('morgan'); // HTTP request logger
+const morgan = require('morgan'); // HTTP request logger
 const config = require('./config');
 const app = express();
 
@@ -20,7 +20,7 @@ if (config.env === 'development') {
 }
 
 app.use('/', function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
+  res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
   res.header('Access-Control-Allow-Headers', 'Content-type,Accept,X-Access-Token');
   if (req.method === 'OPTIONS') {
@@ -30,7 +30,7 @@ app.use('/', function (req, res, next) {
   }
 });
 
-// Mount express sub app/routers 
+// Mount express sub app/routers
 var errorHandler = require('app/middleware/errorHandler.js'),
     userRouter = require('app/user/router'),
     pollRouter = require('app/poll/router'),

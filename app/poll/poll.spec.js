@@ -1,5 +1,5 @@
 'use strict';
-/*jshint expr: true*/
+/* jshint expr: true */
 
 var mongoose = require('mongoose'),
     Promise = require('bluebird'),
@@ -18,13 +18,12 @@ var createPollData = function (overwrites) {
     answer2: {
       text: 'soccer',
       picture: 'a2picurl'
-    } 
+    }
   };
   return _.extend(defaults, overwrites);
 };
 
 describe('Poll', function () {
-
   var user;
 
   beforeEach(function () {
@@ -87,15 +86,15 @@ describe('Poll', function () {
       });
     }).catch(done);
   });
-  
+
   it('should get polls in decending order by id for a user', function () {
     var poll1 = createPollData({ question: 'poll1' }),
         poll2 = createPollData({ question: 'poll2' }),
         poll3 = createPollData({ question: 'poll3' }),
-        user2 = { 
-          name: 'Sam', 
-          picture: 'pfpic', 
-          id: mongoose.Types.ObjectId() 
+        user2 = {
+          name: 'Sam',
+          picture: 'pfpic',
+          id: mongoose.Types.ObjectId()
         };
 
     var promise = Poll.publish(user, poll1).then(function (poll1) {
@@ -112,7 +111,7 @@ describe('Poll', function () {
       expect(polls[1].question).to.equal(poll1.question);
     });
   });
-  
+
   it('should exclude array values on #getByUserId', function () {
     var poll1 = createPollData({ question: 'poll1' });
 
@@ -127,9 +126,8 @@ describe('Poll', function () {
       expect(polls[0].comments).to.be.undefined;
       expect(polls[0].votes).to.be.undefined;
     });
-
   });
-  
+
   it('should limit the number of result', function () {
     var poll1 = createPollData({ question: 'poll1' }),
         poll2 = createPollData({ question: 'poll2' });
@@ -168,10 +166,10 @@ describe('Poll', function () {
   });
 
   it('should vote an answer for the poll', function () {
-    var user2 = { 
-      name: 'Sam', 
-      picture: 'pfpic', 
-      id: mongoose.Types.ObjectId() 
+    var user2 = {
+      name: 'Sam',
+      picture: 'pfpic',
+      id: mongoose.Types.ObjectId()
     };
     var pollId;
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
@@ -223,7 +221,7 @@ describe('Poll', function () {
     }).then(function () {
       return Poll.voteAnswer(pollId, user.id, 2);
     }).then(function () {
-      return Poll.findByIdAsync(pollId); 
+      return Poll.findByIdAsync(pollId);
     });
 
     return expect(promise).to.be.fulfilled.then(function (poll) {
@@ -235,7 +233,6 @@ describe('Poll', function () {
   });
 
   it('should emit an event when poll is voted', function (done) {
-
     var pollId;
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
       pollId = poll.id;
@@ -315,7 +312,6 @@ describe('Poll', function () {
   });
 
   it('should emit event after comment is created', function (done) {
-
     var promise = Poll.publish(user, createPollData()).then(function (poll) {
       return Poll.comment(poll.id, user, 'new comment');
     });
@@ -326,7 +322,7 @@ describe('Poll', function () {
       setImmediate(function () {
         expect(eb.emit).to.have.been.calledWith('pollModel:comment', {
           userId: user.id,
-          poll: updatedPoll 
+          poll: updatedPoll
         });
       });
       done();
@@ -334,7 +330,6 @@ describe('Poll', function () {
   });
 
   it('should not emit event when commenting on invalid poll', function (done) {
-
     var promise = Poll.comment(mongoose.Types.ObjectId(), user, 'new comment');
 
     return expect(promise).to.be.fulfilled.then(function (poll) {
@@ -357,7 +352,7 @@ describe('Poll', function () {
 
     return expect(promise).to.eventually.have.property('numComments', 1);
   });
-  
+
   it('should get empty array for comments', function () {
     var promise = Poll.getComments(mongoose.Types.ObjectId());
     return expect(promise).to.eventually.be.an('array').that.is.empty;
@@ -381,7 +376,7 @@ describe('Poll', function () {
     });
 
     return expect(promise).to.be.fulfilled.then(function (comments) {
-      expect(comments).to.be.length(2); 
+      expect(comments).to.be.length(2);
       expect(comments[0].text).to.equal('second');
       expect(comments[1].text).to.equal('third');
     });
@@ -389,12 +384,11 @@ describe('Poll', function () {
 
   it('should have #toJSON to get clean json', function () {
     var data = createPollData();
-    data.someWeird = "adsjfklsdfjalsdfjsalkdfjskldf";
+    data.someWeird = 'adsjfklsdfjalsdfjsalkdfjskldf';
     var poll = new Poll(data);
     expect(poll.toJSON()).to.have.property('id');
     expect(poll.toJSON()).to.not.have.property('_id');
     expect(poll.toJSON()).to.not.have.property('__V');
     expect(poll.toJSON()).to.not.have.property('_random');
   });
-
 });

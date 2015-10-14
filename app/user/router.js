@@ -1,11 +1,11 @@
 'use strict';
 var jwt = require('jwt-simple'),
-    User = require('./user'), 
+    User = require('./user'),
     config = require('app/config'),
     crypto = require('crypto'),
-    express = require("express"),
+    express = require('express'),
     Promise = require('bluebird'),
-    request = Promise.promisify(require("request")),
+    request = Promise.promisify(require('request')),
     requireToken = require('app/middleware/requireToken'),
     errorhandler = require('api-error-handler'),
     pUploader = require('./pUploader');
@@ -54,14 +54,14 @@ var signinWithFacebook = function (req, res, next) {
     return next({status: 400, message: 'A facebook access token is required'});
   }
   request('https://graph.facebook.com/v2.3/me?' +
-    'fields=id,email,name,picture.type(large)&access_token=' + 
+    'fields=id,email,name,picture.type(large)&access_token=' +
     req.body.facebookAccessToken)
   .spread(function (response, body) {
     var profile;
     if (response.statusCode !== 200) {
-      throw { 
+      throw {
         name: 'FacebookGraphAPIError',
-        message: "Failed to fetch facebook user profile",
+        message: 'Failed to fetch facebook user profile',
         status: 500
       };
     }
@@ -73,13 +73,13 @@ var signinWithFacebook = function (req, res, next) {
         var usr = user || new User({
           email: fbProfile.email,
           name: fbProfile.name,
-          facebook: { 
+          facebook: {
             id: fbProfile.id,
             email: fbProfile.email,
             name: fbProfile.name
           }
         });
-        var picture = fbProfile.picture && fbProfile.picture.data && 
+        var picture = fbProfile.picture && fbProfile.picture.data &&
             fbProfile.picture.data.url;
         return pUploader(picture, usr.id).then(function (uploadedUrl) {
           usr._updated = true;
@@ -95,15 +95,15 @@ var signinWithFacebook = function (req, res, next) {
       iss: user.id,
       exp: Date.now() + config.jwtexp
     }, config.jwtsecret);
-    res.json({ 
+    res.json({
       user: user,
-      access_token: token 
-    }); 
+      access_token: token
+    });
   }).catch(function (e) {
     if (e.name === 'FacebookGraphAPIError') {
-      return res.status(500).json(e);  
+      return res.status(500).json(e);
     }
-    next(e); 
+    next(e);
   });
 };
 
@@ -113,9 +113,9 @@ var signin = function (req, res, next) {
     signinWithPassword(req, res, next);
     break;
   case 'facebook':
-    signinWithFacebook(req, res, next); 
+    signinWithFacebook(req, res, next);
     break;
-  default:  
+  default:
     next({ status: 400, message: 'grantType field is missing or not valid' });
   }
 };
@@ -144,8 +144,8 @@ var unfollow = function (req, res, next) {
 
 var getFollowers = function (req, res, next) {
   var options = {};
-  options.skip = parseInt(req.query.skip, 10) || 0; 
-  options.limit = parseInt(req.query.limit, 10) || 100; 
+  options.skip = parseInt(req.query.skip, 10) || 0;
+  options.limit = parseInt(req.query.limit, 10) || 100;
   User.getFollowers(req.params.id, options)
     .then(res.json.bind(res))
     .catch(next);
@@ -160,8 +160,8 @@ var getFollowerCount = function (req, res, next) {
 
 var getFollowing = function (req, res, next) {
   var options = {};
-  options.skip = parseInt(req.query.skip, 10) || 0; 
-  options.limit = parseInt(req.query.limit, 10) || 100; 
+  options.skip = parseInt(req.query.skip, 10) || 0;
+  options.limit = parseInt(req.query.limit, 10) || 100;
   User.getFollowing(req.params.id, options)
     .then(res.json.bind(res))
     .catch(next);
@@ -185,16 +185,16 @@ var getFollowingInfo = function (req, res, next) {
 };
 
 var getS3Info = function (req, res, next) {
-  //TODO: Test
-  var expDate = new Date(Date.now() + (120*24*60*60*1000));
+  // TODO: Test
+  var expDate = new Date(Date.now() + (120 * 24 * 60 * 60 * 1000));
   var s3PolicyDoc = {
-    "expiration": expDate.toISOString(),
-    "conditions": [ 
-      {"bucket": config.aws.bucket}, 
-      ["starts-with", "$key", ""],
-      {"acl": "public-read"},
-      ["starts-with", "$Content-Type", ""],
-      ["content-length-range", 0, 1048576] //1 Mb
+    'expiration': expDate.toISOString(),
+    'conditions': [
+      {'bucket': config.aws.bucket},
+      ['starts-with', '$key', ''],
+      {'acl': 'public-read'},
+      ['starts-with', '$Content-Type', ''],
+      ['content-length-range', 0, 1048576] // 1 Mb
     ]
   };
   var s3Policy, hash, s3Signature;
@@ -224,18 +224,17 @@ var registerDeviceToken = function (req, res, next) {
 };
 
 var userRouter = module.exports = function () {
-  
   var router = express.Router();
 
   router.post('/login', signin);
   router.post('/users', createUser);
 
   // Below routes require authentication tokens
-  router.use(requireToken);  
+  router.use(requireToken);
 
-  router.get('/s3info', getS3Info); //TODO: need test
+  router.get('/s3info', getS3Info); // TODO: need test
   router.post('/deviceTokens', registerDeviceToken);
-  
+
   router.get('/users', listUsers); // will be depreciated
   router.get('/users/:id', getUser);
 
