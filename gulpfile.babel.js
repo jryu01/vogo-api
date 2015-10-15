@@ -15,6 +15,9 @@ gulp.task('test', () => gulp.src(NODE_TEST_FILES)
     .pipe(mocha({ reporter: 'spec'})));
 
 gulp.task('default', ['test']);
+gulp.task('watch', () => {
+  gulp.watch(NODE_FILES, ['test']);
+});
 
 // var gulp = require('gulp'),
 //     exec = require('child_process').exec,

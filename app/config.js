@@ -5,9 +5,9 @@
 
 'use strict';
 
-const _ = require('lodash');
+import _ from 'lodash';
 
-const config = (function (env) {
+const config = (env => {
   const conf = {};
 
   // Common configuration

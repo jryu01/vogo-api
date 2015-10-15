@@ -1,17 +1,14 @@
-'use strict';
-/* jshint expr: true */
+import _ from 'lodash';
+import eb from 'app/eventBus';
+import config from 'app/config';
+import bcrypt from 'bcrypt';
+import rewire from 'rewire';
+import Promise from 'bluebird';
+import mongoose from 'mongoose';
 
-var _ = require('lodash'),
-    eb = require('app/eventBus'),
-    config = require('app/config'),
-    bcrypt = require('bcrypt'),
-    rewire = require('rewire'),
-    Promise = require('bluebird'),
-    mongoose = require('mongoose');
-
-var userData = {
-  create: function (overwrites) {
-    var defaults = {
+const userData = {
+  create: overwrites => {
+    const defaults = {
       email: 'Jhon@jhonhome.com',
       name: 'Jhon Bob',
       password: 'testPassword',
@@ -23,20 +20,15 @@ var userData = {
   }
 };
 
-describe('User', function () {
-  var User, data;
+describe.only('User', () => {
+  const User = require('app/user/user');
 
-  beforeEach(function () {
-    sinon.stub(eb, 'emit');
-    User = require('app/user/user');
-  });
-  afterEach(function () {
-    eb.emit.restore();
-  });
+  beforeEach(() => sinon.stub(eb, 'emit'));
+  afterEach(() => eb.emit.restore());
 
-  describe('.createOrUpdate', function () {
-    it('should create a new user', function () {
-      var user = new User({
+  describe('.createOrUpdate', () => {
+    it('should create a new user', () => {
+      const user = new User({
         email: 'testuser@test.net',
         name: 'test user',
         facebook: {
@@ -45,14 +37,14 @@ describe('User', function () {
           name: 'test user'
         }
       });
-      return expect(User.createOrUpdate(user.id, user.toJSON())).to.be.fulfilled.then(function (user) {
+      return expect(User.createOrUpdate(user.id, user.toJSON())).to.be.fulfilled.then(user => {
         expect(user).to.have.property('id', user.id);
         expect(user).to.have.property('email', 'testuser@test.net');
       });
     });
 
-    it('should update existing user', function () {
-      var user = new User({
+    it('should update existing user', () => {
+      const user = new User({
         email: 'testuser@test.net',
         name: 'test user',
         facebook: {
@@ -61,21 +53,21 @@ describe('User', function () {
           name: 'test user'
         }
       });
-      var p = User.createAsync(user).then(function () {
-        var update = user.toJSON();
+      const p = User.createAsync(user).then(() => {
+        const update = user.toJSON();
         update.name = 'updated user';
         return User.createOrUpdate(user.id, update);
       });
-      return expect(p).to.be.fulfilled.then(function (user) {
+      return expect(p).to.be.fulfilled.then(user => {
         expect(user).to.have.property('id', user.id);
         expect(user).to.have.property('name', 'updated user');
       });
     });
   });
 
-  it('should create a new user', function () {
-    data = userData.create();
-    return expect(User.createAsync(data)).to.be.fulfilled.then(function (user) {
+  it('should create a new user', () => {
+    const data = userData.create();
+    return expect(User.createAsync(data)).to.be.fulfilled.then(user => {
       expect(user).to.have.property('email', 'jhon@jhonhome.com');
       expect(user).to.have.property('password');
       expect(user).to.have.property('name', 'Jhon Bob');
@@ -84,27 +76,27 @@ describe('User', function () {
     });
   });
 
-  it('should give an error when email is missing', function () {
-    data = userData.create({ email: null });
-    return expect(User.createAsync(data)).to.be.rejected.then(function (e) {
+  it('should give an error when email is missing', () => {
+    const data = userData.create({ email: null });
+    return expect(User.createAsync(data)).to.be.rejected.then( e => {
       expect(e).to.match(/email is required!/);
     });
   });
 
-  it('should not save duplicate email', function () {
-    data = userData.create();
-    var createUserPromise = User.createAsync(data).then(function (user) {
+  it('should not save duplicate email', () => {
+    const data = userData.create();
+    const createUserPromise = User.createAsync(data).then(user => {
       return User.createAsync(data);
     });
-    return expect(createUserPromise).to.be.rejected.then(function (e) {
+    return expect(createUserPromise).to.be.rejected.then( e => {
       expect(e).to.match(/E11000 duplicate key error index/);
     });
   });
 
-  it('should save hashed password on creation', function () {
-    data = userData.create();
+  it('should save hashed password on creation', () => {
+    const data = userData.create();
     sinon.spy(bcrypt, 'hashAsync');
-    var passwordCompare = User.createAsync(data).then(function (user) {
+    const passwordCompare = User.createAsync(data).then(user => {
       expect(bcrypt.hashAsync).to.be.calledWith(data.password, 1);
       bcrypt.hashAsync.restore();
       return bcrypt.compareSync(data.password, user.password);
@@ -112,53 +104,53 @@ describe('User', function () {
     return expect(passwordCompare).to.be.eventually.true;
   });
 
-  it('should hash with higher salt work factor in production', function () {
-    var originalEnv = config.env;
-    var hashAsync = sinon.stub(bcrypt, 'hashAsync');
+  it('should hash with higher salt work factor in production', () => {
+    const originalEnv = config.env;
+    const hashAsync = sinon.stub(bcrypt, 'hashAsync');
+    const data = userData.create();
     hashAsync.returns(Promise.resolve({}));
     config.env = 'production';
-    return User.createAsync(data).then(function (user) {
+    return User.createAsync(data).then(user => {
       expect(bcrypt.hashAsync).to.be.calledWith(data.password, 10);
-    }).finally(function () {
+    }).finally(() => {
       config.env = originalEnv;
       hashAsync.restore();
     });
   });
 
-  it('should not hash password if password is not modified', function () {
-    data = userData.create();
+  it('should not hash password if password is not modified', () => {
+    const data = userData.create();
     sinon.spy(bcrypt, 'hashAsync');
 
-    return User.createAsync(data).then(function (user) {
+    return User.createAsync(data).then(user => {
       user.firstName = 'bob';
       return user.saveAsync();
-    }).then(function () {
+    }).then(() => {
       expect(bcrypt.hashAsync).to.have.been.calledOnce;
     }).finally(bcrypt.hashAsync.restore.bind(bcrypt.hashAsync));
   });
 
-  it('should register device tokens to a user', function () {
-    data = userData.create();
-    var promise = User.createAsync(data).then(function (user) {
-      var tokens = [
-        { token: 'userIphoneToken', os: 'ios' },
-        { token: 'userIphoneToken', os: 'ios' },
-        { token: 'userAndroidToken', os: 'android' }
-      ];
-      // var tokens = ['userIphoneToken', 'userIphoneToken', 'userIpadToken'];
-      return Promise.resolve(tokens).each(function (token) {
-        return User.registerDeviceToken(user.id, token.token, token.os)
-        .then(function (token) {
-          expect(token).to.have.property('userId', user.id);
-          expect(token).to.have.property('token');
-          expect(token).to.have.property('os');
-        });
-      }).then(function () {
-        return User.findByIdAsync(user.id);
-      });
-    });
+  it('should register device tokens to a user', () => {
+    const data = userData.create();
+    const tokens = [
+      { token: 'userIphoneToken', os: 'ios' },
+      { token: 'userIphoneToken', os: 'ios' },
+      { token: 'userAndroidToken', os: 'android' }
+    ];
+    const registerTokenTo = user =>
+      token =>
+        User.registerDeviceToken(user.id, token.token, token.os)
+          .then(token => {
+            expect(token).to.have.property('userId', user.id);
+            expect(token).to.have.property('token');
+            expect(token).to.have.property('os');
+          });
 
-    return expect(promise).to.be.fulfilled.then(function (user) {
+    return User.createAsync(data).then(user =>
+      Promise.resolve(tokens)
+        .each(registerTokenTo(user))
+        .then(() => User.findByIdAsync(user.id))
+    ).then(user => {
       expect(user.deviceTokens).to.be.length(2);
       expect(user.deviceTokens[0].token).to.equal('userIphoneToken');
       expect(user.deviceTokens[0].os).to.equal('ios');
@@ -167,32 +159,33 @@ describe('User', function () {
     });
   });
 
-  it('should remove same device token from previous user when a new user is registering with the same token', function () {
-    var u1Data = userData.create({ name: 'Jhon' }),
+  it('should remove same device token from previous user when a new user is registering with the same token', () => {
+    const u1Data = userData.create({ name: 'Jhon' }),
         u2Data = userData.create({ email: 'sam@sam.net', name: 'Sam'});
-    var promise = Promise.all([
+    const promise = Promise.all([
       User.createAsync(u1Data),
       User.createAsync(u2Data)
-    ]).each(function (user) {
+    ]).each(user => {
       return User.registerDeviceToken(user.id, 'iphone1Token', 'ios');
-    }).then(function () {
+    }).then(() => {
       return Promise.all([
         User.findOneAsync({ name: 'Jhon'}),
         User.findOneAsync({ name: 'Sam'})
       ]);
     });
-    return expect(promise).to.be.fulfilled.then(function (users) {
+    return expect(promise).to.be.fulfilled.then(users => {
       expect(users[0].deviceTokens).to.be.empty;
       expect(users[1].deviceTokens[0].token).to.equal('iphone1Token');
     });
   });
 
-  describe('(user graph)', function () {
-    var users, targetUser;
+  describe('(user graph)', () => {
+    let users;
+    let targetUser;
 
-    beforeEach(function () {
+    beforeEach(() => {
       users = [];
-      for (var i = 1; i <= 3; i += 1) {
+      for (let i = 1; i <= 3; i += 1) {
         users.push(new User({
           _id: mongoose.Types.ObjectId(),
           email: 'from' + i + '@address.com',
@@ -211,11 +204,10 @@ describe('User', function () {
       return User.createAsync(users);
     });
 
-    it('should follow target user', function () {
-      var promise = User.follow(users[0], targetUser._id).then(function () {
-        return User.getFollowers(targetUser.id);
-      });
-      return expect(promise).to.be.fulfilled.then(function (followers) {
+    it('should follow target user', () => {
+      const promise = User.follow(users[0], targetUser._id)
+        .then(() => User.getFollowers(targetUser.id));
+      return expect(promise).to.be.fulfilled.then(followers => {
         expect(followers[0]).to.have.property('name', 'From User1');
         expect(followers[0]).to.have.property('picture', 'profilePic1');
         expect(followers[0].userId.toString()).to.equal(users[0].id);
@@ -223,11 +215,11 @@ describe('User', function () {
       });
     });
 
-    it('should emit follow event', function (done) {
-      User.follow(users[0], targetUser._id).then(function () {
+    it('should emit follow event', done => {
+      User.follow(users[0], targetUser._id).then(() => {
         expect(eb.emit).to.not.have.been.called;
         // expect eb.emit called on next event loop cycle
-        setImmediate(function () {
+        setImmediate(() => {
           expect(eb.emit).to.have.been
             .calledWith('userModel:follow', {
               userId: users[0].id,
@@ -238,107 +230,88 @@ describe('User', function () {
       }).catch(done);
     });
 
-    it('should not follow same user twice', function () {
-      var promise = User.follow(users[1], targetUser._id).then(function () {
-        return User.follow(users[1], targetUser.id);
-      }).then(function () {
-        return User.getFollowers(targetUser.id);
-      });
+    it('should not follow same user twice', () => {
+      const promise = User.follow(users[1], targetUser._id)
+        .then(() => User.follow(users[1], targetUser.id))
+        .then(() => User.getFollowers(targetUser.id));
       return expect(promise).to.eventually.be.length(1);
     });
 
-    it('should unfollow a user', function () {
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.unfollow(users[0], targetUser.id);
-      }).then(function () {
-        return User.getFollowers(targetUser.id);
-      });
+    it('should unfollow a user', () => {
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.unfollow(users[0], targetUser.id))
+        .then(() => User.getFollowers(targetUser.id));
       return expect(promise).to.eventually.be.length(0);
     });
 
-    it('should limit and skip list of followers on getFollowers', function () {
-      var options = { skip: 1, limit: 1 };
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.follow(users[1], targetUser.id);
-      }).then(function () {
-        return User.follow(users[2], targetUser.id);
-      }).then(function () {
-        return User.getFollowers(targetUser.id, options);
-      });
-      return expect(promise).to.be.fulfilled.then(function (result) {
+    it('should limit and skip list of followers on getFollowers', () => {
+      const options = { skip: 1, limit: 1 };
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.follow(users[1], targetUser.id))
+        .then(() => User.follow(users[2], targetUser.id))
+        .then(() => User.getFollowers(targetUser.id, options));
+      return expect(promise).to.be.fulfilled.then(result => {
         expect(result).to.be.length(1);
         expect(result[0].name).to.equal(users[1].name);
       });
     });
 
-    it('should retrieve [] on getFollowers for unknown user', function () {
-      var promise = User.getFollowers(mongoose.Types.ObjectId());
+    it('should retrieve [] on getFollowers for unknown user', () => {
+      const promise = User.getFollowers(mongoose.Types.ObjectId());
       return expect(promise).to.eventually.be.an('array').that.is.empty;
     });
 
-    it('should retrive number of followers for a user', function () {
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.follow(users[1], targetUser.id);
-      }).then(function () {
-        return User.getFollowerCount(targetUser.id);
-      });
+    it('should retrive number of followers for a user', () => {
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.follow(users[1], targetUser.id))
+        .then(() => User.getFollowerCount(targetUser.id));
       return expect(promise).to.eventually.equal(2);
     });
 
-    it('should return 0 on getFollowersCount on non-exist user', function () {
-      var promise = User.getFollowerCount(mongoose.Types.ObjectId());
+    it('should return 0 on getFollowersCount on non-exist user', () => {
+      const promise = User.getFollowerCount(mongoose.Types.ObjectId());
       return expect(promise).to.eventually.equal(0);
     });
 
-    it('should get following users list of the user', function () {
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.getFollowing(users[0].id);
-      });
-      return expect(promise).to.be.fulfilled.then(function (following) {
+    it('should get following users list of the user', () => {
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.getFollowing(users[0].id));
+      return expect(promise).to.be.fulfilled.then(following => {
         expect(following[0]).to.have.property('name', 'Target User');
         expect(following[0]).to.have.property('picture', 'profilePicT');
         expect(following[0].userId.toString()).to.equal(targetUser.id);
       });
     });
 
-    it('should skip list of following users on getFollowing', function () {
-      var options = { skip: 2 };
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.follow(users[0], users[1].id);
-      }).then(function () {
-        return User.follow(users[0], users[2].id);
-      }).then(function () {
-        return User.getFollowing(users[0].id, options);
-      });
+    it('should skip list of following users on getFollowing', () => {
+      const options = { skip: 2 };
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.follow(users[0], users[1].id))
+        .then(() => User.follow(users[0], users[2].id))
+        .then(() => User.getFollowing(users[0].id, options));
       return expect(promise).to.eventually.be.length(1);
     });
 
-    it('should limit list of following users on getFollowing', function () {
-      var options = { skip: 1, limit: 1 };
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.follow(users[0], users[1].id);
-      }).then(function () {
-        return User.follow(users[0], users[2].id);
-      }).then(function () {
-        return User.getFollowing(users[0].id, options);
-      });
+    it('should limit list of following users on getFollowing', () => {
+      const options = { skip: 1, limit: 1 };
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.follow(users[0], users[1].id))
+        .then(() => User.follow(users[0], users[2].id))
+        .then(() => User.getFollowing(users[0].id, options));
       return expect(promise).to.eventually.be.length(1);
     });
 
-    it('should retrive number of following for a user', function () {
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.follow(users[0], users[1].id);
-      }).then(function () {
-        return User.getFollowingCount(users[0].id);
-      });
+    it('should retrive number of following for a user', () => {
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.follow(users[0], users[1].id))
+        .then(() => User.getFollowingCount(users[0].id));
       return expect(promise).to.eventually.equal(2);
     });
 
-    it('should retrive following relationships (one to one)', function () {
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.getFollowingInfo(users[0].id, [targetUser.id]);
-      });
-      return expect(promise).to.be.fulfilled.then(function (followingInfo) {
+    it('should retrive following relationships (one to one)', () => {
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.getFollowingInfo(users[0].id, [targetUser.id]));
+      return expect(promise).to.be.fulfilled.then(followingInfo => {
         expect(followingInfo[0]).to.have.property('name', 'Target User');
         expect(followingInfo[0]).to.have.property('userId', targetUser.id.toString());
         expect(followingInfo[0]).to.have.property('picture', targetUser.picture);
@@ -346,18 +319,15 @@ describe('User', function () {
       });
     });
 
-    it('should retrive following relationships (one to many)', function () {
-      var targetUserIds = [targetUser.id, users[1].id, users[2].id];
-      var promise = User.follow(users[0], targetUser.id).then(function () {
-        return User.follow(users[1], targetUser.id);
-      }).then(function () {
-        return User.follow(users[0], users[2].id);
-      }).then(function () {
-        return User.getFollowingInfo(users[0].id, targetUserIds);
-      });
-      return expect(promise).to.be.fulfilled.then(function (fInfo) {
+    it('should retrive following relationships (one to many)', () => {
+      const targetUserIds = [targetUser.id, users[1].id, users[2].id];
+      const promise = User.follow(users[0], targetUser.id)
+        .then(() => User.follow(users[1], targetUser.id))
+        .then(() => User.follow(users[0], users[2].id))
+        .then(() => User.getFollowingInfo(users[0].id, targetUserIds));
+      return expect(promise).to.be.fulfilled.then(fInfo => {
         expect(fInfo).to.be.length(3);
-        fInfo.forEach(function (info) {
+        fInfo.forEach(info => {
           if (info.userId.toString() === targetUser.id.toString()) {
             expect(info).to.have.property('following', true);
           } else if (info.userId.toString() === users[1].id.toString()) {
@@ -370,29 +340,26 @@ describe('User', function () {
     });
   });
 
-  describe('#comparePassword', function () {
-    it('should check for matching password', function () {
-      data = userData.create({ password: 'matchingPwd' });
-
-      var isMatching = User.createAsync(data).then(function (user) {
-        return user.comparePassword('matchingPwd');
-      });
+  describe('#comparePassword', () => {
+    it('should check for matching password', () => {
+      const data = userData.create({ password: 'matchingPwd' });
+      const isMatching = User.createAsync(data)
+        .then(user => user.comparePassword('matchingPwd'));
       return expect(isMatching).to.eventually.be.true;
     });
 
-    it('should check for wrong password', function () {
-      data = userData.create({ password: 'matchingPwd' });
-      var isMatching = User.createAsync(data).then(function (user) {
-        return user.comparePassword('wrong');
-      });
+    it('should check for wrong password', () => {
+      const data = userData.create({ password: 'matchingPwd' });
+      const isMatching = User.createAsync(data)
+        .then(user => user.comparePassword('wrong'));
       return expect(isMatching).to.eventually.be.false;
     });
   });
 
-  describe('#toJSON', function () {
-    it('should return clean json', function () {
-      data = userData.create();
-      var user = new User(data);
+  describe('#toJSON', () => {
+    it('should return clean json', () => {
+      const data = userData.create();
+      const user = new User(data);
       expect(user.toJSON()).to.have.property('id');
       expect(user.toJSON()).to.not.have.property('_id');
       expect(user.toJSON()).to.not.have.property('__V');
