@@ -21,7 +21,7 @@ global.expect = chai.expect;
 
 const connectDb = callback => {
   if (mongoose.connection.readyState === 0) {
-    mongoose.connect(DB_URI, function (err) {
+    mongoose.connect(DB_URI, err => {
       if (err) {
         throw err;
       }
@@ -39,8 +39,7 @@ after(mongoose.disconnect.bind(mongoose));
 // cleanup db
 beforeEach(done => {
   // clear database
-  Object.keys(mongoose.connection.collections).forEach(function (name) {
-    mongoose.connection.collections[name].remove(function () {});
-  });
+  Object.keys(mongoose.connection.collections)
+    .forEach(name => mongoose.connection.collections[name].remove(() => {}));
   return done();
 });

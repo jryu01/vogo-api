@@ -1,10 +1,6 @@
 /*eslint-disable */
 //Note: This file should be es5
 var mongoose = require('mongoose');
-
-// use babel for subsequent require
-require('babel-core/register');
-
 var config = require('app/config');
 var app = require('app');
 

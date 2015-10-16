@@ -4,7 +4,7 @@ import express from 'express';
 import morgan from 'morgan';
 import config from './config';
 
-import errorHandler from 'app/middleware/errorHandler.js';
+import errorHandler from 'app/middleware/errorHandler';
 import userRouter from 'app/user/router';
 import pollRouter from 'app/poll/router';
 import bingRouter from 'app/bing/router';

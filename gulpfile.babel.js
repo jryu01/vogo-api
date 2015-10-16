@@ -3,7 +3,7 @@ import gulp from 'gulp';
 import mocha from 'gulp-mocha';
 import eslint from 'gulp-eslint';
 
-const NODE_FILES = ['*.js', 'app/**/*.js', 'bin/**/*.js'];
+const NODE_FILES = ['*.js', 'app/**/*.js'];
 const NODE_TEST_FILES = ['app/**/*.spec.js', '*.spec.js'];
 
 gulp.task('lint', () => gulp.src(NODE_FILES)
@@ -14,9 +14,10 @@ gulp.task('lint', () => gulp.src(NODE_FILES)
 gulp.task('test', () => gulp.src(NODE_TEST_FILES)
     .pipe(mocha({ reporter: 'spec'})));
 
-gulp.task('default', ['test']);
+gulp.task('default', ['lint', 'test']);
+
 gulp.task('watch', () => {
-  gulp.watch(NODE_FILES, ['test']);
+  gulp.watch(NODE_FILES, ['lint', 'test']);
 });
 
 // var gulp = require('gulp'),
