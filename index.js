@@ -1,8 +1,6 @@
-/*eslint-disable */
-//Note: This file should be es5
-var mongoose = require('mongoose');
-var config = require('app/config');
-var app = require('app');
+import mongoose from 'mongoose';
+import config from 'app/config';
+import app from 'app';
 
 app.set('port', config.port);
 
