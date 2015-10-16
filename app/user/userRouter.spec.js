@@ -1,3 +1,4 @@
+/* eslint no-unused-expressions: 0 */
 import methodOverride from 'method-override';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
@@ -158,7 +159,10 @@ describe('User Router', () => {
     });
 
     describe('with facebook access token', () => {
-      let revert, mockRequest, mockPUploader, user;
+      let revert;
+      let mockRequest;
+      let mockPUploader;
+      let user;
 
       beforeEach(done => {
         const userData = {
@@ -207,7 +211,7 @@ describe('User Router', () => {
 
       it('should send request to facebook to get profile', done => {
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
-        app.post(path).send(reqBody).expect(200, (err, res) => {
+        app.post(path).send(reqBody).expect(200, err => {
           if (err) { return done(err); }
           expect(mockRequest).to.have.been
             .calledWith('https://graph.facebook.com/v2.3/me?fields=id,email,name,picture.type(large)&access_token=fakefbtk');
@@ -252,8 +256,7 @@ describe('User Router', () => {
         });
       });
 
-      it('should send 201 with a newly created user when there\'s no user with given fb id',
-        done => {
+      it('should send 201 with a newly created user when there\'s no user with given fb id', done => {
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'anotherfakefbtk'};
         // predefine result for facebook profile request
         mockRequest.returns(Promise.resolve([{
@@ -292,7 +295,7 @@ describe('User Router', () => {
             name: 'Test Vogo2'
           }
         };
-        User.create(existingUser, (err, user) => {
+        User.create(existingUser, err => {
           if (err) { return done(err); }
           const reqBody = {grantType: 'facebook', facebookAccessToken: 'anotherfakefbtk'};
 
@@ -309,8 +312,8 @@ describe('User Router', () => {
           mockPUploader.withArgs('previousProfilePic')
             .returns(Promise.resolve('s3ProfileUrl'));
 
-          app.post(path).send(reqBody).expect(200, (err, res) => {
-            if (err) { return done(err); }
+          app.post(path).send(reqBody).expect(200, (e, res) => {
+            if (e) { return done(e); }
             expect(res.body).to.have.property('access_token').that.is.an('string');
             expect(res.body.user).to.have.property('name', 'Test Vogo2');
             expect(res.body.user).to.have.property('email', 'test2@vogo.com');
@@ -395,9 +398,9 @@ describe('User Router', () => {
           const userId = res.body.id;
           app.get(path + '/' + userId)
             .set('x-access-token', 'testToken')
-            .expect(200, (err, res) => {
-              if (err) { return done(err); }
-              expect(res.body).to.have.property('email', 'bob@vogo.vogo');
+            .expect(200, (error, response) => {
+              if (error) { return done(error); }
+              expect(response.body).to.have.property('email', 'bob@vogo.vogo');
               done();
             });
         });
@@ -565,18 +568,18 @@ describe('User Router', () => {
     });
 
     it('should send if userId parameter is missing', done => {
-        const resBody = {
-          status: 400,
-          message: 'userId parameter is required'
-        };
-        const path = '/relationships/following';
-        const uid = mongoose.Types.ObjectId().toString();
-        User.getFollowingInfo
-          .withArgs(testUser.id, [uid])
-          .returns(Promise.resolve({ result: 'result' }));
-        app.get(path)
-          .set('x-access-token', 'testToken')
-          .expect(400, resBody, done);
+      const resBody = {
+        status: 400,
+        message: 'userId parameter is required'
+      };
+      const path = '/relationships/following';
+      const uid = mongoose.Types.ObjectId().toString();
+      User.getFollowingInfo
+        .withArgs(testUser.id, [uid])
+        .returns(Promise.resolve({ result: 'result' }));
+      app.get(path)
+        .set('x-access-token', 'testToken')
+        .expect(400, resBody, done);
     });
   });
 });

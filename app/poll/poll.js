@@ -1,12 +1,12 @@
 'use strict';
 
-var _ = require('lodash'),
-    eb = require('app/eventBus'),
-    Promise = require('bluebird'),
-    mongoose = Promise.promisifyAll(require('mongoose')),
-    Schema = mongoose.Schema;
+const _ = require('lodash');
+const eb = require('app/eventBus');
+const Promise = require('bluebird');
+const mongoose = Promise.promisifyAll(require('mongoose'));
+const Schema = mongoose.Schema;
 
-var PollSchema = new Schema({
+const PollSchema = new Schema({
 
   createdBy: {
     userId: { type: Schema.Types.ObjectId, required: '{PATH} is required!' },
@@ -60,7 +60,7 @@ PollSchema.options.toJSON = {
 // Static methods
 PollSchema.statics.publish = function (user, data) {
   data = data || {};
-  var poll = {
+  const poll = {
     question: data.question,
     answer1: {
       text: data.answer1 && data.answer1.text,
@@ -86,7 +86,7 @@ PollSchema.statics.publish = function (user, data) {
 };
 
 PollSchema.statics.getByUserId = function (userId, pollId, limit) {
-  var query = { 'createdBy.userId': userId },
+  const query = { 'createdBy.userId': userId },
       projection = {
         'answer1.voters': 0,
         'answer2.voters': 0,
@@ -107,17 +107,17 @@ PollSchema.statics.getByUserId = function (userId, pollId, limit) {
 
 // remove sub arrays. use findByIdAsync to retrieve with sub arrays
 PollSchema.statics.getById = function (pollId) {
-  var projection = '-answer1.voters -answer2.voters -subscribers -comments';
+  const projection = '-answer1.voters -answer2.voters -subscribers -comments';
   return this.findByIdAsync(pollId, projection);
 };
 
 PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
-  var query = {
+  const query = {
     '_id': pollId,
     'answer1.voters': { $ne: voterId },
     'answer2.voters': { $ne: voterId }
   };
-  var update = { $inc: {}, $addToSet: {} };
+  const update = { $inc: {}, $addToSet: {} };
 
   if (answerNumber !== 1 && answerNumber !== 2) {
     return Promise.reject(
@@ -143,7 +143,7 @@ PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
 };
 
 PollSchema.statics.comment = function (pollId, user, text) {
-  var comment = {
+  const comment = {
     'createdBy': {
       userId: user.id,
       name: user.name,
@@ -151,7 +151,7 @@ PollSchema.statics.comment = function (pollId, user, text) {
     },
     'text': text
   };
-  var update = {
+  const update = {
     '$addToSet': {
       'subscribers': user.id
     },
@@ -176,7 +176,7 @@ PollSchema.statics.getComments = function (pollId, options) {
   options = options || {};
   options.skip = options.skip || 0;
   options.limit = options.limit || 100;
-  var project = {
+  const project = {
     'comments': { $slice: [options.skip, options.limit] }
   };
   return this.findByIdAsync(pollId, project).then(function (poll) {
@@ -186,8 +186,8 @@ PollSchema.statics.getComments = function (pollId, options) {
 
 // TODO: test this
 PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
-  var userId = mongoose.Types.ObjectId(user.id);
-  var query = {
+  const userId = mongoose.Types.ObjectId(user.id);
+  const query = {
     'answer1.voters': { $ne: userId },
     'answer2.voters': { $ne: userId }
   };

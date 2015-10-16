@@ -1,3 +1,4 @@
+/* eslint no-unused-expressions: 0 */
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
 import User from 'app/user/user';
@@ -19,9 +20,9 @@ const createPollData = overwrites =>
     }
   }, overwrites);
 
-const promiseUsers = numUsers => 
+const promiseUsers = numUsers =>
   numUsers === 0 ? [] : [
-    ...promiseUsers(numUsers - 1), 
+    ...promiseUsers(numUsers - 1),
     User.createAsync({
       email: 'user' + numUsers + '@test.com',
       name: 'user' + numUsers,

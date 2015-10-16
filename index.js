@@ -1,3 +1,4 @@
+/*eslint-disable */
 //Note: This file should be es5
 var mongoose = require('mongoose');
 

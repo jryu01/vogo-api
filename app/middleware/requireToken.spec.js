@@ -32,7 +32,7 @@ describe('Middleware: requiresToken', () => {
     app = express();
     app.use(bodyParser.json());
     app.use((req, res) => {
-      requiresToken(req, res, (err) => {
+      requiresToken(req, res, err => {
         reqObj = req;
         res.statusCode = err ? (err.status || 500) : 200;
         res.end(err ? err.message : JSON.stringify(req.body));

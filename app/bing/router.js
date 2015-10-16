@@ -1,13 +1,12 @@
-'use strict';
-var config = require('app/config'),
-    express = require('express'),
-    Promise = require('bluebird'),
-    request = Promise.promisify(require('request')),
-    requireToken = require('app/middleware/requireToken');
+const config = require('app/config');
+const express = require('express');
+const Promise = require('bluebird');
+const request = Promise.promisify(require('request'));
+const requireToken = require('app/middleware/requireToken');
 
 
-var searchImage = function (req, res, next) {
-  var query = req.query.query || '',
+const searchImage = function (req, res, next) {
+  const query = req.query.query || '',
       opts = {};
 
   opts.skip = 0;
@@ -15,7 +14,7 @@ var searchImage = function (req, res, next) {
   opts.accKey = config.bing.accountKey;
   opts.reqTimeout = 5000;
 
-  var reqUrl = 'https://api.datamarket.azure.com/Bing/Search/v1/Image?' +
+  const reqUrl = 'https://api.datamarket.azure.com/Bing/Search/v1/Image?' +
     'Query=%27' + query + '%27' +
     '&Adult=%27Strict%27' +
     '&ImageFilters=%27Size%3AMedium%2BAspect%3ASquare%27' +
@@ -33,8 +32,8 @@ var searchImage = function (req, res, next) {
     },
     timeout: opts.reqTimeout
   }).then(function (result) {
-    var response = result[0],
-        body = result[1];
+    const response = result[0];
+    let body = result[1];
     if (response && response.statusCode !== 200) {
       throw new Error('Bing Api Error: ' + body);
     }
@@ -43,8 +42,8 @@ var searchImage = function (req, res, next) {
   }).catch(next);
 };
 
-var userRouter = module.exports = function () {
-  var router = express.Router();
+const userRouter = module.exports = function () {
+  const router = express.Router();
 
   router.get('/bing/search/image', requireToken, searchImage);
 

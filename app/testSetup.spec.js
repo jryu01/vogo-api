@@ -1,7 +1,6 @@
 // ensure the MONGOLAB_URI is set to use test db
 process.env.MONGO_URI = 'mongodb://localhost/voteit-api-test';
 
-import _ from 'lodash';
 import chai from 'chai';
 import sinon from 'sinon';
 import mongoose from 'mongoose';

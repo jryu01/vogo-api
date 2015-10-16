@@ -1,18 +1,18 @@
 'use strict';
 
-var requireToken = require('app/middleware/requireToken'),
-    Notification = require('app/notification/notificationModel'),
-    Promise = require('bluebird'),
-    express = require('express'),
-    router = express.Router(),
-    config = require('app/config'),
-    User = require('app/user/user'),
-    apn = require('apn'),
-    gcm = require('node-gcm'),
-    eb = require('app/eventBus'),
-    _ = require('lodash');
+const requireToken = require('app/middleware/requireToken');
+const Notification = require('app/notification/notificationModel');
+const Promise = require('bluebird');
+const express = require('express');
+const router = express.Router();
+const config = require('app/config');
+const User = require('app/user/user');
+const apn = require('apn');
+const gcm = require('node-gcm');
+const eb = require('app/eventBus');
+const _ = require('lodash');
 
-var populate = function (notification) {
+const populate = function (notification) {
   if (notification.verb === 'follow') {
     return notification.populateAsync({
       path: 'actor',
@@ -29,17 +29,17 @@ var populate = function (notification) {
   });
 };
 
-var sendPush = function (notification) {
+const sendPush = function (notification) {
 // Note: To find all users with at least one device registered
 // User.find({$and: [{deviceTokens: {$ne: []}}, {deviceTokens: {$ne: null}}]});
-  var actor = notification.actor.name;
-  var question = notification.object && notification.object.question;
-  var msgs = {
+  const actor = notification.actor.name;
+  const question = notification.object && notification.object.question;
+  const msgs = {
     follow: actor + ' is now following you.',
     comment: actor + ' commented on the question: "' + question + '"',
     create: actor + ' asked: "' + question + '"'
   };
-  var payload = {
+  const payload = {
     title: 'Vogo',
     body: msgs[notification.verb],
     verb: notification.verb,
@@ -47,26 +47,26 @@ var sendPush = function (notification) {
     objectId: notification.verb === 'follow' ? notification.object : notification.object.id
   };
   User.findByIdAsync(notification.user).then(function (user) {
-    var androidDevices = [];
+    const androidDevices = [];
 
     if (!user.deviceTokens) { return; }
 
     user.deviceTokens.forEach(function (token) {
       if (token.os === 'ios') {
         try {
-          var device = new apn.Device(token.token);
-          var note = new apn.Notification();
+          const device = new apn.Device(token.token);
+          const note = new apn.Notification();
           note.badge = 0;
           note.contentAvailable = 1;
           note.sound = payload.verb === 'vote' ? '' : 'default';
           note.alert = payload;
           note.device = device;
 
-          var options = {
+          const options = {
             cert: config.apns.cert,
             key: config.apns.key
           };
-          var apnsConnection = new apn.Connection(options);
+          const apnsConnection = new apn.Connection(options);
           apnsConnection.sendNotification(note);
         } catch (e) {
           console.error(e);
@@ -80,14 +80,14 @@ var sendPush = function (notification) {
 
     // send push to android devices
 
-    var message = new gcm.Message();
+    const message = new gcm.Message();
 
     message.addData(_.assign(payload, {
       message: payload.body
     }));
 
     // Set up the sender with you API key
-    var sender = new gcm.Sender(config.google.apiKey);
+    const sender = new gcm.Sender(config.google.apiKey);
     // Now the sender can be used to send messages
     sender.send(message, androidDevices, 4, function (err, result) {
       if (err) { console.error(err); }
@@ -96,9 +96,9 @@ var sendPush = function (notification) {
 };
 
 // notification module
-var notification = module.exports = function () {
-  var handleFollowNotification = function (data) {
-    var userId = data.userId,
+const notification = module.exports = function () {
+  const handleFollowNotification = function (data) {
+    const userId = data.userId,
         targetUserId = data.toUserId,
         query = {
           user: targetUserId,
@@ -118,15 +118,15 @@ var notification = module.exports = function () {
       .catch(console.error);
   };
 
-  var handlePublishNotification = function (data) {
-    var userId = data.user.id.toString(),
-        poll = data.poll,
-        followers = data.user.followers || [],
-        i = 0;
+  const handlePublishNotification = function (data) {
+    const userId = data.user.id.toString();
+    const poll = data.poll;
+    const followers = data.user.followers || [];
+    let i = 0;
     // create notification to all followers in non-blocing way
     (function next() {
       if (followers[i]) {
-        var newNotification = {
+        const newNotification = {
           actor: userId,
           user: followers[i].userId,
           object: poll._id,
@@ -146,15 +146,15 @@ var notification = module.exports = function () {
     }());
   };
 
-  var handleVoteNotification = function (data) {
-    var userId = data.userId.toString(),
+  const handleVoteNotification = function (data) {
+    const userId = data.userId.toString(),
         poll = data.poll,
         toUserId = poll.createdBy.userId.toString(),
         numVoted = poll.answer1.voters.length + poll.answer2.voters.length;
     // don't create notification if user is voting on his own poll
     if (userId === toUserId) { return; }
 
-    var query = {
+    const query = {
           user: toUserId,
           object: poll._id,
           verb: 'vote',
@@ -175,8 +175,8 @@ var notification = module.exports = function () {
       .catch(console.error);
   };
 
-  var handleCommentNotification = function (data) {
-    var userId = data.userId.toString(),
+  const handleCommentNotification = function (data) {
+    const userId = data.userId.toString(),
         poll = data.poll,
         subs = poll.subscribers;
     // TODO: optimize loop to async loop later
@@ -184,7 +184,7 @@ var notification = module.exports = function () {
       // don't create notification if user is commenting on his own poll
       if (userId === subscriberId.toString()) { return; }
 
-      var newNotification = {
+      const newNotification = {
         actor: userId,
         user: subscriberId,
         object: poll._id,
@@ -199,8 +199,8 @@ var notification = module.exports = function () {
     });
   };
 
-  var getNotifications = function (req, res, next) {
-    var query = { user: req.user.id },
+  const getNotifications = function (req, res, next) {
+    const query = { user: req.user.id },
         options = { sort: { updatedAt: -1 }};
     options.limit = 100;
 
@@ -210,8 +210,8 @@ var notification = module.exports = function () {
       .catch(next);
   };
 
-  var getNotificationCount = function (req, res, next) {
-    var query = { user: req.user.id };
+  const getNotificationCount = function (req, res, next) {
+    const query = { user: req.user.id };
 
     if (req.query.after) {
       query.updatedAt = { $gt: req.query.after };

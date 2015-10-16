@@ -1,16 +1,14 @@
-'use strict';
-
-var errorHanlder = module.exports = function () {
-  return function (err, req, res, next) {
+export default () =>
+  (err, req, res, next) => {
     // TODO: write test
-    var e = err;
+    const e = err;
     if (err.name === 'OperationalError') {
       err = err.cause;
     }
     switch (err.name) {
       case 'ValidationError':
-        var msgs = [];
-        Object.keys(err.errors).forEach(function (key) {
+        const msgs = [];
+        Object.keys(err.errors).forEach(key => {
           msgs.push(err.errors[key].message);
         });
         res.status(400);
@@ -33,4 +31,3 @@ var errorHanlder = module.exports = function () {
         res.json({ message: err.message });
     }
   };
-};

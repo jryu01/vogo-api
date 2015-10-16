@@ -1,25 +1,25 @@
 'use strict';
 
-var Promise = require('bluebird'),
-    mongoose = Promise.promisifyAll(require('mongoose')),
-    bcrypt = Promise.promisifyAll(require('bcrypt')),
-    config = require('app/config'),
-    Poll = require('app/poll/poll'),
-    eb = require('app/eventBus'),
-    Schema = mongoose.Schema;
+const Promise = require('bluebird');
+const mongoose = Promise.promisifyAll(require('mongoose'));
+const bcrypt = Promise.promisifyAll(require('bcrypt'));
+const config = require('app/config');
+const Poll = require('app/poll/poll');
+const eb = require('app/eventBus');
+const Schema = mongoose.Schema;
 
-var FollowerSchema = new Schema({
+const FollowerSchema = new Schema({
   userId: { type: Schema.Types.ObjectId },
   picture: String,
   name: String,
 });
 
-var DeviceTokenSchema = new Schema({
+const DeviceTokenSchema = new Schema({
   token: String,
   os: String
 });
 
-var UserSchema = new Schema({
+const UserSchema = new Schema({
   email: {
     type: String,
     required: '{PATH} is required!',
@@ -46,8 +46,8 @@ UserSchema.index({'deviceTokens.token': 1});
 UserSchema.index({'followers.userId': 1});
 
 UserSchema.pre('save', function (next) {
-  var user = this,
-      saltWorkFactor = (config.env === 'production') ? 10 : 1;
+  const user = this;
+  const saltWorkFactor = (config.env === 'production') ? 10 : 1;
 
   if (!user.isModified('password')) { return next(); }
 
@@ -60,11 +60,11 @@ UserSchema.pre('save', function (next) {
 // User Graph functions
 
 UserSchema.statics.follow = function (fromUser, toUserId) {
-  var query = {
+  const query = {
     _id: toUserId,
     'followers.userId': { $ne: fromUser.id }
   };
-  var update = {
+  const update = {
     '$push': {
       'followers': {
         userId: fromUser.id,
@@ -81,7 +81,7 @@ UserSchema.statics.follow = function (fromUser, toUserId) {
 };
 
 UserSchema.statics.unfollow = function (fromUser, toUserId) {
-  var update = {
+  const update = {
     '$pull': {
       'followers': {
         userId: fromUser.id
@@ -91,12 +91,12 @@ UserSchema.statics.unfollow = function (fromUser, toUserId) {
   return this.findByIdAndUpdateAsync(toUserId, update);
 };
 
-UserSchema.statics.getFollowers = function (userId, options) {
-  options = options || {};
-  options.skip = options.skip || 0;
-  options.limit = options.limit || 100;
-  var project = {
-    'followers': { $slice: [options.skip, options.limit] },
+UserSchema.statics.getFollowers = function (userId, {
+    skip = 0,
+    limit = 100
+  } = {}) {
+  const project = {
+    'followers': { $slice: [ skip, limit ] },
     'followers._id': 0,
   };
   return this.findByIdAsync(userId, project).then(function (result) {
@@ -113,35 +113,35 @@ UserSchema.statics.getFollowerCount = function (userId) {
   });
 };
 
-UserSchema.statics.getFollowing = function (userId, options) {
-  options = options || {};
-  options.skip = options.skip || 0;
-  options.limit = options.limit || 100;
+UserSchema.statics.getFollowing = function (userId, {
+    skip = 0,
+    limit = 21
+  } = {}) {
   return this.aggregateAsync([
     { $match: { 'followers.userId': mongoose.Types.ObjectId(userId) } },
-    { $skip: options.skip },
-    { $limit: options.limit },
+    { $skip: skip },
+    { $limit: limit },
     { $project: { name: 1, userId: '$_id', _id: 0, picture: 1 } }
   ]);
 };
 
 UserSchema.statics.getFollowingCount = function (userId) {
-  var query = this.find({ 'followers.userId': userId });
+  const query = this.find({ 'followers.userId': userId });
   return query.countAsync();
 };
 // Return the relationships of the source user to the target users.
 UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
-  var query = {
+  const query = {
     '_id': { '$in': targetUserIds }
   };
-  var projection = {
+  const projection = {
     'name': 1,
     'picture': 1,
     'followers': { '$elemMatch': {'userId': userId }}
   };
   return this.findAsync(query, projection).then(function (users) {
     return users.map(function (user) {
-      var o = {
+      const o = {
         userId: user.id,
         name: user.name,
         picture: user.picture,
@@ -153,11 +153,11 @@ UserSchema.statics.getFollowingInfo = function (userId, targetUserIds) {
 };
 
 // this needs test
-var updateUserData = function (userModel, user) {
-  var userId = user.id;
-  var options = { multi: true };
+const updateUserData = function (userModel, user) {
+  const userId = user.id;
+  const options = { multi: true };
 
-  var setUpdatedToFalse = function () {
+  const setUpdatedToFalse = function () {
     userModel.updateAsync({ _id: userId }, {'$set': {'_updated': false}});
   };
 
@@ -190,7 +190,7 @@ var updateUserData = function (userModel, user) {
 };
 
 UserSchema.statics.createOrUpdate = function (userId, userData) {
-  var that = this;
+  const that = this;
   return new Promise(function (resolve, reject) {
     that.findOneAndUpdate(
       { _id: userId },
@@ -200,7 +200,7 @@ UserSchema.statics.createOrUpdate = function (userId, userData) {
         if (err) { reject(err); }
 
         // TODO: Need Test ///////////
-        var updatedExisting = raw && raw.lastErrorObject &&
+        const updatedExisting = raw && raw.lastErrorObject &&
             raw.lastErrorObject.updatedExisting;
         if (updatedExisting) {
           updateUserData(that, user);
@@ -214,15 +214,15 @@ UserSchema.statics.createOrUpdate = function (userId, userData) {
 };
 
 UserSchema.statics.registerDeviceToken = function (userId, deviceToken, os) {
-  var model = this;
-  var query = { _id: userId, 'deviceTokens.token': { $ne: deviceToken } };
-  var addToken = {
+  const model = this;
+  const query = { _id: userId, 'deviceTokens.token': { $ne: deviceToken } };
+  const addToken = {
     '$push': {
       'deviceTokens': { token: deviceToken, os: os }
     }
   };
 
-  var removeTokenFromPrevUser = this.updateAsync(
+  const removeTokenFromPrevUser = this.updateAsync(
     { 'deviceTokens.token': deviceToken },
     {
       '$pull': {
@@ -245,7 +245,7 @@ UserSchema.methods.comparePassword = function (candidatePassword) {
 
 // Add toJSON option to transform document before returnig the result
 UserSchema.options.toJSON = {
-  transform: function (doc, ret, options) {
+  transform: function (doc, ret) {
     ret.id = ret._id;
     delete ret._id;
     delete ret.__v;

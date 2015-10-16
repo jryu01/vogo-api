@@ -1,10 +1,11 @@
+/* eslint no-unused-expressions: 0 */
 import _ from 'lodash';
 import eb from 'app/eventBus';
 import config from 'app/config';
 import bcrypt from 'bcrypt';
-import rewire from 'rewire';
 import Promise from 'bluebird';
 import mongoose from 'mongoose';
+import User from 'app/user/user';
 
 const userData = {
   create: overwrites => {
@@ -21,8 +22,6 @@ const userData = {
 };
 
 describe('User', () => {
-  const User = require('app/user/user');
-
   beforeEach(() => sinon.stub(eb, 'emit'));
   afterEach(() => eb.emit.restore());
 
@@ -37,9 +36,9 @@ describe('User', () => {
           name: 'test user'
         }
       });
-      return expect(User.createOrUpdate(user.id, user.toJSON())).to.be.fulfilled.then(user => {
-        expect(user).to.have.property('id', user.id);
-        expect(user).to.have.property('email', 'testuser@test.net');
+      return expect(User.createOrUpdate(user.id, user.toJSON())).to.be.fulfilled.then(result => {
+        expect(result).to.have.property('id', user.id);
+        expect(result).to.have.property('email', 'testuser@test.net');
       });
     });
 
@@ -58,9 +57,9 @@ describe('User', () => {
         update.name = 'updated user';
         return User.createOrUpdate(user.id, update);
       });
-      return expect(p).to.be.fulfilled.then(user => {
-        expect(user).to.have.property('id', user.id);
-        expect(user).to.have.property('name', 'updated user');
+      return expect(p).to.be.fulfilled.then(result => {
+        expect(result).to.have.property('id', user.id);
+        expect(result).to.have.property('name', 'updated user');
       });
     });
   });
@@ -85,9 +84,8 @@ describe('User', () => {
 
   it('should not save duplicate email', () => {
     const data = userData.create();
-    const createUserPromise = User.createAsync(data).then(user => {
-      return User.createAsync(data);
-    });
+    const createUserPromise = User.createAsync(data).then(() =>
+      User.createAsync(data));
     return expect(createUserPromise).to.be.rejected.then( e => {
       expect(e).to.match(/E11000 duplicate key error index/);
     });
@@ -110,7 +108,7 @@ describe('User', () => {
     const data = userData.create();
     hashAsync.returns(Promise.resolve({}));
     config.env = 'production';
-    return User.createAsync(data).then(user => {
+    return User.createAsync(data).then(() => {
       expect(bcrypt.hashAsync).to.be.calledWith(data.password, 10);
     }).finally(() => {
       config.env = originalEnv;
@@ -140,10 +138,10 @@ describe('User', () => {
     const registerTokenTo = user =>
       token =>
         User.registerDeviceToken(user.id, token.token, token.os)
-          .then(token => {
-            expect(token).to.have.property('userId', user.id);
-            expect(token).to.have.property('token');
-            expect(token).to.have.property('os');
+          .then(result => {
+            expect(result).to.have.property('userId', user.id);
+            expect(result).to.have.property('token');
+            expect(result).to.have.property('os');
           });
 
     return User.createAsync(data).then(user =>
@@ -160,8 +158,8 @@ describe('User', () => {
   });
 
   it('should remove same device token from previous user when a new user is registering with the same token', () => {
-    const u1Data = userData.create({ name: 'Jhon' }),
-        u2Data = userData.create({ email: 'sam@sam.net', name: 'Sam'});
+    const u1Data = userData.create({ name: 'Jhon' });
+    const u2Data = userData.create({ email: 'sam@sam.net', name: 'Sam'});
     const promise = Promise.all([
       User.createAsync(u1Data),
       User.createAsync(u2Data)
@@ -225,7 +223,7 @@ describe('User', () => {
               userId: users[0].id,
               toUserId: targetUser._id
             });
-            done();
+          done();
         });
       }).catch(done);
     });

@@ -45,7 +45,7 @@
     // disallow assignment in conditional expressions
     "no-cond-assign": [2, "always"],
     // disallow use of console
-    // "no-console": 1, //TODO
+    "no-console": 1, //TODO
     // disallow use of constant expressions in conditions
     "no-constant-condition": 1,
     // disallow control characters in regular expressions
@@ -174,7 +174,7 @@
     // var foo = "Copyright \251";
     "no-octal-escape": 2,
     // disallow reassignment of function parameters
-    // "no-param-reassign": 2, //TODO
+    "no-param-reassign": 2, //TODO
     // disallow use of process.env
     "no-process-env": 0,
     // disallow usage of __proto__ property
@@ -190,9 +190,9 @@
     // disallow use of comma operator
     "no-sequences": 2,
     // restrict what can be thrown as an exception
-    // "no-throw-literal": 2, //TODO
+    "no-throw-literal": 2, //TODO
     // disallow usage of expressions in statement position
-    // "no-unused-expressions": 2, //TODO:disable manualy in tests
+    "no-unused-expressions": 2, //TODO:disable manualy in tests
     // disallow unnecessary .call() and .apply()
     "no-useless-call": 0,
     // disallow use of void operator
@@ -204,7 +204,7 @@
     // require use of the second argument for parseInt()
     "radix": 2,
     // requires to declare all vars on top of their containing scope
-    // "vars-on-top": 2, //TODO: enable
+    "vars-on-top": 2, //TODO: enable
     // require immediate function invocation to be wrapped in parentheses
     "wrap-iife": [2, "any"],
     // require or disallow Yoda conditions
@@ -214,7 +214,7 @@
     //==================== Strict Mode ========================================
     //=========================================================================
      // require that all functions are run in strict mode
-    // "strict": [2, "never"], //TODO
+    "strict": [2, "never"], //TODO
 
     //=========================================================================
     //==================== Variables ==========================================
@@ -230,7 +230,7 @@
     // disallow shadowing of names such as arguments
     "no-shadow-restricted-names": 2,
     // disallow declaration of variables already declared in the outer scope
-    // "no-shadow": 2, //TODO
+    "no-shadow": 2, //TODO
     // disallow use of undefined when initializing variables
     "no-undef-init": 0,
     // disallow use of undeclared variables unless mentioned in a /*global */ block
@@ -238,7 +238,7 @@
     // disallow use of undefined variable
     "no-undefined": 0,
     // disallow declaration of variables that are not used in the code
-    // "no-unused-vars": [2, {"vars": "local", "args": "after-used"}], //TODO
+    "no-unused-vars": [2, {"vars": "local", "args": "after-used"}], //TODO
     // disallow use of variables before they are defined
     "no-use-before-define": 2,
 
@@ -248,7 +248,7 @@
     // enforce return after a callback
     "callback-return": 0,
     // disallow require() outside of the top-level module scope
-    // "global-require": 2, //TODO: in tests
+    "global-require": 2, //TODO: in tests
     // enforces error handling in callbacks (node environment)
     "handle-callback-err": 0,
     // disallow mixing regular variable and require declarations
@@ -289,7 +289,7 @@
     // this option enforces minimum and maximum identifier lengths (variable names, property names etc.)
     "id-length": 0,
     // this option sets a specific tab width for your code
-    // "indent": [2, 2], //TODO
+    "indent": [2, 2], //TODO
     // specify whether double or single quotes should be used in JSX attributes
     "jsx-quotes": 2,
     // enforces spacing between keys and values in object literal properties
@@ -335,7 +335,7 @@
     // require or disallow padding inside curly braces
     "object-curly-spacing": 0,
     // allow just one var statement per function
-    // "one-var": [2, "never"], //TODO: after change var to const
+    "one-var": [2, "never"], //TODO: after change var to const
     // require assignment operator shorthand where possible or prohibit it entirely
     "operator-assignment": 0,
     // enforce operators to be placed before or after line breaks

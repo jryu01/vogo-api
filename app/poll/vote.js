@@ -1,11 +1,11 @@
 'use strict';
 
-var Promise = require('bluebird'),
-    mongoose = Promise.promisifyAll(require('mongoose')),
-    Poll = require('./poll'),
-    Schema = mongoose.Schema;
+const Promise = require('bluebird');
+const mongoose = Promise.promisifyAll(require('mongoose'));
+const Poll = require('./poll');
+const Schema = mongoose.Schema;
 
-var VoteSchema = new Schema({
+const VoteSchema = new Schema({
   _user: { type: Schema.Types.ObjectId, ref: 'User' },
   answer: { type: Number },
   _poll: { type: Schema.Types.ObjectId, ref: 'Poll' }
@@ -15,13 +15,13 @@ VoteSchema.index({'_user': 1, '_id': -1});
 VoteSchema.index({'_poll': -1, '_id': -1});
 
 VoteSchema.statics.createNew = function (userId, pollId, answer) {
-  var that = this;
-  var vote = {
+  const that = this;
+  const vote = {
     _user: userId,
     answer: answer,
     _poll: pollId,
   };
-  var promise = Poll.voteAnswer(pollId, userId, answer).then(function (poll) {
+  const promise = Poll.voteAnswer(pollId, userId, answer).then(function (poll) {
     if (!poll) { return null; }
     return that.createAsync(vote);
   });
@@ -29,7 +29,7 @@ VoteSchema.statics.createNew = function (userId, pollId, answer) {
 };
 
 VoteSchema.statics.getByUserId = function (userId, voteId, limit) {
-  var query = { '_user': userId },
+  const query = { '_user': userId },
       options = { sort: { '_id': -1 } };
 
   if (limit > 0) {
@@ -44,7 +44,7 @@ VoteSchema.statics.getByUserId = function (userId, voteId, limit) {
 };
 
 VoteSchema.statics.getByUserIdAndPollIds = function (userId, pollIds) {
-  var query = {
+  const query = {
     '_poll': { '$in': pollIds },
     '_user': userId
   };
@@ -52,7 +52,7 @@ VoteSchema.statics.getByUserIdAndPollIds = function (userId, pollIds) {
 };
 
 VoteSchema.statics.getVotersFor = function (pollId, answer, options) {
-  var query = { '_poll': pollId, 'answer': answer },
+  const query = { '_poll': pollId, 'answer': answer },
       opts = { sort: { '_id': -1 } };
 
   if (options && options.skip) {
@@ -62,7 +62,7 @@ VoteSchema.statics.getVotersFor = function (pollId, answer, options) {
     opts.limit = options.limit;
   }
 
-  var mapToUsers = function (votes) {
+  const mapToUsers = function (votes) {
     return votes.map(function (vote) {
       return vote._user;
     });

@@ -1,28 +1,27 @@
-'use strict';
-var jwt = require('jwt-simple'),
-    User = require('./user'),
-    config = require('app/config'),
-    crypto = require('crypto'),
-    express = require('express'),
-    Promise = require('bluebird'),
-    request = Promise.promisify(require('request')),
-    requireToken = require('app/middleware/requireToken'),
-    errorhandler = require('api-error-handler'),
-    pUploader = require('./pUploader');
+const jwt = require('jwt-simple');
+const User = require('./user');
+const config = require('app/config');
+const crypto = require('crypto');
+const express = require('express');
+const Promise = require('bluebird');
+const request = Promise.promisify(require('request'));
+const requireToken = require('app/middleware/requireToken');
+const errorhandler = require('api-error-handler');
+const pUploader = require('./pUploader');
 
-var createUser = function (req, res, next) {
+const createUser = function (req, res, next) {
   User.createAsync(req.body).then(res.status(201).json.bind(res)).catch(next);
 };
 
-var listUsers = function (req, res, next) {
+const listUsers = function (req, res, next) {
   User.findAsync({}, '-followers').then(res.json.bind(res)).catch(next);
 };
 
-var getUser = function (req, res, next) {
+const getUser = function (req, res, next) {
   User.findByIdAsync(req.params.id, '-followers').then(res.json.bind(res)).catch(next);
 };
 
-var signinWithPassword = function (req, res, next) {
+const signinWithPassword = function (req, res, next) {
   if (!req.body.email || !req.body.password) {
     return next({ status: 401, message: 'Invalid credentials'});
   }
@@ -38,7 +37,7 @@ var signinWithPassword = function (req, res, next) {
       return user;
     });
   }).then(function (user) {
-    var token = jwt.encode({
+    const token = jwt.encode({
       iss: user.id,
       exp: Date.now() + config.jwtexp
     }, config.jwtsecret);
@@ -49,7 +48,7 @@ var signinWithPassword = function (req, res, next) {
   }).catch(next);
 };
 
-var signinWithFacebook = function (req, res, next) {
+const signinWithFacebook = function (req, res, next) {
   if (!req.body.facebookAccessToken) {
     return next({status: 400, message: 'A facebook access token is required'});
   }
@@ -57,7 +56,6 @@ var signinWithFacebook = function (req, res, next) {
     'fields=id,email,name,picture.type(large)&access_token=' +
     req.body.facebookAccessToken)
   .spread(function (response, body) {
-    var profile;
     if (response.statusCode !== 200) {
       throw {
         name: 'FacebookGraphAPIError',
@@ -70,7 +68,7 @@ var signinWithFacebook = function (req, res, next) {
     return User.findOneAsync({ 'facebook.id': fbProfile.id }, '-followers')
     .then(function (user) {
       if (!user || !user._updated) {
-        var usr = user || new User({
+        const usr = user || new User({
           email: fbProfile.email,
           name: fbProfile.name,
           facebook: {
@@ -79,7 +77,7 @@ var signinWithFacebook = function (req, res, next) {
             name: fbProfile.name
           }
         });
-        var picture = fbProfile.picture && fbProfile.picture.data &&
+        const picture = fbProfile.picture && fbProfile.picture.data &&
             fbProfile.picture.data.url;
         return pUploader(picture, usr.id).then(function (uploadedUrl) {
           usr._updated = true;
@@ -91,7 +89,7 @@ var signinWithFacebook = function (req, res, next) {
       return user;
     });
   }).then(function (user) {
-    var token = jwt.encode({
+    const token = jwt.encode({
       iss: user.id,
       exp: Date.now() + config.jwtexp
     }, config.jwtsecret);
@@ -107,7 +105,7 @@ var signinWithFacebook = function (req, res, next) {
   });
 };
 
-var signin = function (req, res, next) {
+const signin = function (req, res, next) {
   switch (req.body.grantType) {
   case 'password':
     signinWithPassword(req, res, next);
@@ -120,9 +118,8 @@ var signin = function (req, res, next) {
   }
 };
 
-var follow = function (req, res, next) {
-  var user = req.user,
-      update;
+const follow = function (req, res, next) {
+  const user = req.user;
   if (req.params.id !== user.id.toString()) {
     return next({ status: 403 });
   }
@@ -131,9 +128,8 @@ var follow = function (req, res, next) {
   }).catch(next);
 };
 
-var unfollow = function (req, res, next) {
-  var user = req.user,
-      update;
+const unfollow = function (req, res, next) {
+  const user = req.user;
   if (req.params.id !== user.id.toString()) {
     return next({ status: 403 });
   }
@@ -142,8 +138,8 @@ var unfollow = function (req, res, next) {
   }).catch(next);
 };
 
-var getFollowers = function (req, res, next) {
-  var options = {};
+const getFollowers = function (req, res, next) {
+  const options = {};
   options.skip = parseInt(req.query.skip, 10) || 0;
   options.limit = parseInt(req.query.limit, 10) || 100;
   User.getFollowers(req.params.id, options)
@@ -151,15 +147,15 @@ var getFollowers = function (req, res, next) {
     .catch(next);
 };
 
-var getFollowerCount = function (req, res, next) {
+const getFollowerCount = function (req, res, next) {
    User.getFollowerCount(req.params.id)
     .then(function (count) {
       res.json({ numberOfFollowers: count });
     }).catch(next);
 };
 
-var getFollowing = function (req, res, next) {
-  var options = {};
+const getFollowing = function (req, res, next) {
+  const options = {};
   options.skip = parseInt(req.query.skip, 10) || 0;
   options.limit = parseInt(req.query.limit, 10) || 100;
   User.getFollowing(req.params.id, options)
@@ -167,27 +163,27 @@ var getFollowing = function (req, res, next) {
     .catch(next);
 };
 
-var getFollowingCount = function (req, res, next) {
+const getFollowingCount = function (req, res, next) {
   User.getFollowingCount(req.params.id)
     .then(function (count) {
       res.json({ numberOfFollowing: count });
     }).catch(next);
 };
 
-var getFollowingInfo = function (req, res, next) {
+const getFollowingInfo = function (req, res, next) {
   if (!req.query.userId) {
      return next({ status: 400, message: 'userId parameter is required'});
   }
-  var uids = [].concat(req.query.userId);
+  const uids = [].concat(req.query.userId);
   User.getFollowingInfo(req.user.id, uids)
     .then(res.json.bind(res))
     .catch(next);
 };
 
-var getS3Info = function (req, res, next) {
+const getS3Info = function (req, res, next) {
   // TODO: Test
-  var expDate = new Date(Date.now() + (120 * 24 * 60 * 60 * 1000));
-  var s3PolicyDoc = {
+  const expDate = new Date(Date.now() + (120 * 24 * 60 * 60 * 1000));
+  const s3PolicyDoc = {
     'expiration': expDate.toISOString(),
     'conditions': [
       {'bucket': config.aws.bucket},
@@ -197,10 +193,11 @@ var getS3Info = function (req, res, next) {
       ['content-length-range', 0, 1048576] // 1 Mb
     ]
   };
-  var s3Policy, hash, s3Signature;
+  let s3Policy, s3Signature;
   try {
-    s3Policy = new Buffer(JSON.stringify(s3PolicyDoc)).toString('base64');
-    hash = crypto.createHmac('sha1', config.aws.secretKey)
+    s3Policy = new Buffer(JSON.stringify(s3PolicyDoc))
+      .toString('base64');
+    const hash = crypto.createHmac('sha1', config.aws.secretKey)
         .update(s3Policy)
         .digest();
     s3Signature = new Buffer(hash).toString('base64');
@@ -208,7 +205,7 @@ var getS3Info = function (req, res, next) {
     return next(err);
   }
 
-  var info = {
+  const info = {
     bucket: config.aws.bucket,
     uploadUrl: 'https://s3.amazonaws.com/' + config.aws.bucket + '/',
     accessKey: config.aws.accessKey,
@@ -218,13 +215,13 @@ var getS3Info = function (req, res, next) {
   res.json(info);
 };
 
-var registerDeviceToken = function (req, res, next) {
+const registerDeviceToken = function (req, res, next) {
   User.registerDeviceToken(req.user.id, req.body.token, req.body.os || 'ios')
     .then(res.status(201).json.bind(res)).catch(next);
 };
 
-var userRouter = module.exports = function () {
-  var router = express.Router();
+const userRouter = module.exports = function () {
+  const router = express.Router();
 
   router.post('/login', signin);
   router.post('/users', createUser);

@@ -1,15 +1,14 @@
-'use strict';
+import Promise from 'bluebird';
 
-var Promise = require('bluebird'),
-    User = require('app/user/user'),
-    jwt = require('jwt-simple'),
-    config = require('app/config');
+const User = require('app/user/user');
+const jwt = require('jwt-simple');
+const config = require('app/config');
 
-var requiresToken = module.exports = function (req, res, next) {
-  var token = (req.body && req.body.access_token) ||
+export default (req, res, next) => {
+  const token = (req.body && req.body.access_token) ||
               (req.query && req.query.access_token) ||
               req.headers['x-access-token'];
-  var decoded;
+  let decoded;
   if (!token) {
     return res.status(401)
       .json({ status: 401, message: 'Access token is missing!' });
@@ -24,7 +23,7 @@ var requiresToken = module.exports = function (req, res, next) {
     return res.status(401)
       .json({ status: 401, message: 'Access token has been expired!' });
   }
-  User.findByIdAsync(decoded.iss).then(function (user) {
+  User.findByIdAsync(decoded.iss).then(user => {
     if (!user) {
       return res.status(401)
         .json({ status: 401, message: 'User not found with the token!' });

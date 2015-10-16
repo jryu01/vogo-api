@@ -1,3 +1,4 @@
+/* eslint no-unused-expressions: 0 */
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
 import eb from 'app/eventBus';

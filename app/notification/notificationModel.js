@@ -1,10 +1,10 @@
 'use strict';
 
-var Promise = require('bluebird'),
-    mongoose = Promise.promisifyAll(require('mongoose')),
-    Schema = mongoose.Schema;
+const Promise = require('bluebird');
+const mongoose = Promise.promisifyAll(require('mongoose'));
+const Schema = mongoose.Schema;
 
-var NotificationSchema = new Schema({
+const NotificationSchema = new Schema({
   user: { type: Schema.Types.ObjectId, ref: 'User' },
   actor: { type: Schema.Types.ObjectId, ref: 'User' },
   verb: { type: String }, // comment, vote, follow, join,
