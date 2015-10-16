@@ -1,7 +1,9 @@
 import 'babel-core/register';
+import fs from 'fs';
 import gulp from 'gulp';
 import mocha from 'gulp-mocha';
 import eslint from 'gulp-eslint';
+import nodemon from 'gulp-nodemon';
 
 const NODE_FILES = ['*.js', 'app/**/*.js'];
 const NODE_TEST_FILES = ['app/**/*.spec.js', '*.spec.js'];
@@ -15,6 +17,12 @@ gulp.task('test', () => gulp.src(NODE_TEST_FILES)
     .pipe(mocha({ reporter: 'spec'})));
 
 gulp.task('default', ['lint', 'test']);
+
+gulp.task('serve', () => nodemon({
+  script: 'index.js',
+  exec: './node_modules/.bin/babel-node',
+  env: JSON.parse(fs.readFileSync('./.envconfig', 'utf-8'))
+}));
 
 gulp.task('watch', () => {
   gulp.watch(NODE_FILES, ['lint', 'test']);

@@ -1,3 +1,4 @@
+.envconfig
 run.sh
 runDev.sh
 db_scripts
