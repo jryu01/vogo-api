@@ -20,7 +20,7 @@ const userData = {
   }
 };
 
-describe.only('User', () => {
+describe('User', () => {
   const User = require('app/user/user');
 
   beforeEach(() => sinon.stub(eb, 'emit'));

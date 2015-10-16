@@ -1,15 +1,11 @@
-'use strict';
-/* jshint expr: true */
+import mongoose from 'mongoose';
+import Promise from 'bluebird';
+import eb from 'app/eventBus';
+import _ from 'lodash';
+import Poll from './poll';
 
-var mongoose = require('mongoose'),
-    Promise = require('bluebird'),
-    eb = require('app/eventBus'),
-    _ = require('lodash');
-
-var Poll = require('./poll');
-
-var createPollData = function (overwrites) {
-  var defaults = {
+const createPollData = overwrites =>
+  _.extend({
     question: 'which sports?',
     answer1: {
       text: 'basketball',
@@ -19,14 +15,12 @@ var createPollData = function (overwrites) {
       text: 'soccer',
       picture: 'a2picurl'
     }
-  };
-  return _.extend(defaults, overwrites);
-};
+  }, overwrites);
 
-describe('Poll', function () {
-  var user;
+describe('Poll', () => {
+  let user;
 
-  beforeEach(function () {
+  beforeEach(() => {
     user = {
       name: 'Bob',
       picture: 'profilePic',
@@ -34,19 +28,17 @@ describe('Poll', function () {
     };
     sinon.stub(eb, 'emit');
   });
-  afterEach(function () {
-    eb.emit.restore();
-  });
+  afterEach(() => eb.emit.restore());
 
-  it('should publish and return a new poll', function () {
-    var data = createPollData(),
-        pollFromCreate;
-    var promise = Poll.publish(user, data).then(function (poll) {
+  it('should publish and return a new poll', () => {
+    const data = createPollData();
+    let pollFromCreate;
+    const promise = Poll.publish(user, data).then(poll => {
       pollFromCreate = poll;
       return Poll.getById(poll.id);
     });
-    return expect(promise).to.eventually.be.fulfilled.then(function (poll) {
-      var expectAndValidate = function (poll) {
+    return expect(promise).to.eventually.be.fulfilled.then(poll => {
+      const expectAndValidate = poll => {
         expect(poll.createdBy.userId.toString()).to.equal(user.id.toString());
         expect(poll).to.have.deep.property('createdBy.name', 'Bob');
         expect(poll).to.have.deep.property('createdBy.picture', 'profilePic');
@@ -71,13 +63,13 @@ describe('Poll', function () {
     });
   });
 
-  it('should emit an event when poll is published', function (done) {
-    var data = createPollData();
+  it('should emit an event when poll is published', done => {
+    const data = createPollData();
 
-    expect(Poll.publish(user, data)).to.be.fulfilled.then(function (poll) {
+    expect(Poll.publish(user, data)).to.be.fulfilled.then(poll => {
       // expect eb.emit called on next event loop cycle
       expect(eb.emit).to.have.not.been.calledWith('pollModel:publish');
-      setImmediate(function () {
+      setImmediate(() => {
         expect(eb.emit).to.have.been.calledWith('pollModel:publish', {
           user: user,
           poll: poll
@@ -87,8 +79,8 @@ describe('Poll', function () {
     }).catch(done);
   });
 
-  it('should get polls in decending order by id for a user', function () {
-    var poll1 = createPollData({ question: 'poll1' }),
+  it('should get polls in decending order by id for a user', () => {
+    const poll1 = createPollData({ question: 'poll1' }),
         poll2 = createPollData({ question: 'poll2' }),
         poll3 = createPollData({ question: 'poll3' }),
         user2 = {
@@ -97,30 +89,25 @@ describe('Poll', function () {
           id: mongoose.Types.ObjectId()
         };
 
-    var promise = Poll.publish(user, poll1).then(function (poll1) {
-      return Poll.publish(user2, poll3);
-    }).then(function () {
-      return Poll.publish(user, poll2);
-    }).then(function () {
-      return Poll.getByUserId(user.id);
-    });
+    const promise = Poll.publish(user, poll1)
+      .then(() => Poll.publish(user2, poll3))
+      .then(() => Poll.publish(user, poll2))
+      .then(() => Poll.getByUserId(user.id));
 
-    return expect(promise).to.be.fulfilled.then(function (polls) {
+    return expect(promise).to.be.fulfilled.then(polls => {
       expect(polls).to.have.length(2);
       expect(polls[0].question).to.equal(poll2.question);
       expect(polls[1].question).to.equal(poll1.question);
     });
   });
 
-  it('should exclude array values on #getByUserId', function () {
-    var poll1 = createPollData({ question: 'poll1' });
+  it('should exclude array values on #getByUserId', () => {
+    const poll1 = createPollData({ question: 'poll1' });
 
-    var promise = Poll.publish(user, poll1).then(function (poll1) {
-    }).then(function () {
-      return Poll.getByUserId(user.id);
-    });
+    const promise = Poll.publish(user, poll1).then(() =>
+      Poll.getByUserId(user.id));
 
-    return expect(promise).to.be.fulfilled.then(function (polls) {
+    return expect(promise).to.be.fulfilled.then(polls => {
       expect(polls[0].answer1.voters).to.be.undefined;
       expect(polls[0].answer2.voters).to.be.undefined;
       expect(polls[0].comments).to.be.undefined;
@@ -128,59 +115,53 @@ describe('Poll', function () {
     });
   });
 
-  it('should limit the number of result', function () {
-    var poll1 = createPollData({ question: 'poll1' }),
+  it('should limit the number of result', () => {
+    const poll1 = createPollData({ question: 'poll1' }),
         poll2 = createPollData({ question: 'poll2' });
 
-    var promise = Poll.publish(user, poll1).then(function (poll1) {
-      return Poll.publish(user, poll2);
-    }).then(function () {
-      return Poll.getByUserId(user.id, null, 1);
-    });
+    const promise = Poll.publish(user, poll1)
+      .then(poll1 => Poll.publish(user, poll2))
+      .then(() => Poll.getByUserId(user.id, null, 1));
 
     return expect(promise).to.eventually.have.length(1);
   });
 
-  it('should get polls before provided poll id with limit', function () {
-    var poll1 = createPollData({ question: 'poll1' }),
-        poll2 = createPollData({ question: 'poll2' }),
-        poll3 = createPollData({ question: 'poll3' }),
-        poll4 = createPollData({ question: 'poll4' }),
-        poll3Id;
+  it('should get polls before provided poll id with limit', () => {
+    const poll1 = createPollData({ question: 'poll1' });
+    const poll2 = createPollData({ question: 'poll2' });
+    const poll3 = createPollData({ question: 'poll3' });
+    const poll4 = createPollData({ question: 'poll4' });
+    let poll3Id;
 
-    var promise = Poll.publish(user, poll1).then(function () {
-      return Poll.publish(user, poll2);
-    }).then(function () {
-      return Poll.publish(user, poll3);
-    }).then(function (poll) {
-      poll3Id = poll.id;
-      return Poll.publish(user, poll4);
-    }).then(function () {
-      return Poll.getByUserId(user.id, poll3Id, 1);
-    });
+    const promise = Poll.publish(user, poll1)
+      .then(() => Poll.publish(user, poll2))
+      .then(() => Poll.publish(user, poll3))
+      .then(poll => {
+        poll3Id = poll.id;
+        return Poll.publish(user, poll4);
+      })
+      .then(() => Poll.getByUserId(user.id, poll3Id, 1));
 
-    return expect(promise).to.be.fulfilled.then(function (polls) {
+    return expect(promise).to.be.fulfilled.then(polls => {
       expect(polls).to.have.length(1);
       expect(polls[0].question).to.equal('poll2');
     });
   });
 
-  it('should vote an answer for the poll', function () {
-    var user2 = {
+  it('should vote an answer for the poll', () => {
+    const user2 = {
       name: 'Sam',
       picture: 'pfpic',
       id: mongoose.Types.ObjectId()
     };
-    var pollId;
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+    let pollId;
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.voteAnswer(pollId, user.id, 1);
-    }).then(function () {
-      return Poll.voteAnswer(pollId, user2.id, 2);
-    }).then(function () {
-      return Poll.findByIdAsync(pollId);
-    });
-    return expect(promise).to.be.fulfilled.then(function (poll) {
+    })
+    .then(() => Poll.voteAnswer(pollId, user2.id, 2))
+    .then(() => Poll.findByIdAsync(pollId));
+    return expect(promise).to.be.fulfilled.then(poll => {
       expect(poll.answer1.numVotes).to.equal(1);
       expect(poll.answer1.voters[0].toString()).to.equal(user.id.toString());
       expect(poll.answer2.numVotes).to.equal(1);
@@ -188,22 +169,22 @@ describe('Poll', function () {
     });
   });
 
-  it('should return updated poll when voted', function () {
-    var pollId;
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+  it('should return updated poll when voted', () => {
+    let pollId;
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.voteAnswer(poll.id, user.id, 1);
     });
-    return expect(promise).to.be.fulfilled.then(function (poll) {
+    return expect(promise).to.be.fulfilled.then(poll => {
       expect(poll.id).to.equal(pollId);
       expect(poll.answer1.numVotes).to.equal(1);
       expect(poll.answer1.voters[0].toString()).to.equal(user.id.toString());
     });
   });
 
-  it('should give error when vote with invalid answerNumber', function () {
-    var pollId;
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+  it('should give error when vote with invalid answerNumber', () => {
+    let pollId;
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.voteAnswer(pollId, user.id);
     });
@@ -211,20 +192,17 @@ describe('Poll', function () {
       .rejectedWith('Invalid answer: answer must be either number 1 or 2');
   });
 
-  it('should not vote same poll twice with same user', function () {
-    var pollId;
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+  it('should not vote same poll twice with same user', () => {
+    let pollId;
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.voteAnswer(pollId, user.id, 1);
-    }).then(function () {
-      return Poll.voteAnswer(pollId, user.id, 1);
-    }).then(function () {
-      return Poll.voteAnswer(pollId, user.id, 2);
-    }).then(function () {
-      return Poll.findByIdAsync(pollId);
-    });
+    })
+    .then(() => Poll.voteAnswer(pollId, user.id, 1))
+    .then(() => Poll.voteAnswer(pollId, user.id, 2))
+    .then(() => Poll.findByIdAsync(pollId));
 
-    return expect(promise).to.be.fulfilled.then(function (poll) {
+    return expect(promise).to.be.fulfilled.then(poll => {
       expect(poll.answer1.numVotes).to.equal(1);
       expect(poll.answer1.voters[0].toString()).to.equal(user.id.toString());
       expect(poll.answer2.numVotes).to.equal(0);
@@ -232,17 +210,17 @@ describe('Poll', function () {
     });
   });
 
-  it('should emit an event when poll is voted', function (done) {
-    var pollId;
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+  it('should emit an event when poll is voted', done => {
+    let pollId;
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.voteAnswer(poll.id, user.id, 1);
     });
 
-    expect(promise).to.be.fulfilled.then(function (poll) {
+    expect(promise).to.be.fulfilled.then(poll => {
       // expect eb.emit called on next event loop cycle
       expect(eb.emit).to.have.not.been.calledWith('pollModel:vote');
-      setImmediate(function () {
+      setImmediate(() => {
         expect(eb.emit).to.have.been.calledWith('pollModel:vote', {
           userId: user.id,
           poll: poll,
@@ -253,29 +231,29 @@ describe('Poll', function () {
     }).catch(done);
   });
 
-  it('should not emit an event when voted on invalid poll', function (done) {
-    var promise = Poll.voteAnswer(mongoose.Types.ObjectId(), user.id, 1);
+  it('should not emit an event when voted on invalid poll', done => {
+    const promise = Poll.voteAnswer(mongoose.Types.ObjectId(), user.id, 1);
 
-    expect(promise).to.be.fulfilled.then(function (poll) {
+    expect(promise).to.be.fulfilled.then(poll => {
       expect(poll).to.be.null;
-      setImmediate(function () {
+      setImmediate(() => {
         expect(eb.emit).to.have.not.been.called;
         done();
       });
     }).catch(done);
   });
 
-  it('should add comment to a poll and return updated poll', function () {
-    var pollId, poll;
-    var id = mongoose.Types.ObjectId();
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+  it('should add comment to a poll and return updated poll', () => {
+    let pollId, poll;
+    const id = mongoose.Types.ObjectId();
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.comment(pollId, user, 'hello');
-    }).then(function (result) {
+    }).then(result => {
       poll = result;
       return Poll.getComments(pollId);
     });
-    return expect(promise).to.be.fulfilled.then(function (comments) {
+    return expect(promise).to.be.fulfilled.then(comments => {
       expect(poll.subscribers).to.be.length(1);
 
       expect(poll.comments[0]).to.have.property('_id');
@@ -294,32 +272,31 @@ describe('Poll', function () {
     });
   });
 
-  it('should add comment author to the subscribers', function () {
-    var pollId, poll;
+  it('should add comment author to the subscribers', () => {
+    let pollId, poll;
 
-    var cris = {
+    const cris = {
       name: 'Cris',
       picture: 'crisProfilePic',
       id: mongoose.Types.ObjectId()
     };
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       return Poll.comment(poll.id, cris, 'hello');
     });
-    return expect(promise).to.be.fulfilled.then(function (poll) {
+    return expect(promise).to.be.fulfilled.then(poll => {
       expect(poll.subscribers).to.be.length(2);
       expect(poll.subscribers[1].toString()).to.equal(cris.id.toString());
     });
   });
 
-  it('should emit event after comment is created', function (done) {
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
-      return Poll.comment(poll.id, user, 'new comment');
-    });
+  it('should emit event after comment is created', done => {
+    const promise = Poll.publish(user, createPollData())
+    .then(poll => Poll.comment(poll.id, user, 'new comment'));
 
-    return expect(promise).to.be.fulfilled.then(function (updatedPoll) {
+    return expect(promise).to.be.fulfilled.then(updatedPoll => {
       // should emit on next event loop cycle
       expect(eb.emit).to.not.have.been.calledWith('pollModel:comment');
-      setImmediate(function () {
+      setImmediate(() => {
         expect(eb.emit).to.have.been.calledWith('pollModel:comment', {
           userId: user.id,
           poll: updatedPoll
@@ -329,63 +306,58 @@ describe('Poll', function () {
     }).catch(done);
   });
 
-  it('should not emit event when commenting on invalid poll', function (done) {
-    var promise = Poll.comment(mongoose.Types.ObjectId(), user, 'new comment');
+  it('should not emit event when commenting on invalid poll', done => {
+    const promise = Poll.comment(mongoose.Types.ObjectId(), user, 'new comment');
 
-    return expect(promise).to.be.fulfilled.then(function (poll) {
+    return expect(promise).to.be.fulfilled.then(poll => {
       expect(poll).to.be.null;
-      setImmediate(function () {
+      setImmediate(() => {
         expect(eb.emit).to.have.not.been.called;
       });
       done();
     }).catch(done);
   });
 
-  it('should update number of comments of the poll', function () {
-    var pollId;
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+  it('should update number of comments of the poll', () => {
+    let pollId;
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.comment(pollId, user, 'hello');
-    }).then(function () {
-      return Poll.getById(pollId);
-    });
+    })
+    .then(() => Poll.getById(pollId));
 
     return expect(promise).to.eventually.have.property('numComments', 1);
   });
 
-  it('should get empty array for comments', function () {
-    var promise = Poll.getComments(mongoose.Types.ObjectId());
+  it('should get empty array for comments', () => {
+    const promise = Poll.getComments(mongoose.Types.ObjectId());
     return expect(promise).to.eventually.be.an('array').that.is.empty;
   });
 
-  it('should paginate comments on getComments', function () {
-    var options = { skip: 1, limit: 2 };
+  it('should paginate comments on getComments', () => {
+    const options = { skip: 1, limit: 2 };
+    let pollId;
 
-    var pollId, comment;
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       return Poll.comment(pollId, user, 'first');
-    }).then(function () {
-      return Poll.comment(pollId, user, 'second');
-    }).then(function () {
-      return Poll.comment(pollId, user, 'third');
-    }).then(function () {
-      return Poll.comment(pollId, user, 'fourth');
-    }).then(function () {
-      return Poll.getComments(pollId, options);
-    });
+    })
+    .then(() => Poll.comment(pollId, user, 'second'))
+    .then(() => Poll.comment(pollId, user, 'third'))
+    .then(() => Poll.comment(pollId, user, 'fourth'))
+    .then(() => Poll.getComments(pollId, options));
 
-    return expect(promise).to.be.fulfilled.then(function (comments) {
+    return expect(promise).to.be.fulfilled.then(comments => {
       expect(comments).to.be.length(2);
       expect(comments[0].text).to.equal('second');
       expect(comments[1].text).to.equal('third');
     });
   });
 
-  it('should have #toJSON to get clean json', function () {
-    var data = createPollData();
+  it('should have #toJSON to get clean json', () => {
+    const data = createPollData();
     data.someWeird = 'adsjfklsdfjalsdfjsalkdfjskldf';
-    var poll = new Poll(data);
+    const poll = new Poll(data);
     expect(poll.toJSON()).to.have.property('id');
     expect(poll.toJSON()).to.not.have.property('_id');
     expect(poll.toJSON()).to.not.have.property('__V');

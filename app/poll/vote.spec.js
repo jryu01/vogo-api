@@ -1,17 +1,13 @@
-'use strict';
-/* jshint expr: true */
+import mongoose from 'mongoose';
+import Promise from 'bluebird';
+import User from 'app/user/user';
+import Poll from './poll';
+import eb from 'app/eventBus';
+import _ from 'lodash';
+import Vote from './vote';
 
-var mongoose = require('mongoose'),
-    Promise = require('bluebird'),
-    User = require('app/user/user'),
-    Poll = require('./poll'),
-    eb = require('app/eventBus'),
-    _ = require('lodash');
-
-var Vote = require('./vote');
-
-var createPollData = function (overwrites) {
-  var defaults = {
+const createPollData = overwrites =>
+  _.extend({
     question: 'which sports?',
     answer1: {
       text: 'basketball',
@@ -21,75 +17,63 @@ var createPollData = function (overwrites) {
       text: 'soccer',
       picture: 'a2picurl'
     }
-  };
-  return _.extend(defaults, overwrites);
-};
+  }, overwrites);
 
-var createUsers = function (numUsers) {
-  var createUserPromises = [];
-  for (var i = 1; i <= numUsers; i += 1) {
-    createUserPromises.push(User.createAsync({
-      email: 'user' + i + '@test.com',
-      name: 'user' + i,
-      picture: 'userPic' + i
-    }));
-  }
-  return Promise.all(createUserPromises);
-};
+const promiseUsers = numUsers => 
+  numUsers === 0 ? [] : [
+    ...promiseUsers(numUsers - 1), 
+    User.createAsync({
+      email: 'user' + numUsers + '@test.com',
+      name: 'user' + numUsers,
+      picture: 'userpic' + numUsers
+    }),
+  ];
+const createUsers = numUsers => Promise.all(promiseUsers(numUsers));
 
-describe('Vote', function () {
-  var user;
+describe('Vote', () => {
+  let user;
 
-  beforeEach(function () {
+  beforeEach(() => {
     user = new User({
       name: 'Bob',
       picture: 'profilePic'
     });
     sinon.stub(eb, 'emit');
   });
-  afterEach(function () {
-    eb.emit.restore();
-  });
+  afterEach(() => eb.emit.restore());
 
-  it('should create a vote', function () {
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
-      return Vote.createNew(user.id, poll.id, 1);
-    });
-    return expect(promise).to.eventually.be.fulfilled.then(function (vote) {
+  it('should create a vote', () => {
+    const promise = Poll.publish(user, createPollData())
+      .then(poll => Vote.createNew(user.id, poll.id, 1));
+    return expect(promise).to.eventually.be.fulfilled.then(vote => {
       expect(vote).to.have.property('_user');
       expect(vote).to.have.property('answer');
       expect(vote).to.have.property('_poll');
     });
   });
 
-  it('should return null when creating to non-existing poll', function () {
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
-      return Vote.createNew(user.id, mongoose.Types.ObjectId(), 1);
-    });
+  it('should return null when creating to non-existing poll', () => {
+    const promise = Poll.publish(user, createPollData())
+      .then(poll => Vote.createNew(user.id, mongoose.Types.ObjectId(), 1));
     return expect(promise).to.eventually.be.null;
   });
 
-  it('should get votes for user by provided pollIds', function () {
-    var pollList, pollIds;
-    var promise = Promise.all([
+  it('should get votes for user by provided pollIds', () => {
+    let pollList;
+    let pollIds;
+    const promise = Promise.all([
       Poll.publish(user, createPollData({ question: 'poll1' }) ),
       Poll.publish(user, createPollData({ question: 'poll2' }) ),
       Poll.publish(user, createPollData({ question: 'poll3' }) ),
-    ]).then(function (polls) {
+    ]).then(polls => {
       pollList = polls;
-      pollIds = pollList.map(function (poll) {
-        return poll.id;
-      });
+      pollIds = pollList.map(poll => poll.id);
       return Vote.createNew(user.id, pollList[0].id, 1);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[1].id, 2);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[2].id, 1);
-    }).then(function () {
-      return Vote.getByUserIdAndPollIds(user.id, pollIds);
-    });
+    }).then(() => Vote.createNew(user.id, pollList[1].id, 2))
+      .then(() => Vote.createNew(user.id, pollList[2].id, 1))
+      .then(() => Vote.getByUserIdAndPollIds(user.id, pollIds));
 
-    return expect(promise).to.be.fulfilled.then(function (votes) {
+    return expect(promise).to.be.fulfilled.then(votes => {
       expect(votes).to.have.length(3);
       expect(votes[0]._poll.toString()).to.equal(pollIds[2].toString());
       expect(votes[1]._poll.toString()).to.equal(pollIds[1].toString());
@@ -97,24 +81,20 @@ describe('Vote', function () {
     });
   });
 
-  it('should get votes for a user decending order by _id', function () {
-    var pollList;
-    var promise = Promise.all([
+  it('should get votes for a user decending order by _id', () => {
+    let pollList;
+    const promise = Promise.all([
       Poll.publish(user, createPollData({ question: 'poll1' }) ),
       Poll.publish(user, createPollData({ question: 'poll2' }) ),
       Poll.publish(user, createPollData({ question: 'poll3' }) ),
-    ]).then(function (polls) {
+    ]).then(polls => {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[1].id, 2);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[2].id, 1);
-    }).then(function () {
-      return Vote.getByUserId(user.id);
-    });
+    }).then(() => Vote.createNew(user.id, pollList[1].id, 2))
+      .then(() => Vote.createNew(user.id, pollList[2].id, 1))
+      .then(() => Vote.getByUserId(user.id));
 
-    return expect(promise).to.be.fulfilled.then(function (votes) {
+    return expect(promise).to.be.fulfilled.then(votes => {
       expect(votes).to.have.length(3);
       expect(votes[0]._poll.question).to.equal('poll3');
       expect(votes[1]._poll.question).to.equal('poll2');
@@ -122,15 +102,12 @@ describe('Vote', function () {
     });
   });
 
-  it('should exclude array values on #getByUserId', function () {
-    var promise = Poll.publish(user, createPollData({question: 'poll1'}))
-      .then(function (p) {
-         return Vote.createNew(user.id, p.id, 1);
-      }).then(function () {
-        return Vote.getByUserId(user.id);
-      });
+  it('should exclude array values on #getByUserId', () => {
+    const promise = Poll.publish(user, createPollData({question: 'poll1'}))
+      .then(poll => Vote.createNew(user.id, poll.id, 1))
+      .then(() => Vote.getByUserId(user.id));
 
-    return expect(promise).to.be.fulfilled.then(function (votes) {
+    return expect(promise).to.be.fulfilled.then(votes => {
       expect(votes[0]._poll.answer1.voters).to.be.undefined;
       expect(votes[0]._poll.answer2.voters).to.be.undefined;
       expect(votes[0]._poll.comments).to.be.undefined;
@@ -138,69 +115,62 @@ describe('Vote', function () {
     });
   });
 
-  it('should limit the number of result', function () {
-    var pollList;
-    var promise = Promise.all([
+  it('should limit the number of result', () => {
+    let pollList;
+    const promise = Promise.all([
       Poll.publish(user, createPollData({ question: 'poll1' }) ),
       Poll.publish(user, createPollData({ question: 'poll2' }) ),
-      Poll.publish(user, createPollData({ question: 'poll3' }) ),
-    ]).then(function (polls) {
+      Poll.publish(user, createPollData({ question: 'poll3' }) )
+    ]).then(polls => {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[1].id, 2);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[2].id, 1);
-    }).then(function () {
-      return Vote.getByUserId(user.id, null, 1);
-    });
+    }).then(() => Vote.createNew(user.id, pollList[1].id, 2))
+      .then(() => Vote.createNew(user.id, pollList[2].id, 1))
+      .then(() => Vote.getByUserId(user.id, null, 1));
 
     return expect(promise).to.eventually.have.length(1);
   });
 
-  it('should get votes before provided vote id with limit', function () {
-    var pollList, voteId;
-    var promise = Promise.all([
+  it('should get votes before provided vote id with limit', () => {
+    let pollList;
+    let voteId;
+    const promise = Promise.all([
       Poll.publish(user, createPollData({ question: 'poll1' }) ),
       Poll.publish(user, createPollData({ question: 'poll2' }) ),
       Poll.publish(user, createPollData({ question: 'poll3' }) ),
       Poll.publish(user, createPollData({ question: 'poll4' }) ),
-    ]).then(function (polls) {
+    ]).then(polls => {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[1].id, 2);
-    }).then(function () {
-      return Vote.createNew(user.id, pollList[2].id, 1);
-    }).then(function (vote) {
+    })
+    .then(() => Vote.createNew(user.id, pollList[1].id, 2))
+    .then(() => Vote.createNew(user.id, pollList[2].id, 1))
+    .then(vote => {
       voteId = vote.id;
       return Vote.createNew(user.id, pollList[3].id, 1);
-    }).then(function () {
-      return Vote.getByUserId(user.id, voteId, 1);
-    });
+    })
+    .then(() => Vote.getByUserId(user.id, voteId, 1));
 
-    return expect(promise).to.be.fulfilled.then(function (votes) {
+    return expect(promise).to.be.fulfilled.then(votes => {
       expect(votes).to.have.length(1);
       expect(votes[0]._poll.question).to.equal('poll2');
     });
   });
 
-  it('should get voters for a pollId by answer', function () {
-    var users = [],
-        pollId;
+  it('should get voters for a pollId by answer', () => {
+    const users = [];
+    let pollId;
     // create a poll
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       // create users
       return createUsers(3);
-    }).each(function (user, index) {
-      var answer = (index === 1) ? 2 : 1;
+    }).each((user, index) => {
+      const answer = (index === 1) ? 2 : 1;
       return Vote.createNew(user.id, pollId, answer);
-    }).then(function () {
-      return Vote.getVotersFor(pollId, 1);
-    });
+    }).then(() => Vote.getVotersFor(pollId, 1));
 
-    return expect(promise).to.be.fulfilled.then(function (voters) {
+    return expect(promise).to.be.fulfilled.then(voters => {
       expect(voters).to.have.length(2);
 
       // expect users are sorted ind revers order of the createion of the vote
@@ -211,31 +181,27 @@ describe('Vote', function () {
     });
   });
 
-  it('should get voters with pagination', function () {
-    var users = [],
-        pollId;
+  it('should get voters with pagination', () => {
+    const users = [];
+    let pollId;
     // create a poll
-    var promise = Poll.publish(user, createPollData()).then(function (poll) {
+    const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       // create users
       return createUsers(4);
-    }).each(function (user) {
-      return Vote.createNew(user.id, pollId, 2);
-    }).then(function (r) {
-      return Vote.getVotersFor(pollId, 2, { skip: 1, limit: 2 });
-    });
+    }).each(user => Vote.createNew(user.id, pollId, 2)).then(r =>
+      Vote.getVotersFor(pollId, 2, { skip: 1, limit: 2 }));
 
-    return expect(promise).to.be.fulfilled.then(function (voters) {
+    return expect(promise).to.be.fulfilled.then(voters => {
       expect(voters).to.have.length(2);
-
       // expect users are sorted ind reverse order of the createion of the vote
       expect(voters[0]).to.have.property('name', 'user3');
       expect(voters[1]).to.have.property('name', 'user2');
     });
   });
 
-  it('should have #toJSON to get clean json', function () {
-    var vote = new Vote({ answer: 1});
+  it('should have #toJSON to get clean json', () => {
+    const vote = new Vote({ answer: 1});
     expect(vote.toJSON()).to.have.property('id');
     expect(vote.toJSON()).to.not.have.property('_id');
     expect(vote.toJSON()).to.not.have.property('__V');

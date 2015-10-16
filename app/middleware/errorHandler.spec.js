@@ -1,19 +1,13 @@
-'use strict';
-/* jshint expr: true */
+import chai from 'chai';
+import sinon from 'sinon';
+import sinonChai from 'sinon-chai';
+import errorHandler from './errorHandler';
 
-var chai = require('chai');
-var sinon = require('sinon');
-var sinonChai = require('sinon-chai');
-var expect = chai.expect;
-chai.use(sinonChai);
+describe('Middleware: errorHandler', () => {
+  const eHandler = errorHandler();
+  let err, req, res, next;
 
-var errorHandler = require('./errorHandler');
-
-describe('Middleware: errorHandler', function () {
-  var eHandler = errorHandler();
-  var err, req, res, next;
-
-  beforeEach(function () {
+  beforeEach(() => {
     // test doubles
     err = {};
     req = {};
@@ -21,17 +15,17 @@ describe('Middleware: errorHandler', function () {
     next = {};
   });
 
-  it('should be a function', function () {
+  it('should be a function', () => {
     expect(eHandler).to.be.a('function');
   });
 
-  it('should respond with status 500', function () {
+  it('should respond with status 500', () => {
     eHandler(err, req, res, next);
     expect(res.status).to.have.been.calledOnce;
     expect(res.status).to.have.been.calledWith(500);
   });
 
-  it('should respond with error message', function () {
+  it('should respond with error message', () => {
     err = new Error('Unexpected server error');
     eHandler(err, req, res, next);
     expect(res.json).to.have.been.calledOnce;
@@ -41,14 +35,14 @@ describe('Middleware: errorHandler', function () {
   });
 
   it('should respond with status with provided error status code',
-    function () {
+    () => {
     err = { status: 400, message: 'some error' };
     eHandler(err, req, res, next);
     expect(res.status).to.have.been.calledWith(400);
   });
 
-  describe('with MongoError', function () {
-    it('should respond with status 400 error when code is E11000', function () {
+  describe('with MongoError', () => {
+    it('should respond with status 400 error when code is E11000', () => {
       err = { name: 'MongoError', code: 11000, message: 'some error'};
       eHandler(err, req, res, next);
       expect(res.status).to.have.been.calledWith(400);
@@ -57,7 +51,7 @@ describe('Middleware: errorHandler', function () {
       });
     });
 
-    it('should respond with status 400 error when code is E11001', function () {
+    it('should respond with status 400 error when code is E11001', () => {
       err = { name: 'MongoError', code: 11001, message: 'some error'};
       eHandler(err, req, res, next);
       expect(res.status).to.have.been.calledWith(400);
@@ -67,7 +61,7 @@ describe('Middleware: errorHandler', function () {
     });
 
     it('should respond with custom error message for duplicate email',
-      function () {
+      () => {
       err = {
         name: 'MongoError',
         code: 11001,
@@ -79,7 +73,7 @@ describe('Middleware: errorHandler', function () {
       });
     });
 
-    it('should respond with status 500 for other errors', function () {
+    it('should respond with status 500 for other errors', () => {
       err = { name: 'MongoError', code: 1234, message: 'some error'};
       eHandler(err, req, res, next);
       expect(res.status).to.have.been.calledWith(500);
@@ -89,8 +83,8 @@ describe('Middleware: errorHandler', function () {
     });
   });
 
-  describe('with mongoose ValidationError', function () {
-    beforeEach(function () {
+  describe('with mongoose ValidationError', () => {
+    beforeEach(() => {
       // mongoose error obj
       err = {
         message: 'Validation failed',
@@ -107,18 +101,18 @@ describe('Middleware: errorHandler', function () {
       };
     });
 
-    it('should respond with status 400', function () {
+    it('should respond with status 400', () => {
       eHandler(err, req, res, next);
       expect(res.status).to.have.been.calledWith(400);
     });
 
-    it('should respond with a error message', function () {
+    it('should respond with a error message', () => {
       eHandler(err, req, res, next);
       expect(res.json).to.have.been.calledWith({ message: 'name is required!'});
     });
 
     it('should respond with a message containing error messages' +
-      ' seperated by comma when there are multiple errors', function () {
+      ' seperated by comma when there are multiple errors', () => {
       err.errors.email = {
         message: 'email is required!',
         name: 'ValidatorError',

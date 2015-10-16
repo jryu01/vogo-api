@@ -1,18 +1,18 @@
-'use strict';
+import express from 'express';
+import bodyParser from 'body-parser';
+import request from 'supertest';
+import Promise from 'bluebird';
+import rewire from 'rewire';
 
-var express = require('express'),
-    bodyParser = require('body-parser'),
-    request = require('supertest'),
-    Promise = require('bluebird'),
-    rewire = require('rewire');
-
-describe('Middleware: requiresToken', function () {
-  var app, reqObj;
+describe('Middleware: requiresToken', () => {
+  const TOKEN = 'some token';
+  let app;
+  let reqObj;
 
   // setup mocks
-  var requiresToken, mockJwt, mockUser, mockConfig, TOKEN;
+  let requiresToken, mockJwt, mockUser, mockConfig;
 
-  beforeEach(function () {
+  beforeEach(() => {
     mockJwt = { decode: sinon.stub(), encode: sinon.stub() };
     mockConfig = {
       jwtsecret: 'testsecret',
@@ -31,8 +31,8 @@ describe('Middleware: requiresToken', function () {
 
     app = express();
     app.use(bodyParser.json());
-    app.use(function (req, res) {
-      requiresToken(req, res, function (err) {
+    app.use((req, res) => {
+      requiresToken(req, res, (err) => {
         reqObj = req;
         res.statusCode = err ? (err.status || 500) : 200;
         res.end(err ? err.message : JSON.stringify(req.body));
@@ -40,8 +40,7 @@ describe('Middleware: requiresToken', function () {
     });
   });
 
-  beforeEach(function () {
-    TOKEN = 'some token';
+  beforeEach(() => {
     // set default behaviour of mocks
     mockJwt.decode
       .withArgs(TOKEN, 'testsecret').returns({
@@ -50,35 +49,35 @@ describe('Middleware: requiresToken', function () {
       });
   });
 
-  describe('with valid token', function () {
-    beforeEach(function () {
+  describe('with valid token', () => {
+    beforeEach(() => {
       mockUser.findByIdAsync.withArgs(321)
           .returns(Promise.resolve({ user: 'json'}));
     });
 
-    it('should attach user to req object', function (done) {
+    it('should attach user to req object', done => {
       request(app).get('/')
         .set('x-access-token', TOKEN)
-        .expect(200, function (err, res) {
+        .expect(200, (err, res) => {
           if (err) { return done(err); }
           expect(reqObj.user).to.deep.equal({ user: 'json'});
           done();
         });
     });
 
-    it('should get token from query strings', function (done) {
+    it('should get token from query strings', done => {
       request(app).get('/')
         .query({ access_token: TOKEN })
         .expect(200, done);
     });
 
-    it('should get token from body', function (done) {
+    it('should get token from body', done => {
       request(app).post('/')
         .send({ 'access_token': TOKEN })
         .expect(200, done);
     });
 
-    it('should response with 401 if user not found', function (done) {
+    it('should response with 401 if user not found', done => {
       mockUser.findByIdAsync.withArgs(321).returns(Promise.resolve(null));
 
       request(app).get('/')
@@ -88,14 +87,14 @@ describe('Middleware: requiresToken', function () {
     });
   });
 
- describe('with an Invalid token', function () {
-    it('should response with 401 with missing token', function (done) {
+ describe('with an Invalid token', () => {
+    it('should response with 401 with missing token', done => {
       request(app).get('/')
         .expect(401,
           '{"status":401,"message":"Access token is missing!"}', done);
     });
 
-    it('should response with 401 with decoding error', function (done) {
+    it('should response with 401 with decoding error', done => {
       mockJwt.decode.withArgs('invalidToken', 'testsecret')
       .throws(new Error('decode err'));
 
@@ -106,8 +105,8 @@ describe('Middleware: requiresToken', function () {
           done);
     });
 
-    it('should response with 401 when token is expired', function (done) {
-      var expTokenDecoded = {
+    it('should response with 401 when token is expired', done => {
+      const expTokenDecoded = {
         iss: 123,
         exp: Date.now() - (60 * 24 * 60 * 60 * 1000)
       };

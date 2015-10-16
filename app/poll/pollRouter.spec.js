@@ -1,25 +1,23 @@
-'use strict';
-/* jshint expr: true */
-var methodOverride = require('method-override'),
-    bodyParser = require('body-parser'),
-    mongoose = require('mongoose'),
-    Promise = require('bluebird'),
-    request = require('supertest'),
-    express = require('express'),
-    rewire = require('rewire'),
-    Poll = require('./poll'),
-    Vote = require('./vote');
+import methodOverride from 'method-override';
+import bodyParser from 'body-parser';
+import mongoose from 'mongoose';
+import Promise from 'bluebird';
+import request from 'supertest';
+import express from 'express';
+import rewire from 'rewire';
+import Poll from './poll';
+import Vote from './vote';
 
-var router = rewire('./router');
+const router = rewire('./router');
 
-var user = {
+const user = {
   id: '507f1f77bcf86cd799439011',
   email: 'test@user.com',
   name: 'Test User'
 };
 
-var mockRequireToken = function (req, res, next) {
-  var token = req.headers['x-access-token'];
+const mockRequireToken = (req, res, next) => {
+  const token = req.headers['x-access-token'];
   if (token !== 'testToken') {
     return res.status(401).end();
   }
@@ -27,8 +25,8 @@ var mockRequireToken = function (req, res, next) {
   next();
 };
 
-var createApp = function () {
-  var app = express();
+const createApp = () => {
+  const app = express();
   app.use(bodyParser.json());
   router.__set__({
     requireToken: mockRequireToken
@@ -38,19 +36,19 @@ var createApp = function () {
 };
 
 
-describe('Poll Router', function () {
-  var app = createApp();
+describe('Poll Router', () => {
+  const app = createApp();
 
-  it('should require authentication token', function (done) {
+  it('should require authentication token', done => {
     request(app).post('/anyRoute').expect(401, done);
   });
 
-  describe('POST /polls', function () {
-    beforeEach(function () { sinon.stub(Poll, 'publish'); });
-    afterEach(function () { Poll.publish.restore(); });
+  describe('POST /polls', () => {
+    beforeEach(() => sinon.stub(Poll, 'publish'));
+    afterEach(() => Poll.publish.restore());
 
-    it('should send 201 with created poll data', function (done) {
-      var reqBody = {
+    it('should send 201 with created poll data', done => {
+      const reqBody = {
         question: 'which answer?',
         answer1: { text: 'left answer', picture: 'pic' },
         answer2: { text: 'right answer', picture: 'pic2' }
@@ -62,7 +60,7 @@ describe('Poll Router', function () {
         .set('x-access-token', 'testToken')
         .set('Accept', 'application/json')
         .send(reqBody)
-        .expect(201, function (err, res) {
+        .expect(201, (err, res) => {
           if (err) { return done(err); }
           expect(res.body).to.have.property('question', 'Created Poll');
           done();
@@ -70,34 +68,31 @@ describe('Poll Router', function () {
     });
   });
 
-  describe('POST /polls/:id/votes', function () {
-    var pollId = mongoose.Types.ObjectId().toString();
+  describe('POST /polls/:id/votes', () => {
+    const pollId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () {
-      sinon.stub(Vote, 'createNew');
-    });
-    afterEach(function () {
-      Vote.createNew.restore();
-    });
+    beforeEach(() => sinon.stub(Vote, 'createNew'));
+    afterEach(() => Vote.createNew.restore());
 
-    it('should send 201 with result', function (done) {
-      var reqBody = { answer: 1 };
-      Vote.createNew.withArgs(user.id, pollId, 1).returns(Promise.resolve('result'));
+    it('should send 201 with result', done => {
+      const reqBody = { answer: 1 };
+      Vote.createNew.withArgs(user.id, pollId, 1)
+        .returns(Promise.resolve('result'));
 
       request(app).post('/polls/' + pollId + '/votes')
         .set('x-access-token', 'testToken')
         .set('Accept', 'application/json')
         .send(reqBody)
-        .expect(201, function (err, res) {
+        .expect(201, (err, res) => {
           if (err) { return done(err); }
           expect(res.body).to.equal('result');
           done();
         });
     });
 
-    it('should send 404 with non-existing poll', function (done) {
-      var reqBody = { answer: 1 },
-          expected = /poll not found or already voted with the user/;
+    it('should send 404 with non-existing poll', done => {
+      const reqBody = { answer: 1 };
+      const expected = /poll not found or already voted with the user/;
       Vote.createNew.withArgs(user.id, pollId, 1)
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/votes')
@@ -107,18 +102,14 @@ describe('Poll Router', function () {
     });
   });
 
-  describe('POST /polls/:id/comments', function () {
-    var pollId = mongoose.Types.ObjectId().toString();
+  describe('POST /polls/:id/comments', () => {
+    const pollId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () {
-      sinon.stub(Poll, 'comment');
-    });
-    afterEach(function () {
-      Poll.comment.restore();
-    });
+    beforeEach(() => sinon.stub(Poll, 'comment'));
+    afterEach(() => Poll.comment.restore());
 
-    it('should send 201 with created comments', function (done) {
-      var reqBody = { text: 'new comment' };
+    it('should send 201 with created comments', done => {
+      const reqBody = { text: 'new comment' };
       Poll.comment.withArgs(pollId, user, 'new comment')
         .returns(Promise.resolve({
           comments: [{text: 'old comment'}, {text: 'new comment'}]
@@ -130,9 +121,9 @@ describe('Poll Router', function () {
         .expect(201, {text: 'new comment'}, done);
     });
 
-    it('should send 404 with non existing poll', function (done) {
-      var reqBody = { text: 'new comment' },
-          expected = /poll not found/;
+    it('should send 404 with non existing poll', done => {
+      const reqBody = { text: 'new comment' };
+      const expected = /poll not found/;
       Poll.comment.withArgs(pollId, user, 'new comment')
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/comments')
@@ -143,13 +134,13 @@ describe('Poll Router', function () {
     });
   });
 
-  describe('GET /polls/:id/comments', function () {
-    var pollId = mongoose.Types.ObjectId().toString();
+  describe('GET /polls/:id/comments', () => {
+    const pollId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () { sinon.stub(Poll, 'getComments'); });
-    afterEach(function () { Poll.getComments.restore(); });
+    beforeEach(() => sinon.stub(Poll, 'getComments'));
+    afterEach(() => Poll.getComments.restore());
 
-    it('should send 200 with comments', function (done) {
+    it('should send 200 with comments', done => {
       Poll.getComments.withArgs(pollId, { skip: 0, limit: 20 })
         .returns(Promise.resolve([{text: 'comment1'}, {text: 'comment2'}]));
 
@@ -159,7 +150,7 @@ describe('Poll Router', function () {
         .expect(200, [{text: 'comment1'}, {text: 'comment2'}], done);
     });
 
-    it('should paginate comments', function (done) {
+    it('should paginate comments', done => {
       Poll.getComments.withArgs(pollId, { skip: 20, limit: 2})
         .returns(Promise.resolve([{text: 'comment1'}, {text: 'comment2'}]));
 
@@ -171,13 +162,13 @@ describe('Poll Router', function () {
     });
   });
 
-  describe('GET /polls/:id', function () {
-    var pollId = mongoose.Types.ObjectId().toString();
+  describe('GET /polls/:id', () => {
+    const pollId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () { sinon.stub(Poll, 'getById'); });
-    afterEach(function () { Poll.getById.restore(); });
+    beforeEach(() => sinon.stub(Poll, 'getById'));
+    afterEach(() => Poll.getById.restore());
 
-    it('should send 200 with a poll', function (done) {
+    it('should send 200 with a poll', done => {
       Poll.getById.withArgs(pollId)
         .returns(Promise.resolve({ id: pollId }));
 
@@ -188,13 +179,13 @@ describe('Poll Router', function () {
     });
   });
 
-  describe('GET /users/:id/polls', function () {
-    var userId = mongoose.Types.ObjectId().toString();
+  describe('GET /users/:id/polls', () => {
+    const userId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () { sinon.stub(Poll, 'getByUserId'); });
-    afterEach(function () { Poll.getByUserId.restore(); });
+    beforeEach(() => sinon.stub(Poll, 'getByUserId'));
+    afterEach(() => Poll.getByUserId.restore());
 
-    it('should send 200 with data', function (done) {
+    it('should send 200 with data', done => {
       Poll.getByUserId.withArgs(userId, null, 20)
         .returns(Promise.resolve({ question: 'poll?' }));
 
@@ -204,8 +195,8 @@ describe('Poll Router', function () {
         .expect(200, { question: 'poll?'}, done);
     });
 
-    it('should send 200 with before query parameter', function (done) {
-      var pollId = mongoose.Types.ObjectId().toString();
+    it('should send 200 with before query parameter', done => {
+      const pollId = mongoose.Types.ObjectId().toString();
       Poll.getByUserId.withArgs(userId, pollId, 20)
         .returns(Promise.resolve({ question: 'poll?' }));
 
@@ -217,19 +208,19 @@ describe('Poll Router', function () {
     });
   });
 
-  describe('GET /users/:id/votes', function () {
-    var userId = mongoose.Types.ObjectId().toString();
+  describe('GET /users/:id/votes', () => {
+    const userId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () {
+    beforeEach(() => {
       sinon.stub(Vote, 'getByUserId');
       sinon.stub(Vote, 'getByUserIdAndPollIds');
     });
-    afterEach(function () {
+    afterEach(() => {
       Vote.getByUserId.restore();
       Vote.getByUserIdAndPollIds.restore();
     });
 
-    it('should send 200 with data', function (done) {
+    it('should send 200 with data', done => {
       Vote.getByUserId.withArgs(userId, null, 20)
         .returns(Promise.resolve({ id: 1 }));
 
@@ -240,8 +231,8 @@ describe('Poll Router', function () {
         .expect(200, { id: 1 }, done);
     });
 
-    it('should send 200 with before query parameter', function (done) {
-      var voteId = mongoose.Types.ObjectId().toString();
+    it('should send 200 with before query parameter', done => {
+      const voteId = mongoose.Types.ObjectId().toString();
       Vote.getByUserId.withArgs(userId, voteId, 20)
         .returns(Promise.resolve( { id: 1 }));
 
@@ -252,8 +243,8 @@ describe('Poll Router', function () {
         .expect(200, { id: 1 }, done);
     });
 
-    it('should send 200 with pollIds query parameter', function (done) {
-      var pollId = mongoose.Types.ObjectId().toString();
+    it('should send 200 with pollIds query parameter', done => {
+      const pollId = mongoose.Types.ObjectId().toString();
       Vote.getByUserIdAndPollIds.withArgs(userId, [pollId])
         .returns(Promise.resolve( { id: 2 }));
 
@@ -265,17 +256,13 @@ describe('Poll Router', function () {
     });
   });
 
-  describe('GET /polls/:id/voters', function () {
-    var pollId = mongoose.Types.ObjectId().toString();
+  describe('GET /polls/:id/voters', () => {
+    const pollId = mongoose.Types.ObjectId().toString();
 
-    beforeEach(function () {
-      sinon.stub(Vote, 'getVotersFor');
-    });
-    afterEach(function () {
-      Vote.getVotersFor.restore();
-    });
+    beforeEach(() => sinon.stub(Vote, 'getVotersFor'));
+    afterEach(() => Vote.getVotersFor.restore());
 
-    it('should send 200 with data', function (done) {
+    it('should send 200 with data', done => {
       Vote.getVotersFor.withArgs(pollId, 1)
         .returns(Promise.resolve([{ name: 'user1' }]));
 
@@ -286,7 +273,7 @@ describe('Poll Router', function () {
         .expect(200, [{ name: 'user1'}], done);
     });
 
-    it('should paginate with limit and skip', function (done) {
+    it('should paginate with limit and skip', done => {
       Vote.getVotersFor.withArgs(pollId, 2, { limit: 1, skip: 20 })
         .returns(Promise.resolve([{ name: 'user1' }]));
 
@@ -297,7 +284,7 @@ describe('Poll Router', function () {
         .expect(200, [{ name: 'user1'}], done);
     });
 
-    it('should paginate with default limit and skip value', function (done) {
+    it('should paginate with default limit and skip value', done => {
       Vote.getVotersFor.withArgs(pollId, 2, { limit: 100, skip: 0 })
         .returns(Promise.resolve([{ name: 'user1' }]));
 
