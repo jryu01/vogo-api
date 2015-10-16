@@ -1,5 +1,4 @@
 /* eslint no-unused-expressions: 0 */
-import methodOverride from 'method-override';
 import bodyParser from 'body-parser';
 import mongoose from 'mongoose';
 import Promise from 'bluebird';

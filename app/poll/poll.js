@@ -1,6 +1,3 @@
-'use strict';
-
-const _ = require('lodash');
 const eb = require('app/eventBus');
 const Promise = require('bluebird');
 const mongoose = Promise.promisifyAll(require('mongoose'));
@@ -49,7 +46,7 @@ PollSchema.index({'subscribers': 1});
 
 // Add toJSON option to transform document before returnig the result
 PollSchema.options.toJSON = {
-  transform: function (doc, ret, options) {
+  transform: function (doc, ret) {
     ret.id = ret._id;
     delete ret._id;
     delete ret._random;
@@ -58,9 +55,8 @@ PollSchema.options.toJSON = {
 };
 
 // Static methods
-PollSchema.statics.publish = function (user, data) {
-  data = data || {};
-  const poll = {
+PollSchema.statics.publish = function (user, data = {}) {
+  const pollData = {
     question: data.question,
     answer1: {
       text: data.answer1 && data.answer1.text,
@@ -77,7 +73,7 @@ PollSchema.statics.publish = function (user, data) {
       picture: user.picture
     }
   };
-  return this.createAsync(poll).then(function (poll) {
+  return this.createAsync(pollData).then(function (poll) {
     setImmediate(function () {
       eb.emit('pollModel:publish', { user: user, poll: poll });
     });
@@ -86,14 +82,14 @@ PollSchema.statics.publish = function (user, data) {
 };
 
 PollSchema.statics.getByUserId = function (userId, pollId, limit) {
-  const query = { 'createdBy.userId': userId },
-      projection = {
-        'answer1.voters': 0,
-        'answer2.voters': 0,
-        'comments': 0,
-        'votes': 0
-      },
-      options = { sort: { '_id': -1 } };
+  const query = { 'createdBy.userId': userId };
+  const projection = {
+    'answer1.voters': 0,
+    'answer2.voters': 0,
+    'comments': 0,
+    'votes': 0
+  };
+  const options = { sort: { '_id': -1 } };
 
   if (limit > 0) {
     options.limit = limit;
@@ -172,12 +168,12 @@ PollSchema.statics.comment = function (pollId, user, text) {
   });
 };
 
-PollSchema.statics.getComments = function (pollId, options) {
-  options = options || {};
-  options.skip = options.skip || 0;
-  options.limit = options.limit || 100;
+PollSchema.statics.getComments = function (pollId, {
+    skip = 0,
+    limit = 100
+  } = {}) {
   const project = {
-    'comments': { $slice: [options.skip, options.limit] }
+    'comments': { $slice: [ skip, limit ] }
   };
   return this.findByIdAsync(pollId, project).then(function (poll) {
     return poll ? poll.comments : [];
@@ -192,10 +188,7 @@ PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
     'answer2.voters': { $ne: userId }
   };
   if (exclude.length > 1) {
-    exclude = exclude.map(function (id) {
-      return mongoose.Types.ObjectId(id);
-    });
-    query._id = { $nin: exclude };
+    query._id = { $nin: exclude.map(id => mongoose.Types.ObjectId(id)) };
   }
   if (beforePollId) {
     query._id = { $lt: mongoose.Types.ObjectId(beforePollId) };

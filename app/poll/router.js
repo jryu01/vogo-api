@@ -1,12 +1,8 @@
-'use strict';
-
 const requireToken = require('app/middleware/requireToken');
 const errorhandler = require('api-error-handler');
-const mongoose = require('mongoose');
 const express = require('express');
 const Poll = require('./poll');
 const Vote = require('./vote');
-const _ = require('lodash');
 
 const publish = function (req, res, next) {
   // TODO: input validation with req.body
@@ -18,14 +14,14 @@ const publish = function (req, res, next) {
 const vote = function (req, res, next) {
   // TODO: input validation
   Vote.createNew(req.user.id, req.params.id, req.body.answer)
-    .then(function (vote) {
-      if (!vote) {
+    .then(function (data) {
+      if (!data) {
         throw {
           status: 404,
           message: 'poll not found or already voted with the user'
         };
       }
-      res.status(201).json(vote);
+      res.status(201).json(data);
     }).catch(next);
 };
 
@@ -54,19 +50,19 @@ const getPollById = function (req, res, next) {
 };
 
 const getUserPolls = function (req, res, next) {
-  const userId = req.params.id,
-      beforePollId = req.query.before || null,
-      limit = 20;
+  const userId = req.params.id;
+  const beforePollId = req.query.before || null;
+  const limit = 20;
   Poll.getByUserId(userId, beforePollId, limit)
     .then(res.json.bind(res))
     .catch(next);
 };
 
 const getUserVotes = function (req, res, next) {
-  const userId = req.params.id,
-      pollIds = req.query.pollIds,
-      beforeVoteId = req.query.before || null,
-      limit = 20;
+  const userId = req.params.id;
+  const pollIds = req.query.pollIds;
+  const beforeVoteId = req.query.before || null;
+  const limit = 20;
   if (pollIds) {
     // if pollids are provided, get provided user's votes on provided pollIds
     // (it lets you check if a user voted on provided polls)
@@ -80,9 +76,9 @@ const getUserVotes = function (req, res, next) {
 };
 
 const getVoters = function (req, res, next) {
-  const pollId = req.params.id,
-      answer = req.query.answer,
-      options = {};
+  const pollId = req.params.id;
+  const answer = req.query.answer;
+  const options = {};
 
   options.limit = parseInt(req.query.limit || 100, 10);
   options.skip = parseInt(req.query.skip || 0, 10);
@@ -94,15 +90,15 @@ const getVoters = function (req, res, next) {
 
 // TODO: test
 const getRecentUnvotedPolls = function (req, res, next) {
-  const user = req.user,
-      exclude = req.query.exclude || [],
-      beforePollId = req.query.before;
+  const user = req.user;
+  const exclude = req.query.exclude || [];
+  const beforePollId = req.query.before;
   return Poll.getRecentUnvoted(user, beforePollId, [].concat(exclude))
     .then(res.json.bind(res))
     .catch(next);
 };
 
-const pollRouter = module.exports = function () {
+module.exports = function () {
   const router = express.Router();
 
   router.use(requireToken);

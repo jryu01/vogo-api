@@ -1,6 +1,5 @@
 /* eslint no-unused-expressions: 0 */
 import mongoose from 'mongoose';
-import Promise from 'bluebird';
 import eb from 'app/eventBus';
 import _ from 'lodash';
 import Poll from './poll';
@@ -32,30 +31,25 @@ describe('Poll', () => {
   afterEach(() => eb.emit.restore());
 
   it('should publish and return a new poll', () => {
-    const data = createPollData();
-    let pollFromCreate;
-    const promise = Poll.publish(user, data).then(poll => {
-      pollFromCreate = poll;
-      return Poll.getById(poll.id);
-    });
-    return expect(promise).to.eventually.be.fulfilled.then(poll => {
-      const expectAndValidate = poll => {
-        expect(poll.createdBy.userId.toString()).to.equal(user.id.toString());
-        expect(poll).to.have.deep.property('createdBy.name', 'Bob');
-        expect(poll).to.have.deep.property('createdBy.picture', 'profilePic');
+    const expectAndValidate = data => {
+      expect(data.createdBy.userId.toString()).to.equal(user.id.toString());
+      expect(data).to.have.deep.property('createdBy.name', 'Bob');
+      expect(data).to.have.deep.property('createdBy.picture', 'profilePic');
 
-        expect(poll).to.have.property('question', 'which sports?');
-        expect(poll).to.have.deep.property('answer1.text', 'basketball');
-        expect(poll).to.have.deep.property('answer1.picture', 'a1picurl');
-        expect(poll).to.have.deep.property('answer1.numVotes', 0);
-        expect(poll).to.have.deep.property('answer2.text', 'soccer');
-        expect(poll).to.have.deep.property('answer2.picture', 'a2picurl');
-        expect(poll).to.have.deep.property('answer2.numVotes', 0);
-      };
-      expectAndValidate(pollFromCreate);
-      expect(pollFromCreate.subscribers[0].toString())
+      expect(data).to.have.property('question', 'which sports?');
+      expect(data).to.have.deep.property('answer1.text', 'basketball');
+      expect(data).to.have.deep.property('answer1.picture', 'a1picurl');
+      expect(data).to.have.deep.property('answer1.numVotes', 0);
+      expect(data).to.have.deep.property('answer2.text', 'soccer');
+      expect(data).to.have.deep.property('answer2.picture', 'a2picurl');
+      expect(data).to.have.deep.property('answer2.numVotes', 0);
+    };
+    return Poll.publish(user, createPollData()).then(poll => {
+      expectAndValidate(poll);
+      expect(poll.subscribers[0].toString())
         .to.equal(user.id.toString());
-
+      return Poll.getById(poll.id);
+    }).then(poll => {
       expectAndValidate(poll);
       expect(poll).to.not.have.deep.property('answer1.voters');
       expect(poll).to.not.have.deep.property('answer2.voters');
@@ -67,7 +61,7 @@ describe('Poll', () => {
   it('should emit an event when poll is published', done => {
     const data = createPollData();
 
-    expect(Poll.publish(user, data)).to.be.fulfilled.then(poll => {
+    Poll.publish(user, data).then(poll => {
       // expect eb.emit called on next event loop cycle
       expect(eb.emit).to.have.not.been.calledWith('pollModel:publish');
       setImmediate(() => {
@@ -81,14 +75,14 @@ describe('Poll', () => {
   });
 
   it('should get polls in decending order by id for a user', () => {
-    const poll1 = createPollData({ question: 'poll1' }),
-        poll2 = createPollData({ question: 'poll2' }),
-        poll3 = createPollData({ question: 'poll3' }),
-        user2 = {
-          name: 'Sam',
-          picture: 'pfpic',
-          id: mongoose.Types.ObjectId()
-        };
+    const poll1 = createPollData({ question: 'poll1' });
+    const poll2 = createPollData({ question: 'poll2' });
+    const poll3 = createPollData({ question: 'poll3' });
+    const user2 = {
+      name: 'Sam',
+      picture: 'pfpic',
+      id: mongoose.Types.ObjectId()
+    };
 
     const promise = Poll.publish(user, poll1)
       .then(() => Poll.publish(user2, poll3))
@@ -117,11 +111,11 @@ describe('Poll', () => {
   });
 
   it('should limit the number of result', () => {
-    const poll1 = createPollData({ question: 'poll1' }),
-        poll2 = createPollData({ question: 'poll2' });
+    const poll1 = createPollData({ question: 'poll1' });
+    const poll2 = createPollData({ question: 'poll2' });
 
     const promise = Poll.publish(user, poll1)
-      .then(poll1 => Poll.publish(user, poll2))
+      .then(() => Poll.publish(user, poll2))
       .then(() => Poll.getByUserId(user.id, null, 1));
 
     return expect(promise).to.eventually.have.length(1);
@@ -212,13 +206,10 @@ describe('Poll', () => {
   });
 
   it('should emit an event when poll is voted', done => {
-    let pollId;
-    const promise = Poll.publish(user, createPollData()).then(poll => {
-      pollId = poll.id;
-      return Poll.voteAnswer(poll.id, user.id, 1);
-    });
+    const promise = Poll.publish(user, createPollData()).then(poll =>
+      Poll.voteAnswer(poll.id, user.id, 1));
 
-    expect(promise).to.be.fulfilled.then(poll => {
+    promise.then(poll => {
       // expect eb.emit called on next event loop cycle
       expect(eb.emit).to.have.not.been.calledWith('pollModel:vote');
       setImmediate(() => {
@@ -245,10 +236,10 @@ describe('Poll', () => {
   });
 
   it('should add comment to a poll and return updated poll', () => {
-    let pollId, poll;
-    const id = mongoose.Types.ObjectId();
-    const promise = Poll.publish(user, createPollData()).then(poll => {
-      pollId = poll.id;
+    let pollId;
+    let poll;
+    const promise = Poll.publish(user, createPollData()).then(data => {
+      pollId = data.id;
       return Poll.comment(pollId, user, 'hello');
     }).then(result => {
       poll = result;
@@ -274,17 +265,14 @@ describe('Poll', () => {
   });
 
   it('should add comment author to the subscribers', () => {
-    let pollId, poll;
-
     const cris = {
       name: 'Cris',
       picture: 'crisProfilePic',
       id: mongoose.Types.ObjectId()
     };
-    const promise = Poll.publish(user, createPollData()).then(poll => {
-      return Poll.comment(poll.id, cris, 'hello');
-    });
-    return expect(promise).to.be.fulfilled.then(poll => {
+    return Poll.publish(user, createPollData()).then(poll =>
+      Poll.comment(poll.id, cris, 'hello'))
+    .then(poll => {
       expect(poll.subscribers).to.be.length(2);
       expect(poll.subscribers[1].toString()).to.equal(cris.id.toString());
     });
@@ -292,7 +280,7 @@ describe('Poll', () => {
 
   it('should emit event after comment is created', done => {
     const promise = Poll.publish(user, createPollData())
-    .then(poll => Poll.comment(poll.id, user, 'new comment'));
+      .then(poll => Poll.comment(poll.id, user, 'new comment'));
 
     return expect(promise).to.be.fulfilled.then(updatedPoll => {
       // should emit on next event loop cycle

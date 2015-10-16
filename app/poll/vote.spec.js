@@ -55,7 +55,7 @@ describe('Vote', () => {
 
   it('should return null when creating to non-existing poll', () => {
     const promise = Poll.publish(user, createPollData())
-      .then(poll => Vote.createNew(user.id, mongoose.Types.ObjectId(), 1));
+      .then(() => Vote.createNew(user.id, mongoose.Types.ObjectId(), 1));
     return expect(promise).to.eventually.be.null;
   });
 
@@ -159,16 +159,15 @@ describe('Vote', () => {
   });
 
   it('should get voters for a pollId by answer', () => {
-    const users = [];
     let pollId;
     // create a poll
     const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
       // create users
       return createUsers(3);
-    }).each((user, index) => {
+    }).each((userData, index) => {
       const answer = (index === 1) ? 2 : 1;
-      return Vote.createNew(user.id, pollId, answer);
+      return Vote.createNew(userData.id, pollId, answer);
     }).then(() => Vote.getVotersFor(pollId, 1));
 
     return expect(promise).to.be.fulfilled.then(voters => {
@@ -183,15 +182,13 @@ describe('Vote', () => {
   });
 
   it('should get voters with pagination', () => {
-    const users = [];
     let pollId;
     // create a poll
     const promise = Poll.publish(user, createPollData()).then(poll => {
       pollId = poll.id;
-      // create users
       return createUsers(4);
-    }).each(user => Vote.createNew(user.id, pollId, 2)).then(r =>
-      Vote.getVotersFor(pollId, 2, { skip: 1, limit: 2 }));
+    }).each(userData => Vote.createNew(userData.id, pollId, 2))
+      .then(() => Vote.getVotersFor(pollId, 2, { skip: 1, limit: 2 }));
 
     return expect(promise).to.be.fulfilled.then(voters => {
       expect(voters).to.have.length(2);

@@ -1,33 +1,31 @@
 export default () =>
-  (err, req, res, next) => {
+  (err, req, res) => {
     // TODO: write test
-    const e = err;
-    if (err.name === 'OperationalError') {
-      err = err.cause;
+    let error = err;
+    if (error.name === 'OperationalError') {
+      error = error.cause;
     }
-    switch (err.name) {
-      case 'ValidationError':
-        const msgs = [];
-        Object.keys(err.errors).forEach(key => {
-          msgs.push(err.errors[key].message);
-        });
-        res.status(400);
-        res.json({ message: msgs.join() });
-        break;
-      case 'MongoError':
-        if (err.code === 11000 || err.code === 11001) {
-          err.status = 400;
-          if (err.message.indexOf('email') >= 0) {
-            err.message = 'The email already exists in the system';
-          }
+    switch (error.name) {
+    case 'ValidationError':
+      const msgs = [];
+      Object.keys(error.errors).forEach(key => {
+        msgs.push(error.errors[key].message);
+      });
+      res.status(400);
+      res.json({ message: msgs.join() });
+      break;
+    case 'MongoError':
+      if (error.code === 11000 || error.code === 11001) {
+        error.status = 400;
+        if (error.message.indexOf('email') >= 0) {
+          error.message = 'The email already exists in the system';
         }
-        res.status(err.status || 500);
-        res.json({ message: err.message });
-        break;
-      default:
-        // console.log(e);
-        // console.log(e.stack);
-        res.status(err.status || 500);
-        res.json({ message: err.message });
+      }
+      res.status(error.status || 500);
+      res.json({ message: error.message });
+      break;
+    default:
+      res.status(error.status || 500);
+      res.json({ message: error.message });
     }
   };

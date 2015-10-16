@@ -2,9 +2,6 @@
  * configuration file
  *
  */
-
-'use strict';
-
 import _ from 'lodash';
 
 const config = (env => {

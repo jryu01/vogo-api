@@ -190,7 +190,7 @@
     // disallow use of comma operator
     "no-sequences": 2,
     // restrict what can be thrown as an exception
-    "no-throw-literal": 2, //TODO
+    "no-throw-literal": 0,
     // disallow usage of expressions in statement position
     "no-unused-expressions": 2, //TODO:disable manualy in tests
     // disallow unnecessary .call() and .apply()

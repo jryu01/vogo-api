@@ -1,5 +1,3 @@
-'use strict';
-
 const Promise = require('bluebird');
 const mongoose = Promise.promisifyAll(require('mongoose'));
 const Poll = require('./poll');
@@ -29,8 +27,8 @@ VoteSchema.statics.createNew = function (userId, pollId, answer) {
 };
 
 VoteSchema.statics.getByUserId = function (userId, voteId, limit) {
-  const query = { '_user': userId },
-      options = { sort: { '_id': -1 } };
+  const query = { '_user': userId };
+  const options = { sort: { '_id': -1 } };
 
   if (limit > 0) {
     options.limit = limit;
@@ -51,35 +49,24 @@ VoteSchema.statics.getByUserIdAndPollIds = function (userId, pollIds) {
   return this.findAsync(query);
 };
 
-VoteSchema.statics.getVotersFor = function (pollId, answer, options) {
-  const query = { '_poll': pollId, 'answer': answer },
-      opts = { sort: { '_id': -1 } };
+VoteSchema.statics.getVotersFor = function (pollId, answer, options = {}) {
+  const query = { '_poll': pollId, 'answer': answer };
+  options.sort = { '_id': -1 };
 
-  if (options && options.skip) {
-    opts.skip = options.skip;
-  }
-  if (options && options.limit) {
-    opts.limit = options.limit;
-  }
+  const mapToUsers = votes => votes.map(vote => vote._user);
 
-  const mapToUsers = function (votes) {
-    return votes.map(function (vote) {
-      return vote._user;
-    });
-  };
-
-  return this.find(query, null, opts)
+  return this.find(query, null, options)
     .populate('_user', '-followers')
     .execAsync()
     .then(mapToUsers);
 };
 
-VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};
+// VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};
 
 
 // Add toJSON option to transform document before returnig the result
 VoteSchema.options.toJSON = {
-  transform: function (doc, ret, options) {
+  transform: function (doc, ret) {
     ret.id = ret._id;
     delete ret._id;
     delete ret.__v;

@@ -1,5 +1,3 @@
-import Promise from 'bluebird';
-
 const User = require('app/user/user');
 const jwt = require('jwt-simple');
 const config = require('app/config');

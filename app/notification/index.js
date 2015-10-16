@@ -1,5 +1,3 @@
-'use strict';
-
 const requireToken = require('app/middleware/requireToken');
 const Notification = require('app/notification/notificationModel');
 const Promise = require('bluebird');
@@ -89,28 +87,28 @@ const sendPush = function (notification) {
     // Set up the sender with you API key
     const sender = new gcm.Sender(config.google.apiKey);
     // Now the sender can be used to send messages
-    sender.send(message, androidDevices, 4, function (err, result) {
+    sender.send(message, androidDevices, 4, function (err) {
       if (err) { console.error(err); }
     });
   }).catch(console.error);
 };
 
 // notification module
-const notification = module.exports = function () {
+module.exports = function () {
   const handleFollowNotification = function (data) {
-    const userId = data.userId,
-        targetUserId = data.toUserId,
-        query = {
-          user: targetUserId,
-          actor: userId,
-          verb: 'follow',
-        },
-        newNotification = _.assign(_.clone(query), {
-          object: userId,
-          objectType: 'user',
-          updatedAt: Date.now()
-        }),
-        options = { new: true, upsert: true };
+    const userId = data.userId;
+    const targetUserId = data.toUserId;
+    const query = {
+      user: targetUserId,
+      actor: userId,
+      verb: 'follow',
+    };
+    const newNotification = _.assign(_.clone(query), {
+      object: userId,
+      objectType: 'user',
+      updatedAt: Date.now()
+    });
+    const options = { new: true, upsert: true };
 
     Notification.findOneAndUpdateAsync(query, newNotification, options)
       .then(populate)
@@ -147,28 +145,28 @@ const notification = module.exports = function () {
   };
 
   const handleVoteNotification = function (data) {
-    const userId = data.userId.toString(),
-        poll = data.poll,
-        toUserId = poll.createdBy.userId.toString(),
-        numVoted = poll.answer1.voters.length + poll.answer2.voters.length;
+    const userId = data.userId.toString();
+    const poll = data.poll;
+    const toUserId = poll.createdBy.userId.toString();
+    const numVoted = poll.answer1.voters.length + poll.answer2.voters.length;
     // don't create notification if user is voting on his own poll
     if (userId === toUserId) { return; }
 
     const query = {
-          user: toUserId,
-          object: poll._id,
-          verb: 'vote',
-        },
-        newNotification = _.assign(_.clone(query), {
-          actor: userId,
-          objectType: 'poll',
-          detail: {
-            totalVote: numVoted,
-            answer: data.answer
-          },
-          updatedAt: Date.now()
-        }),
-        options = { new: true, upsert: true };
+      user: toUserId,
+      object: poll._id,
+      verb: 'vote',
+    };
+    const newNotification = _.assign(_.clone(query), {
+      actor: userId,
+      objectType: 'poll',
+      detail: {
+        totalVote: numVoted,
+        answer: data.answer
+      },
+      updatedAt: Date.now()
+    });
+    const options = { new: true, upsert: true };
     Notification.findOneAndUpdateAsync(query, newNotification, options)
       .then(populate)
       .then(sendPush)
@@ -176,9 +174,9 @@ const notification = module.exports = function () {
   };
 
   const handleCommentNotification = function (data) {
-    const userId = data.userId.toString(),
-        poll = data.poll,
-        subs = poll.subscribers;
+    const userId = data.userId.toString();
+    const poll = data.poll;
+    const subs = poll.subscribers;
     // TODO: optimize loop to async loop later
     subs.forEach(function (subscriberId) {
       // don't create notification if user is commenting on his own poll
@@ -200,8 +198,8 @@ const notification = module.exports = function () {
   };
 
   const getNotifications = function (req, res, next) {
-    const query = { user: req.user.id },
-        options = { sort: { updatedAt: -1 }};
+    const query = { user: req.user.id };
+    const options = { sort: { updatedAt: -1 }};
     options.limit = 100;
 
     Notification.findAsync(query, null, options).then(function (notes) {

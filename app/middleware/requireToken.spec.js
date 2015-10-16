@@ -10,7 +10,10 @@ describe('Middleware: requiresToken', () => {
   let reqObj;
 
   // setup mocks
-  let requiresToken, mockJwt, mockUser, mockConfig;
+  let requiresToken;
+  let mockJwt;
+  let mockUser;
+  let mockConfig;
 
   beforeEach(() => {
     mockJwt = { decode: sinon.stub(), encode: sinon.stub() };
@@ -58,7 +61,7 @@ describe('Middleware: requiresToken', () => {
     it('should attach user to req object', done => {
       request(app).get('/')
         .set('x-access-token', TOKEN)
-        .expect(200, (err, res) => {
+        .expect(200, err => {
           if (err) { return done(err); }
           expect(reqObj.user).to.deep.equal({ user: 'json'});
           done();
@@ -87,7 +90,7 @@ describe('Middleware: requiresToken', () => {
     });
   });
 
- describe('with an Invalid token', () => {
+  describe('with an Invalid token', () => {
     it('should response with 401 with missing token', done => {
       request(app).get('/')
         .expect(401,

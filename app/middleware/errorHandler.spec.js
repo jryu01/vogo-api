@@ -1,11 +1,12 @@
-import chai from 'chai';
-import sinon from 'sinon';
-import sinonChai from 'sinon-chai';
+/* eslint no-unused-expressions: 0 */
 import errorHandler from './errorHandler';
 
 describe('Middleware: errorHandler', () => {
   const eHandler = errorHandler();
-  let err, req, res, next;
+  let err;
+  let req;
+  let res;
+  let next;
 
   beforeEach(() => {
     // test doubles
@@ -34,8 +35,7 @@ describe('Middleware: errorHandler', () => {
     });
   });
 
-  it('should respond with status with provided error status code',
-    () => {
+  it('should respond with status with provided error status code', () => {
     err = { status: 400, message: 'some error' };
     eHandler(err, req, res, next);
     expect(res.status).to.have.been.calledWith(400);
@@ -60,8 +60,7 @@ describe('Middleware: errorHandler', () => {
       });
     });
 
-    it('should respond with custom error message for duplicate email',
-      () => {
+    it('should respond with custom error message for duplicate email', () => {
       err = {
         name: 'MongoError',
         code: 11001,
@@ -111,8 +110,7 @@ describe('Middleware: errorHandler', () => {
       expect(res.json).to.have.been.calledWith({ message: 'name is required!'});
     });
 
-    it('should respond with a message containing error messages' +
-      ' seperated by comma when there are multiple errors', () => {
+    it('should respond with a message containing error messages seperated by comma when there are multiple errors', () => {
       err.errors.email = {
         message: 'email is required!',
         name: 'ValidatorError',

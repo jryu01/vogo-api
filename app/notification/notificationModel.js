@@ -1,5 +1,3 @@
-'use strict';
-
 const Promise = require('bluebird');
 const mongoose = Promise.promisifyAll(require('mongoose'));
 const Schema = mongoose.Schema;

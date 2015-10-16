@@ -32,7 +32,7 @@ const signinWithPassword = function (req, res, next) {
     }
     return user.comparePassword(req.body.password).then(function (match) {
       if (!match) {
-       throw { status: 401, message: 'Password is not correct'};
+        throw { status: 401, message: 'Password is not correct'};
       }
       return user;
     });
@@ -133,7 +133,7 @@ const unfollow = function (req, res, next) {
   if (req.params.id !== user.id.toString()) {
     return next({ status: 403 });
   }
-  User.unfollow(user, req.params.target).then(function (r) {
+  User.unfollow(user, req.params.target).then(function () {
     res.status(204).end();
   }).catch(next);
 };
@@ -148,7 +148,7 @@ const getFollowers = function (req, res, next) {
 };
 
 const getFollowerCount = function (req, res, next) {
-   User.getFollowerCount(req.params.id)
+  User.getFollowerCount(req.params.id)
     .then(function (count) {
       res.json({ numberOfFollowers: count });
     }).catch(next);
@@ -172,7 +172,7 @@ const getFollowingCount = function (req, res, next) {
 
 const getFollowingInfo = function (req, res, next) {
   if (!req.query.userId) {
-     return next({ status: 400, message: 'userId parameter is required'});
+    return next({ status: 400, message: 'userId parameter is required'});
   }
   const uids = [].concat(req.query.userId);
   User.getFollowingInfo(req.user.id, uids)
@@ -193,7 +193,8 @@ const getS3Info = function (req, res, next) {
       ['content-length-range', 0, 1048576] // 1 Mb
     ]
   };
-  let s3Policy, s3Signature;
+  let s3Policy;
+  let s3Signature;
   try {
     s3Policy = new Buffer(JSON.stringify(s3PolicyDoc))
       .toString('base64');
@@ -220,7 +221,7 @@ const registerDeviceToken = function (req, res, next) {
     .then(res.status(201).json.bind(res)).catch(next);
 };
 
-const userRouter = module.exports = function () {
+module.exports = function () {
   const router = express.Router();
 
   router.post('/login', signin);

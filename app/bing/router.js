@@ -6,8 +6,8 @@ const requireToken = require('app/middleware/requireToken');
 
 
 const searchImage = function (req, res, next) {
-  const query = req.query.query || '',
-      opts = {};
+  const query = req.query.query || '';
+  const opts = {};
 
   opts.skip = 0;
   opts.userAgent = 'Vogo Api';
@@ -24,11 +24,11 @@ const searchImage = function (req, res, next) {
     uri: reqUrl,
     method: 'GET',
     headers: {
-        'User-Agent': opts.userAgent
+      'User-Agent': opts.userAgent
     },
     auth: {
-        user: opts.accKey,
-        pass: opts.accKey
+      user: opts.accKey,
+      pass: opts.accKey
     },
     timeout: opts.reqTimeout
   }).then(function (result) {
@@ -42,7 +42,7 @@ const searchImage = function (req, res, next) {
   }).catch(next);
 };
 
-const userRouter = module.exports = function () {
+module.exports = function () {
   const router = express.Router();
 
   router.get('/bing/search/image', requireToken, searchImage);
