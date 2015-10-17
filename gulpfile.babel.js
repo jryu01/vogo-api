@@ -3,12 +3,14 @@ import gulp from 'gulp';
 import babel from 'gulp-babel';
 import mocha from 'gulp-mocha';
 import eslint from 'gulp-eslint';
+import cache from 'gulp-cached';
 import nodemon from 'gulp-nodemon';
 
 const NODE_FILES = ['src/*.js', 'src/app/**/*.js'];
 const NODE_TEST_FILES = ['src/app/**/*.spec.js', 'src/*.spec.js'];
 
-gulp.task('eslint', () => gulp.src(NODE_FILES)
+gulp.task('lint', () => gulp.src(NODE_FILES)
+  .pipe(cache('linting'))
   .pipe(eslint())
   .pipe(eslint.format())
   .pipe(eslint.failAfterError()));
@@ -30,7 +32,7 @@ gulp.task('serve', ['babel'], () => nodemon({
 }));
 
 gulp.task('watch', () => {
-  gulp.watch(NODE_FILES, ['eslint', 'test']);
+  gulp.watch(NODE_FILES, ['lint', 'test']);
 });
 
 // var gulp = require('gulp'),
