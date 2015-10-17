@@ -1,6 +1,6 @@
 /* eslint no-unused-expressions: 0 */
 import mongoose from 'mongoose';
-import eb from 'app/eventBus';
+import eb from '../eventBus';
 import _ from 'lodash';
 import Poll from './poll';
 

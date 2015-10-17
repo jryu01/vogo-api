@@ -1,8 +1,8 @@
-const config = require('app/config');
+const config = require('../config');
 const express = require('express');
 const Promise = require('bluebird');
 const request = Promise.promisify(require('request'));
-const requireToken = require('app/middleware/requireToken');
+const requireToken = require('../middleware/requireToken');
 
 
 const searchImage = function (req, res, next) {

@@ -1,9 +1,9 @@
 const Promise = require('bluebird');
 const mongoose = Promise.promisifyAll(require('mongoose'));
 const bcrypt = Promise.promisifyAll(require('bcrypt'));
-const config = require('app/config');
-const Poll = require('app/poll/poll');
-const eb = require('app/eventBus');
+const config = require('../config');
+const Poll = require('../poll/poll');
+const eb = require('../eventBus');
 const Schema = mongoose.Schema;
 
 const FollowerSchema = new Schema({

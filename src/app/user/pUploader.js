@@ -1,6 +1,6 @@
 const Promise = require('bluebird');
 const request = require('request');
-const config = require('app/config');
+const config = require('../config');
 const knox = require('knox');
 
 // TODO: unit test

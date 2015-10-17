@@ -4,11 +4,11 @@ import express from 'express';
 import morgan from 'morgan';
 import config from './config';
 
-import errorHandler from 'app/middleware/errorHandler';
-import userRouter from 'app/user/router';
-import pollRouter from 'app/poll/router';
-import bingRouter from 'app/bing/router';
-import notification from 'app/notification';
+import errorHandler from './middleware/errorHandler';
+import userRouter from './user/router';
+import pollRouter from './poll/router';
+import bingRouter from './bing/router';
+import notification from './notification';
 
 const app = express();
 

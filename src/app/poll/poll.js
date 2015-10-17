@@ -1,4 +1,4 @@
-const eb = require('app/eventBus');
+const eb = require('../eventBus');
 const Promise = require('bluebird');
 const mongoose = Promise.promisifyAll(require('mongoose'));
 const Schema = mongoose.Schema;

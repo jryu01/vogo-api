@@ -1,9 +1,9 @@
 /* eslint no-unused-expressions: 0 */
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
-import User from 'app/user/user';
+import User from '../user/user';
 import Poll from './poll';
-import eb from 'app/eventBus';
+import eb from '../eventBus';
 import _ from 'lodash';
 import Vote from './vote';
 

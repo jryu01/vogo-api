@@ -1,4 +1,4 @@
-const requireToken = require('app/middleware/requireToken');
+const requireToken = require('../middleware/requireToken');
 const errorhandler = require('api-error-handler');
 const express = require('express');
 const Poll = require('./poll');

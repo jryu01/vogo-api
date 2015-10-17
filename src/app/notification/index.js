@@ -1,13 +1,13 @@
-const requireToken = require('app/middleware/requireToken');
-const Notification = require('app/notification/notificationModel');
+const requireToken = require('../middleware/requireToken');
+const Notification = require('../notification/notificationModel');
 const Promise = require('bluebird');
 const express = require('express');
 const router = express.Router();
-const config = require('app/config');
-const User = require('app/user/user');
+const config = require('../config');
+const User = require('../user/user');
 const apn = require('apn');
 const gcm = require('node-gcm');
-const eb = require('app/eventBus');
+const eb = require('../eventBus');
 const _ = require('lodash');
 
 const populate = function (notification) {

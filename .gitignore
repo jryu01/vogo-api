@@ -1,4 +1,5 @@
 .envconfig
+dist
 run.sh
 runDev.sh
 db_scripts

@@ -6,7 +6,7 @@ import Promise from 'bluebird';
 import request from 'supertest';
 import express from 'express';
 import rewire from 'rewire';
-import config from 'app/config';
+import config from '../config';
 import User from './user';
 import jwt from 'jwt-simple';
 

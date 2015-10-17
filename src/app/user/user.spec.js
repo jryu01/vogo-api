@@ -1,11 +1,11 @@
 /* eslint no-unused-expressions: 0 */
 import _ from 'lodash';
-import eb from 'app/eventBus';
-import config from 'app/config';
+import eb from '../eventBus';
+import config from '../config';
 import bcrypt from 'bcrypt';
 import Promise from 'bluebird';
 import mongoose from 'mongoose';
-import User from 'app/user/user';
+import User from '../user/user';
 
 const userData = {
   create: overwrites => {

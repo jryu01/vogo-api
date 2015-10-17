@@ -1,11 +1,11 @@
 const jwt = require('jwt-simple');
 const User = require('./user');
-const config = require('app/config');
+const config = require('../config');
 const crypto = require('crypto');
 const express = require('express');
 const Promise = require('bluebird');
 const request = Promise.promisify(require('request'));
-const requireToken = require('app/middleware/requireToken');
+const requireToken = require('../middleware/requireToken');
 const errorhandler = require('api-error-handler');
 const pUploader = require('./pUploader');
 

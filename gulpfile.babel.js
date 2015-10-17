@@ -1,31 +1,36 @@
-import 'babel-core/register';
 import fs from 'fs';
 import gulp from 'gulp';
+import babel from 'gulp-babel';
 import mocha from 'gulp-mocha';
 import eslint from 'gulp-eslint';
 import nodemon from 'gulp-nodemon';
 
-const NODE_FILES = ['*.js', 'app/**/*.js'];
-const NODE_TEST_FILES = ['app/**/*.spec.js', '*.spec.js'];
+const NODE_FILES = ['src/*.js', 'src/app/**/*.js'];
+const NODE_TEST_FILES = ['src/app/**/*.spec.js', 'src/*.spec.js'];
 
-gulp.task('lint', () => gulp.src(NODE_FILES)
+gulp.task('eslint', () => gulp.src(NODE_FILES)
   .pipe(eslint())
   .pipe(eslint.format())
   .pipe(eslint.failAfterError()));
 
 gulp.task('test', () => gulp.src(NODE_TEST_FILES)
-    .pipe(mocha({ reporter: 'spec'})));
+    .pipe(mocha({ reporter: 'dot'})));
+
+gulp.task('babel', () => gulp.src('src/**/*.js')
+    .pipe(babel())
+    .pipe(gulp.dest('dist')));
 
 gulp.task('default', ['lint', 'test']);
 
-gulp.task('serve', () => nodemon({
-  script: 'index.js',
-  exec: './node_modules/.bin/babel-node',
+gulp.task('serve', ['babel'], () => nodemon({
+  ignore: 'dist',
+  tasks: ['babel'],
+  script: './dist/index.js',
   env: JSON.parse(fs.readFileSync('./.envconfig', 'utf-8'))
 }));
 
 gulp.task('watch', () => {
-  gulp.watch(NODE_FILES, ['lint', 'test']);
+  gulp.watch(NODE_FILES, ['eslint', 'test']);
 });
 
 // var gulp = require('gulp'),
