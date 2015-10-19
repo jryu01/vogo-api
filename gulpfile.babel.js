@@ -4,8 +4,11 @@ import babel from 'gulp-babel';
 import mocha from 'gulp-mocha';
 import eslint from 'gulp-eslint';
 import cache from 'gulp-cached';
+import changed from 'gulp-changed';
 import nodemon from 'gulp-nodemon';
 
+const SRC = 'src/**/*.js';
+const DEST = 'dist';
 const NODE_FILES = ['src/*.js', 'src/app/**/*.js'];
 const NODE_TEST_FILES = ['src/app/**/*.spec.js', 'src/*.spec.js'];
 
@@ -16,18 +19,20 @@ gulp.task('lint', () => gulp.src(NODE_FILES)
   .pipe(eslint.failAfterError()));
 
 gulp.task('test', () => gulp.src(NODE_TEST_FILES)
-    .pipe(mocha({ reporter: 'dot'})));
+  .pipe(mocha({ reporter: 'dot'})));
 
-gulp.task('babel', () => gulp.src('src/**/*.js')
-    .pipe(babel())
-    .pipe(gulp.dest('dist')));
+gulp.task('babel', () => gulp.src(SRC)
+  .pipe(changed(DEST))
+  .pipe(babel())
+  .pipe(gulp.dest(DEST)));
 
 gulp.task('default', ['lint', 'test']);
 
 gulp.task('serve', ['babel'], () => nodemon({
-  ignore: 'dist',
+  ignore: DEST,
   tasks: ['babel'],
   script: './dist/index.js',
+  ext: 'js',
   env: JSON.parse(fs.readFileSync('./.envconfig', 'utf-8'))
 }));
 
