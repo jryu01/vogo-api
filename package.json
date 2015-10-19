@@ -7,7 +7,7 @@
     "npm": "2.1.x"
   },
   "scripts": {
-    "postinstall": "gulp babel",
+    "postinstall": "./node_modules/.bin/gulp babel",
     "test": "make test",
     "start": "node dist/index.js"
   },
