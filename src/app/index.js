@@ -15,7 +15,7 @@ const logger = env =>
     ? morgan('dev')
     : morgan('combined', { skip: (req, res) => res.statusCode < 400 });
 
-const initApp = () => {
+const createApp = () => {
   const app = express();
 
   app.use(bodyParser.json());
@@ -28,7 +28,8 @@ const initApp = () => {
   app.use('/api', pollRouter());
   app.use('/api', bingRouter());
   app.use('/api', notification());
+
   return app;
 };
 
-export default initApp;
+export default createApp;
