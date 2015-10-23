@@ -3,43 +3,32 @@ import bodyParser from 'body-parser';
 import express from 'express';
 import morgan from 'morgan';
 import config from './config';
+import cors from 'cors';
 
-import errorHandler from './middleware/errorHandler';
 import userRouter from './user/router';
 import pollRouter from './poll/router';
 import bingRouter from './bing/router';
 import notification from './notification';
 
-const app = express();
+const logger = env =>
+  env === 'development'
+    ? morgan('dev')
+    : morgan('combined', { skip: (req, res) => res.statusCode < 400 });
 
-app.use(bodyParser.json());
-app.use(methodOverride());
+const initApp = () => {
+  const app = express();
 
-// set up logging
-if (config.env === 'development') {
-  app.use(morgan('dev'));
-} else {
-  app.use(morgan('combined', {
-    skip(req, res) { return res.statusCode < 400; }
-  }));
-}
+  app.use(bodyParser.json());
+  app.use(methodOverride());
+  app.use(logger(config.env));
+  app.use(cors());
 
-app.use('/', (req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-type,Accept,X-Access-Token');
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-  } else {
-    next();
-  }
-});
+  // Mount express sub app/routers
+  app.use('/api', userRouter());
+  app.use('/api', pollRouter());
+  app.use('/api', bingRouter());
+  app.use('/api', notification());
+  return app;
+};
 
-// Mount express sub app/routers
-app.use('/api', userRouter());
-app.use('/api', pollRouter());
-app.use('/api', bingRouter());
-app.use('/api', notification());
-app.use(errorHandler());
-
-module.exports = app;
+export default initApp;
