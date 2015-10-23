@@ -31,7 +31,7 @@ gulp.task('default', ['lint', 'test']);
 gulp.task('serve', ['babel'], () => nodemon({
   ignore: DEST,
   tasks: ['babel'],
-  script: './dist/index.js',
+  script: './dist/server.js',
   ext: 'js',
   env: JSON.parse(fs.readFileSync('./.envconfig', 'utf-8'))
 }));

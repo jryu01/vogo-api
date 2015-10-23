@@ -13,12 +13,12 @@ describe('App', () => {
   });
 
   it('should use jsonParser middleware', () => {
-    const app = initApp({});
+    const app = initApp();
     expect(app._router.stack[2].name).to.equal('jsonParser');
   });
 
   it('should use methodOverride middleware', () => {
-    const app = initApp({});
+    const app = initApp();
     expect(app._router.stack[3].name).to.equal('methodOverride');
   });
 
