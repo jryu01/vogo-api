@@ -57,32 +57,34 @@ UserSchema.pre('save', function (next) {
 
 // User Graph functions
 
-UserSchema.statics.follow = function (fromUser, toUserId) {
-  const query = {
+UserSchema.statics.follow = function (fromUserId, toUserId) {
+  const targetUserQuery = {
     _id: toUserId,
-    'followers.userId': { $ne: fromUser.id }
+    'followers.userId': { $ne: fromUserId }
   };
-  const update = {
-    '$push': {
-      'followers': {
-        userId: fromUser.id,
-        picture: fromUser.picture,
-        name: fromUser.name
+  const emitEventAsync = () =>
+    setImmediate(() =>
+      eb.emit('userModel:follow', { userId: fromUserId, toUserId: toUserId })
+    );
+
+  return this.findByIdAsync(fromUserId).then(user =>
+    this.findOneAndUpdateAsync(targetUserQuery, {
+      '$push': {
+        'followers': {
+          userId: user.id,
+          picture: user.picture,
+          name: user.name
+        }
       }
-    }
-  };
-  return this.findOneAndUpdateAsync(query, update).then(function () {
-    setImmediate(function () {
-      eb.emit('userModel:follow', { userId: fromUser.id, toUserId: toUserId });
-    });
-  });
+    })
+  ).then(emitEventAsync);
 };
 
-UserSchema.statics.unfollow = function (fromUser, toUserId) {
+UserSchema.statics.unfollow = function (fromUserId, toUserId) {
   const update = {
     '$pull': {
       'followers': {
-        userId: fromUser.id
+        userId: fromUserId
       }
     }
   };

@@ -426,7 +426,7 @@ describe('User Router', () => {
       app.put(path).set('x-access-token', 'testToken')
         .expect(204, err => {
           if (err) { return done(err); }
-          expect(User.follow).to.have.been.calledWith(testUser, targetUser.id);
+          expect(User.follow).to.be.calledWith(testUser.id, targetUser.id);
           User.follow.restore();
           done();
         });
@@ -453,7 +453,7 @@ describe('User Router', () => {
         .expect(204, err => {
           if (err) { return done(err); }
           expect(User.unfollow).to.have.been
-            .calledWith(testUser, targetUser.id);
+            .calledWith(testUser.id, targetUser.id);
           User.unfollow.restore();
           done();
         });

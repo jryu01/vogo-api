@@ -123,7 +123,7 @@ const follow = function (req, res, next) {
   if (req.params.id !== user.id.toString()) {
     return next({ status: 403 });
   }
-  User.follow(user, req.params.target).then(function () {
+  User.follow(user.id, req.params.target).then(function () {
     return res.status(204).end();
   }).catch(next);
 };
@@ -133,7 +133,7 @@ const unfollow = function (req, res, next) {
   if (req.params.id !== user.id.toString()) {
     return next({ status: 403 });
   }
-  User.unfollow(user, req.params.target).then(function () {
+  User.unfollow(user.id, req.params.target).then(function () {
     res.status(204).end();
   }).catch(next);
 };

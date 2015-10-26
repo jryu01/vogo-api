@@ -203,7 +203,7 @@ describe('User', () => {
     });
 
     it('should follow target user', () => {
-      const promise = User.follow(users[0], targetUser._id)
+      const promise = User.follow(users[0]._id, targetUser._id)
         .then(() => User.getFollowers(targetUser.id));
       return expect(promise).to.be.fulfilled.then(followers => {
         expect(followers[0]).to.have.property('name', 'From User1');
@@ -214,13 +214,13 @@ describe('User', () => {
     });
 
     it('should emit follow event', done => {
-      User.follow(users[0], targetUser._id).then(() => {
+      User.follow(users[0]._id, targetUser._id).then(() => {
         expect(eb.emit).to.not.have.been.called;
         // expect eb.emit called on next event loop cycle
         setImmediate(() => {
           expect(eb.emit).to.have.been
             .calledWith('userModel:follow', {
-              userId: users[0].id,
+              userId: users[0]._id,
               toUserId: targetUser._id
             });
           done();
@@ -229,24 +229,24 @@ describe('User', () => {
     });
 
     it('should not follow same user twice', () => {
-      const promise = User.follow(users[1], targetUser._id)
-        .then(() => User.follow(users[1], targetUser.id))
+      const promise = User.follow(users[1]._id, targetUser._id)
+        .then(() => User.follow(users[1]._id, targetUser.id))
         .then(() => User.getFollowers(targetUser.id));
       return expect(promise).to.eventually.be.length(1);
     });
 
     it('should unfollow a user', () => {
-      const promise = User.follow(users[0], targetUser.id)
-        .then(() => User.unfollow(users[0], targetUser.id))
+      const promise = User.follow(users[0]._id, targetUser.id)
+        .then(() => User.unfollow(users[0]._id, targetUser.id))
         .then(() => User.getFollowers(targetUser.id));
       return expect(promise).to.eventually.be.length(0);
     });
 
     it('should limit and skip list of followers on getFollowers', () => {
       const options = { skip: 1, limit: 1 };
-      const promise = User.follow(users[0], targetUser.id)
-        .then(() => User.follow(users[1], targetUser.id))
-        .then(() => User.follow(users[2], targetUser.id))
+      const promise = User.follow(users[0]._id, targetUser.id)
+        .then(() => User.follow(users[1]._id, targetUser.id))
+        .then(() => User.follow(users[2]._id, targetUser.id))
         .then(() => User.getFollowers(targetUser.id, options));
       return expect(promise).to.be.fulfilled.then(result => {
         expect(result).to.be.length(1);
@@ -260,8 +260,8 @@ describe('User', () => {
     });
 
     it('should retrive number of followers for a user', () => {
-      const promise = User.follow(users[0], targetUser.id)
-        .then(() => User.follow(users[1], targetUser.id))
+      const promise = User.follow(users[0]._id, targetUser.id)
+        .then(() => User.follow(users[1]._id, targetUser.id))
         .then(() => User.getFollowerCount(targetUser.id));
       return expect(promise).to.eventually.equal(2);
     });
@@ -272,7 +272,7 @@ describe('User', () => {
     });
 
     it('should get following users list of the user', () => {
-      const promise = User.follow(users[0], targetUser.id)
+      const promise = User.follow(users[0]._id, targetUser.id)
         .then(() => User.getFollowing(users[0].id));
       return expect(promise).to.be.fulfilled.then(following => {
         expect(following[0]).to.have.property('name', 'Target User');
@@ -283,31 +283,31 @@ describe('User', () => {
 
     it('should skip list of following users on getFollowing', () => {
       const options = { skip: 2 };
-      const promise = User.follow(users[0], targetUser.id)
-        .then(() => User.follow(users[0], users[1].id))
-        .then(() => User.follow(users[0], users[2].id))
+      const promise = User.follow(users[0]._id, targetUser.id)
+        .then(() => User.follow(users[0]._id, users[1].id))
+        .then(() => User.follow(users[0]._id, users[2].id))
         .then(() => User.getFollowing(users[0].id, options));
       return expect(promise).to.eventually.be.length(1);
     });
 
     it('should limit list of following users on getFollowing', () => {
       const options = { skip: 1, limit: 1 };
-      const promise = User.follow(users[0], targetUser.id)
-        .then(() => User.follow(users[0], users[1].id))
-        .then(() => User.follow(users[0], users[2].id))
+      const promise = User.follow(users[0]._id, targetUser.id)
+        .then(() => User.follow(users[0]._id, users[1].id))
+        .then(() => User.follow(users[0]._id, users[2].id))
         .then(() => User.getFollowing(users[0].id, options));
       return expect(promise).to.eventually.be.length(1);
     });
 
     it('should retrive number of following for a user', () => {
-      const promise = User.follow(users[0], targetUser.id)
-        .then(() => User.follow(users[0], users[1].id))
+      const promise = User.follow(users[0]._id, targetUser.id)
+        .then(() => User.follow(users[0]._id, users[1].id))
         .then(() => User.getFollowingCount(users[0].id));
       return expect(promise).to.eventually.equal(2);
     });
 
     it('should retrive following relationships (one to one)', () => {
-      const promise = User.follow(users[0], targetUser.id)
+      const promise = User.follow(users[0]._id, targetUser.id)
         .then(() => User.getFollowingInfo(users[0].id, [targetUser.id]));
       return expect(promise).to.be.fulfilled.then(followingInfo => {
         expect(followingInfo[0]).to.have.property('name', 'Target User');
@@ -319,9 +319,9 @@ describe('User', () => {
 
     it('should retrive following relationships (one to many)', () => {
       const targetUserIds = [targetUser.id, users[1].id, users[2].id];
-      const promise = User.follow(users[0], targetUser.id)
-        .then(() => User.follow(users[1], targetUser.id))
-        .then(() => User.follow(users[0], users[2].id))
+      const promise = User.follow(users[0]._id, targetUser.id)
+        .then(() => User.follow(users[1]._id, targetUser.id))
+        .then(() => User.follow(users[0]._id, users[2].id))
         .then(() => User.getFollowingInfo(users[0].id, targetUserIds));
       return expect(promise).to.be.fulfilled.then(fInfo => {
         expect(fInfo).to.be.length(3);
