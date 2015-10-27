@@ -6,7 +6,7 @@ const Vote = require('./vote');
 
 const publish = function (req, res, next) {
   // TODO: input validation with req.body
-  Poll.publish(req.user, req.body)
+  Poll.publish(req.user.id, req.body)
     .then(res.status(201).json.bind(res))
     .catch(next);
 };

@@ -37,7 +37,7 @@ before(connectDb);
 after(mongoose.disconnect.bind(mongoose));
 
 // cleanup db
-beforeEach(done => {
+afterEach(done => {
   // clear database
   Object.keys(mongoose.connection.collections)
     .forEach(name => mongoose.connection.collections[name].remove(() => {}));

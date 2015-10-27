@@ -1,6 +1,6 @@
-const User = require('../user/user');
-const jwt = require('jwt-simple');
-const config = require('../config');
+import User from '../user/user';
+import jwt from 'jwt-simple';
+import config from '../config';
 
 export default (req, res, next) => {
   const token = (req.body && req.body.access_token) ||

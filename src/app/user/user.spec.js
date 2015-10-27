@@ -5,7 +5,7 @@ import config from '../config';
 import bcrypt from 'bcrypt';
 import Promise from 'bluebird';
 import mongoose from 'mongoose';
-import User from '../user/user';
+import User from './user';
 
 const userData = {
   create: overwrites => {
@@ -57,7 +57,7 @@ describe('User', () => {
         update.name = 'updated user';
         return User.createOrUpdate(user.id, update);
       });
-      return expect(p).to.be.fulfilled.then(result => {
+      return p.then(result => {
         expect(result).to.have.property('id', user.id);
         expect(result).to.have.property('name', 'updated user');
       });

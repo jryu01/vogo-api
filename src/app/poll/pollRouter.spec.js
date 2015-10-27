@@ -53,7 +53,7 @@ describe('Poll Router', () => {
         answer1: { text: 'left answer', picture: 'pic' },
         answer2: { text: 'right answer', picture: 'pic2' }
       };
-      Poll.publish.withArgs(user, reqBody).returns(Promise.resolve({
+      Poll.publish.withArgs(user.id, reqBody).returns(Promise.resolve({
         question: 'Created Poll'
       }));
       request(app).post('/polls')

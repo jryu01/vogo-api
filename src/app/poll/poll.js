@@ -1,6 +1,7 @@
 const eb = require('../eventBus');
 const Promise = require('bluebird');
 const mongoose = Promise.promisifyAll(require('mongoose'));
+const User = require('../user/user');
 const Schema = mongoose.Schema;
 
 const PollSchema = new Schema({
@@ -55,30 +56,58 @@ PollSchema.options.toJSON = {
 };
 
 // Static methods
-PollSchema.statics.publish = function (user, data = {}) {
-  const pollData = {
-    question: data.question,
-    answer1: {
-      text: data.answer1 && data.answer1.text,
-      picture: data.answer1 && data.answer1.picture
-    },
-    answer2: {
-      text: data.answer2 && data.answer2.text,
-      picture: data.answer2 && data.answer2.picture
-    },
-    subscribers: [ user.id ],
-    createdBy: {
-      name: user.name,
-      userId: user.id,
-      picture: user.picture
-    }
-  };
-  return this.createAsync(pollData).then(function (poll) {
-    setImmediate(function () {
-      eb.emit('pollModel:publish', { user: user, poll: poll });
-    });
+// PollSchema.statics.publish = function (user, data = {}) {
+//   const pollData = {
+//     question: data.question,
+//     answer1: {
+//       text: data.answer1 && data.answer1.text,
+//       picture: data.answer1 && data.answer1.picture
+//     },
+//     answer2: {
+//       text: data.answer2 && data.answer2.text,
+//       picture: data.answer2 && data.answer2.picture
+//     },
+//     subscribers: [ user.id ],
+//     createdBy: {
+//       name: user.name,
+//       userId: user.id,
+//       picture: user.picture
+//     }
+//   };
+//   return this.createAsync(pollData).then(function (poll) {
+//     setImmediate(function () {
+//       eb.emit('pollModel:publish', { user: user, poll: poll });
+//     });
+//     return poll;
+//   });
+// };
+
+PollSchema.statics.publish = function (userId, data = {}) {
+  const emitEventAsync = user => poll => {
+    setImmediate(() =>
+      eb.emit('pollModel:publish', { user: user, poll: poll })
+    );
     return poll;
-  });
+  };
+  return User.findByIdAsync(userId).then(user =>
+    this.createAsync({
+      question: data.question,
+      answer1: {
+        text: data.answer1 && data.answer1.text,
+        picture: data.answer1 && data.answer1.picture
+      },
+      answer2: {
+        text: data.answer2 && data.answer2.text,
+        picture: data.answer2 && data.answer2.picture
+      },
+      subscribers: [ user.id ],
+      createdBy: {
+        name: user.name,
+        userId: user.id,
+        picture: user.picture
+      }
+    }).then(emitEventAsync(user))
+  );
 };
 
 PollSchema.statics.getByUserId = function (userId, pollId, limit) {
@@ -214,5 +243,4 @@ PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
     } }
   ]);
 };
-
-module.exports = mongoose.model('Poll', PollSchema);
+export default mongoose.model('Poll', PollSchema);

@@ -1,11 +1,10 @@
-const Promise = require('bluebird');
-const request = require('request');
-const config = require('../config');
-const knox = require('knox');
+import Promise from 'bluebird';
+import request from 'request';
+import config from '../config';
+import knox from 'knox';
 
 // TODO: unit test
-
-module.exports = function (srcUrl, uid) {
+export default (srcUrl, uid) => {
   const client = knox.createClient({
     key: config.aws.accessKey,
     secret: config.aws.secretKey || 'r/MmGECROKpoXJFDR0OpDE2Sx0QSOrUFZxoEpw5c',

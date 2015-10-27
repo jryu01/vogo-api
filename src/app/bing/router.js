@@ -1,9 +1,9 @@
-const config = require('../config');
-const express = require('express');
-const Promise = require('bluebird');
-const request = Promise.promisify(require('request'));
-const requireToken = require('../middleware/requireToken');
+import config from '../config';
+import express from 'express';
+import Promise from 'bluebird';
+import requireToken from '../middleware/requireToken';
 
+const request = Promise.promisify(require('request'));
 
 const searchImage = function (req, res, next) {
   const query = req.query.query || '';
@@ -42,7 +42,7 @@ const searchImage = function (req, res, next) {
   }).catch(next);
 };
 
-module.exports = function () {
+export default () => {
   const router = express.Router();
 
   router.get('/bing/search/image', requireToken, searchImage);

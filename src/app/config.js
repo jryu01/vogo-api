@@ -76,4 +76,4 @@ const config = (env => {
   return _.merge(conf.common, conf[env]);
 })(process.env.NODE_ENV || 'development');
 
-module.exports = config;
+export default config;

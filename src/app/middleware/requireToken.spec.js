@@ -2,7 +2,8 @@ import express from 'express';
 import bodyParser from 'body-parser';
 import request from 'supertest';
 import Promise from 'bluebird';
-import rewire from 'rewire';
+import proxyquire from 'proxyquire';
+// import rewire from 'rewire';
 
 describe('Middleware: requiresToken', () => {
   const TOKEN = 'some token';
@@ -25,11 +26,10 @@ describe('Middleware: requiresToken', () => {
       }
     };
     mockUser = { findByIdAsync: sinon.stub(), findOneAsync: sinon.stub() };
-    requiresToken = rewire('./requireToken');
-    requiresToken.__set__({
-      jwt: mockJwt,
-      User: mockUser,
-      config: mockConfig
+    requiresToken = proxyquire('./requireToken', {
+      'jwt-simple': mockJwt,
+      '../user/user': mockUser,
+      '../config': mockConfig
     });
 
     app = express();

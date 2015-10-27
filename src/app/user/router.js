@@ -1,13 +1,14 @@
-const jwt = require('jwt-simple');
-const User = require('./user');
-const config = require('../config');
-const crypto = require('crypto');
-const express = require('express');
-const Promise = require('bluebird');
-const request = Promise.promisify(require('request'));
-const requireToken = require('../middleware/requireToken');
-const errorhandler = require('api-error-handler');
-const pUploader = require('./pUploader');
+import jwt from 'jwt-simple';
+import User from './user';
+import config from '../config';
+import crypto from 'crypto';
+import express from 'express';
+import Promise from 'bluebird';
+import requireToken from '../middleware/requireToken';
+import errorhandler from 'api-error-handler';
+import pUploader from './pUploader';
+
+const request = Promise.promisifyAll(require('request'));
 
 const createUser = function (req, res, next) {
   User.createAsync(req.body).then(res.status(201).json.bind(res)).catch(next);
@@ -52,7 +53,7 @@ const signinWithFacebook = function (req, res, next) {
   if (!req.body.facebookAccessToken) {
     return next({status: 400, message: 'A facebook access token is required'});
   }
-  request('https://graph.facebook.com/v2.3/me?' +
+  request.getAsync('https://graph.facebook.com/v2.3/me?' +
     'fields=id,email,name,picture.type(large)&access_token=' +
     req.body.facebookAccessToken)
   .spread(function (response, body) {
@@ -221,7 +222,7 @@ const registerDeviceToken = function (req, res, next) {
     .then(res.status(201).json.bind(res)).catch(next);
 };
 
-module.exports = function () {
+export default () => {
   const router = express.Router();
 
   router.post('/login', signin);

@@ -1,14 +1,15 @@
-const requireToken = require('../middleware/requireToken');
-const Notification = require('../notification/notificationModel');
-const Promise = require('bluebird');
-const express = require('express');
+import requireToken from '../middleware/requireToken';
+import Notification from '../notification/notificationModel';
+import Promise from 'bluebird';
+import express from 'express';
+import config from '../config';
+import User from '../user/user';
+import apn from 'apn';
+import gcm from 'node-gcm';
+import eb from '../eventBus';
+import _ from 'lodash';
+
 const router = express.Router();
-const config = require('../config');
-const User = require('../user/user');
-const apn = require('apn');
-const gcm = require('node-gcm');
-const eb = require('../eventBus');
-const _ = require('lodash');
 
 const populate = function (notification) {
   if (notification.verb === 'follow') {
@@ -94,7 +95,7 @@ const sendPush = function (notification) {
 };
 
 // notification module
-module.exports = function () {
+export default () => {
   const handleFollowNotification = function (data) {
     const userId = data.userId;
     const targetUserId = data.toUserId;

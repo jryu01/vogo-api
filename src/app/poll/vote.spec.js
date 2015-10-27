@@ -34,17 +34,19 @@ const createUsers = numUsers => Promise.all(promiseUsers(numUsers));
 describe('Vote', () => {
   let user;
 
-  beforeEach(() => {
+  beforeEach(done => {
+    sinon.stub(eb, 'emit');
     user = new User({
       name: 'Bob',
+      email: 'bob@mail.net',
       picture: 'profilePic'
     });
-    sinon.stub(eb, 'emit');
+    user.save(done);
   });
   afterEach(() => eb.emit.restore());
 
   it('should create a vote', () => {
-    const promise = Poll.publish(user, createPollData())
+    const promise = Poll.publish(user.id, createPollData())
       .then(poll => Vote.createNew(user.id, poll.id, 1));
     return expect(promise).to.eventually.be.fulfilled.then(vote => {
       expect(vote).to.have.property('_user');
@@ -54,7 +56,7 @@ describe('Vote', () => {
   });
 
   it('should return null when creating to non-existing poll', () => {
-    const promise = Poll.publish(user, createPollData())
+    const promise = Poll.publish(user.id, createPollData())
       .then(() => Vote.createNew(user.id, mongoose.Types.ObjectId(), 1));
     return expect(promise).to.eventually.be.null;
   });
@@ -63,9 +65,9 @@ describe('Vote', () => {
     let pollList;
     let pollIds;
     const promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ),
-      Poll.publish(user, createPollData({ question: 'poll2' }) ),
-      Poll.publish(user, createPollData({ question: 'poll3' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll3' }) ),
     ]).then(polls => {
       pollList = polls;
       pollIds = pollList.map(poll => poll.id);
@@ -85,9 +87,9 @@ describe('Vote', () => {
   it('should get votes for a user decending order by _id', () => {
     let pollList;
     const promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ),
-      Poll.publish(user, createPollData({ question: 'poll2' }) ),
-      Poll.publish(user, createPollData({ question: 'poll3' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll3' }) ),
     ]).then(polls => {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
@@ -104,7 +106,7 @@ describe('Vote', () => {
   });
 
   it('should exclude array values on #getByUserId', () => {
-    const promise = Poll.publish(user, createPollData({question: 'poll1'}))
+    const promise = Poll.publish(user.id, createPollData({question: 'poll1'}))
       .then(poll => Vote.createNew(user.id, poll.id, 1))
       .then(() => Vote.getByUserId(user.id));
 
@@ -119,9 +121,9 @@ describe('Vote', () => {
   it('should limit the number of result', () => {
     let pollList;
     const promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ),
-      Poll.publish(user, createPollData({ question: 'poll2' }) ),
-      Poll.publish(user, createPollData({ question: 'poll3' }) )
+      Poll.publish(user.id, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll3' }) )
     ]).then(polls => {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
@@ -136,10 +138,10 @@ describe('Vote', () => {
     let pollList;
     let voteId;
     const promise = Promise.all([
-      Poll.publish(user, createPollData({ question: 'poll1' }) ),
-      Poll.publish(user, createPollData({ question: 'poll2' }) ),
-      Poll.publish(user, createPollData({ question: 'poll3' }) ),
-      Poll.publish(user, createPollData({ question: 'poll4' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll1' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll2' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll3' }) ),
+      Poll.publish(user.id, createPollData({ question: 'poll4' }) ),
     ]).then(polls => {
       pollList = polls;
       return Vote.createNew(user.id, pollList[0].id, 1);
@@ -161,7 +163,7 @@ describe('Vote', () => {
   it('should get voters for a pollId by answer', () => {
     let pollId;
     // create a poll
-    const promise = Poll.publish(user, createPollData()).then(poll => {
+    const promise = Poll.publish(user.id, createPollData()).then(poll => {
       pollId = poll.id;
       // create users
       return createUsers(3);
@@ -184,7 +186,7 @@ describe('Vote', () => {
   it('should get voters with pagination', () => {
     let pollId;
     // create a poll
-    const promise = Poll.publish(user, createPollData()).then(poll => {
+    const promise = Poll.publish(user.id, createPollData()).then(poll => {
       pollId = poll.id;
       return createUsers(4);
     }).each(userData => Vote.createNew(userData.id, pollId, 2))

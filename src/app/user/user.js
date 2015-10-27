@@ -1,9 +1,10 @@
-const Promise = require('bluebird');
+import Promise from 'bluebird';
+import config from '../config';
+import eb from '../eventBus';
+import Poll from '../poll/poll';
+
 const mongoose = Promise.promisifyAll(require('mongoose'));
 const bcrypt = Promise.promisifyAll(require('bcrypt'));
-const config = require('../config');
-const Poll = require('../poll/poll');
-const eb = require('../eventBus');
 const Schema = mongoose.Schema;
 
 const FollowerSchema = new Schema({
@@ -166,8 +167,7 @@ const updateUserData = function (userModel, user) {
     { 'createdBy.userId': userId },
     { '$set': {'createdBy.picture': user.picture} },
     options
-  ).then(setUpdatedToFalse)
-  .catch(setUpdatedToFalse);
+  ).catch(setUpdatedToFalse);
 
   // update the user in followers lists
   userModel.updateAsync(
@@ -176,6 +176,7 @@ const updateUserData = function (userModel, user) {
     options
   ).catch(setUpdatedToFalse);
 
+  // update the user in comments
   Poll.find({'comments.createdBy.userId': userId}).stream()
     .on('data', function (poll) {
       poll.comments.forEach(function (comment) {
@@ -198,7 +199,6 @@ UserSchema.statics.createOrUpdate = function (userId, userData) {
       { 'new': true, upsert: true, 'passRawResult': true },
       function (err, user, raw) {
         if (err) { reject(err); }
-
         // TODO: Need Test ///////////
         const updatedExisting = raw && raw.lastErrorObject &&
             raw.lastErrorObject.updatedExisting;
@@ -253,4 +253,4 @@ UserSchema.options.toJSON = {
   }
 };
 
-module.exports = mongoose.model('User', UserSchema);
+export default mongoose.model('User', UserSchema);

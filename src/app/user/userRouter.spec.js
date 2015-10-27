@@ -1,16 +1,15 @@
 /* eslint no-unused-expressions: 0 */
 import methodOverride from 'method-override';
 import bodyParser from 'body-parser';
+import proxyquire from 'proxyquire';
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
-import request from 'supertest';
+import supertest from 'supertest';
+import request from 'request';
 import express from 'express';
-import rewire from 'rewire';
 import config from '../config';
 import User from './user';
 import jwt from 'jwt-simple';
-
-const router = rewire('./router');
 
 const testUser = new User({
   _id: mongoose.Types.ObjectId(),
@@ -27,19 +26,19 @@ const mockRequireToken = (req, res, next) => {
   next();
 };
 
-const createApp = () => {
+const createApp = (stub = {}) => {
   const app = express();
+  const router = proxyquire('./router', stub);
   app.use(bodyParser.json());
   app.use(methodOverride());
-  router.__set__({
-    requireToken: mockRequireToken
-  });
   app.use(router());
-  return request(app);
+  return supertest(app);
 };
 
 describe('User Router', () => {
-  const app = createApp();
+  const app = createApp({
+    '../middleware/requireToken': mockRequireToken
+  });
 
   it('should require authentication token', done => {
     app.post('/').expect(401, done);
@@ -159,10 +158,28 @@ describe('User Router', () => {
     });
 
     describe('with facebook access token', () => {
-      let revert;
-      let mockRequest;
+      let getAsyncStub;
       let mockPUploader;
       let user;
+
+      let appWithFbTk;
+
+      before(() => {
+        mockPUploader = sinon.stub();
+        appWithFbTk = createApp({
+          './pUploader': mockPUploader
+        });
+      });
+
+      beforeEach(() => {
+        getAsyncStub = sinon.stub(request, 'getAsync');
+        getAsyncStub.returns(Promise.resolve([{
+          statusCode: 200
+        },
+        '{ "id": "fbtestid123", "email": "test@vogo.com", "name": "Test Vogo"}'
+        ]));
+      });
+      afterEach(() => getAsyncStub.restore());
 
       beforeEach(done => {
         const userData = {
@@ -182,23 +199,6 @@ describe('User Router', () => {
         });
       });
 
-      beforeEach(() => {
-        mockRequest = sinon.stub();
-        mockPUploader = sinon.stub();
-        revert = router.__set__({
-          request: mockRequest,
-          pUploader: mockPUploader
-        });
-        mockRequest.returns(Promise.resolve([{
-          statusCode: 200
-        },
-        '{ "id": "fbtestid123", "email": "test@vogo.com", "name": "Test Vogo"}'
-        ]));
-      });
-
-      afterEach(() => {
-        revert();
-      });
 
       it('should send 400 when facebook token is missing', done => {
         const reqBody = { grantType: 'facebook' };
@@ -206,33 +206,33 @@ describe('User Router', () => {
           status: 400,
           message: 'A facebook access token is required'
         };
-        app.post(path).send(reqBody).expect(400, resBody, done);
+        appWithFbTk.post(path).send(reqBody).expect(400, resBody, done);
       });
 
       it('should send request to facebook to get profile', done => {
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
-        app.post(path).send(reqBody).expect(200, err => {
+        appWithFbTk.post(path).send(reqBody).expect(200, err => {
           if (err) { return done(err); }
-          expect(mockRequest).to.have.been
+          expect(getAsyncStub).to.have.been
             .calledWith('https://graph.facebook.com/v2.3/me?fields=id,email,name,picture.type(large)&access_token=fakefbtk');
           done();
         });
       });
 
       it('should send 500 when it fails to get profile from facebook', done => {
-        mockRequest.returns(Promise.resolve([{ statusCode: 400 }, '{}']));
+        getAsyncStub.returns(Promise.resolve([{ statusCode: 400 }, '{}']));
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
         const resBody = {
           name: 'FacebookGraphAPIError',
           message: 'Failed to fetch facebook user profile',
           status: 500
         };
-        app.post(path).send(reqBody).expect(500, resBody, done);
+        appWithFbTk.post(path).send(reqBody).expect(500, resBody, done);
       });
 
       it('should send 200 with user object', done => {
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
-        app.post(path).send(reqBody).expect(200, (err, res) => {
+        appWithFbTk.post(path).send(reqBody).expect(200, (err, res) => {
           if (err) { return done(err); }
           expect(res.body.user.id).to.equal(user.id);
           expect(res.body.user.email).to.equal('test@vogo.com');
@@ -247,7 +247,7 @@ describe('User Router', () => {
           exp: Date.now() + config.jwtexp
         }, config.jwtsecret);
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
-        app.post(path).send(reqBody).expect(200, (err, res) => {
+        appWithFbTk.post(path).send(reqBody).expect(200, (err, res) => {
           Date.now.restore();
           if (err) { return done(err); }
           expect(res.body).to.have.deep.property('access_token', ACCESS_TOKEN);
@@ -259,7 +259,7 @@ describe('User Router', () => {
       it('should send 201 with a newly created user when there\'s no user with given fb id', done => {
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'anotherfakefbtk'};
         // predefine result for facebook profile request
-        mockRequest.returns(Promise.resolve([{
+        getAsyncStub.returns(Promise.resolve([{
           statusCode: 200
         },
         '{' +
@@ -272,7 +272,7 @@ describe('User Router', () => {
         mockPUploader.withArgs('profileUrl')
           .returns(Promise.resolve('s3ProfileUrl'));
 
-        app.post(path).send(reqBody).expect(200, (err, res) => {
+        appWithFbTk.post(path).send(reqBody).expect(200, (err, res) => {
           if (err) { return done(err); }
           expect(res.body).to.have.property('access_token').that.is.an('string');
           expect(res.body.user).to.have.property('name', 'Sam Power');
@@ -299,7 +299,7 @@ describe('User Router', () => {
           if (err) { return done(err); }
           const reqBody = {grantType: 'facebook', facebookAccessToken: 'anotherfakefbtk'};
 
-          mockRequest.returns(Promise.resolve([{
+          getAsyncStub.returns(Promise.resolve([{
             statusCode: 200
           },
           '{' +
@@ -312,7 +312,7 @@ describe('User Router', () => {
           mockPUploader.withArgs('previousProfilePic')
             .returns(Promise.resolve('s3ProfileUrl'));
 
-          app.post(path).send(reqBody).expect(200, (e, res) => {
+          appWithFbTk.post(path).send(reqBody).expect(200, (e, res) => {
             if (e) { return done(e); }
             expect(res.body).to.have.property('access_token').that.is.an('string');
             expect(res.body.user).to.have.property('name', 'Test Vogo2');
