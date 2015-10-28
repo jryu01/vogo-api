@@ -1,7 +1,8 @@
-const eb = require('../eventBus');
-const Promise = require('bluebird');
+import Promise from 'bluebird';
+import User from '../user/user';
+import eb from '../eventBus';
+
 const mongoose = Promise.promisifyAll(require('mongoose'));
-const User = require('../user/user');
 const Schema = mongoose.Schema;
 
 const PollSchema = new Schema({

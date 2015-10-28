@@ -1,14 +1,12 @@
 /* eslint no-unused-expressions: 0 */
 import bodyParser from 'body-parser';
+import proxyquire from 'proxyquire';
 import mongoose from 'mongoose';
 import Promise from 'bluebird';
 import request from 'supertest';
 import express from 'express';
-import rewire from 'rewire';
 import Poll from './poll';
 import Vote from './vote';
-
-const router = rewire('./router');
 
 const user = {
   id: '507f1f77bcf86cd799439011',
@@ -27,10 +25,10 @@ const mockRequireToken = (req, res, next) => {
 
 const createApp = () => {
   const app = express();
-  app.use(bodyParser.json());
-  router.__set__({
-    requireToken: mockRequireToken
+  const router = proxyquire('./router', {
+    '../middleware/requireToken': mockRequireToken
   });
+  app.use(bodyParser.json());
   app.use(router());
   return app;
 };

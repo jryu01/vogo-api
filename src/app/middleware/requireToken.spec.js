@@ -3,7 +3,6 @@ import bodyParser from 'body-parser';
 import request from 'supertest';
 import Promise from 'bluebird';
 import proxyquire from 'proxyquire';
-// import rewire from 'rewire';
 
 describe('Middleware: requiresToken', () => {
   const TOKEN = 'some token';

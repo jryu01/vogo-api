@@ -1,6 +1,7 @@
-const Promise = require('bluebird');
+import Promise from 'bluebird';
+import Poll from './poll';
+
 const mongoose = Promise.promisifyAll(require('mongoose'));
-const Poll = require('./poll');
 const Schema = mongoose.Schema;
 
 const VoteSchema = new Schema({
@@ -63,7 +64,6 @@ VoteSchema.statics.getVotersFor = function (pollId, answer, options = {}) {
 
 // VoteSchema.statics.getByPollId = function (pollId, voteId, limit) {};
 
-
 // Add toJSON option to transform document before returnig the result
 VoteSchema.options.toJSON = {
   transform: function (doc, ret) {
@@ -73,4 +73,4 @@ VoteSchema.options.toJSON = {
   }
 };
 
-module.exports = mongoose.model('Vote', VoteSchema);
+export default mongoose.model('Vote', VoteSchema);

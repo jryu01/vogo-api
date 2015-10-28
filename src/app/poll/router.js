@@ -1,8 +1,8 @@
-const requireToken = require('../middleware/requireToken');
-const errorhandler = require('api-error-handler');
-const express = require('express');
-const Poll = require('./poll');
-const Vote = require('./vote');
+import requireToken from '../middleware/requireToken';
+import errorhandler from 'api-error-handler';
+import express from 'express';
+import Poll from './poll';
+import Vote from './vote';
 
 const publish = function (req, res, next) {
   // TODO: input validation with req.body
@@ -98,7 +98,7 @@ const getRecentUnvotedPolls = function (req, res, next) {
     .catch(next);
 };
 
-module.exports = function () {
+export default () => {
   const router = express.Router();
 
   router.use(requireToken);
