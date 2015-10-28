@@ -168,30 +168,32 @@ PollSchema.statics.voteAnswer = function (pollId, voterId, answerNumber) {
   });
 };
 
-PollSchema.statics.comment = function (pollId, user, text) {
-  const comment = {
-    'createdBy': {
-      userId: user.id,
-      name: user.name,
-      picture: user.picture
-    },
-    'text': text
-  };
-  const update = {
-    '$addToSet': {
-      'subscribers': user.id
-    },
-    '$push': {
-      'comments': comment,
-    },
-    '$inc': {
-      'numComments': 1
-    }
-  };
-  return this.findByIdAndUpdateAsync(pollId, update, {'new': true}).then(function (poll) {
+PollSchema.statics.comment = function (pollId, userId, text) {
+  return User.findByIdAsync(userId).then(user => {
+    const comment = {
+      'createdBy': {
+        userId: user.id,
+        name: user.name,
+        picture: user.picture
+      },
+      'text': text
+    };
+    const update = {
+      '$addToSet': {
+        'subscribers': user.id
+      },
+      '$push': {
+        'comments': comment,
+      },
+      '$inc': {
+        'numComments': 1
+      }
+    };
+    return this.findByIdAndUpdateAsync(pollId, update, {'new': true});
+  }).then(poll => {
     if (poll) {
       setImmediate(function () {
-        eb.emit('pollModel:comment', { userId: user.id, poll: poll });
+        eb.emit('pollModel:comment', { userId: userId, poll: poll });
       });
     }
     return poll;

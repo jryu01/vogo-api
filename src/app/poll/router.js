@@ -28,7 +28,7 @@ const vote = function (req, res, next) {
 const comment = function (req, res, next) {
   // TODO: input validation
   const pollId = req.params.id;
-  Poll.comment(pollId, req.user, req.body.text).then(function (poll) {
+  Poll.comment(pollId, req.user.id, req.body.text).then(function (poll) {
     if (!poll) {
       throw { status: 404, message: 'poll not found' };
     }

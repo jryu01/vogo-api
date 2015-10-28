@@ -108,7 +108,7 @@ describe('Poll Router', () => {
 
     it('should send 201 with created comments', done => {
       const reqBody = { text: 'new comment' };
-      Poll.comment.withArgs(pollId, user, 'new comment')
+      Poll.comment.withArgs(pollId, user.id, 'new comment')
         .returns(Promise.resolve({
           comments: [{text: 'old comment'}, {text: 'new comment'}]
         }));
@@ -122,7 +122,7 @@ describe('Poll Router', () => {
     it('should send 404 with non existing poll', done => {
       const reqBody = { text: 'new comment' };
       const expected = /poll not found/;
-      Poll.comment.withArgs(pollId, user, 'new comment')
+      Poll.comment.withArgs(pollId, user.id, 'new comment')
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/comments')
         .set('x-access-token', 'testToken')

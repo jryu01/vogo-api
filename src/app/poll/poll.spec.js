@@ -243,7 +243,7 @@ describe('Poll', () => {
     let poll;
     const promise = Poll.publish(user.id, createPollData()).then(data => {
       pollId = data.id;
-      return Poll.comment(pollId, user, 'hello');
+      return Poll.comment(pollId, user.id, 'hello');
     }).then(result => {
       poll = result;
       return Poll.getComments(pollId);
@@ -268,22 +268,23 @@ describe('Poll', () => {
   });
 
   it('should add comment author to the subscribers', () => {
-    const cris = {
+    const cris = new User({
       name: 'Cris',
-      picture: 'crisProfilePic',
-      id: mongoose.Types.ObjectId()
-    };
-    return Poll.publish(user.id, createPollData()).then(poll =>
-      Poll.comment(poll.id, cris, 'hello'))
-    .then(poll => {
-      expect(poll.subscribers).to.be.length(2);
-      expect(poll.subscribers[1].toString()).to.equal(cris.id.toString());
+      email: 'cris@mail.net',
+      picture: 'crisProfilePic'
     });
+    return cris.saveAsync()
+      .then(() => Poll.publish(user.id, createPollData()))
+      .then(poll => Poll.comment(poll.id, cris.id, 'hello'))
+      .then(poll => {
+        expect(poll.subscribers).to.be.length(2);
+        expect(poll.subscribers[1].toString()).to.equal(cris.id.toString());
+      });
   });
 
   it('should emit event after comment is created', done => {
     const promise = Poll.publish(user.id, createPollData())
-      .then(poll => Poll.comment(poll.id, user, 'new comment'));
+      .then(poll => Poll.comment(poll.id, user.id, 'new comment'));
 
     return expect(promise).to.be.fulfilled.then(updatedPoll => {
       // should emit on next event loop cycle
@@ -299,7 +300,8 @@ describe('Poll', () => {
   });
 
   it('should not emit event when commenting on invalid poll', done => {
-    const promise = Poll.comment(mongoose.Types.ObjectId(), user, 'new comment');
+    const mongooseId = mongoose.Types.ObjectId();
+    const promise = Poll.comment(mongooseId, user.id, 'new comment');
 
     return expect(promise).to.be.fulfilled.then(poll => {
       expect(poll).to.be.null;
@@ -314,7 +316,7 @@ describe('Poll', () => {
     let pollId;
     const promise = Poll.publish(user.id, createPollData()).then(poll => {
       pollId = poll.id;
-      return Poll.comment(pollId, user, 'hello');
+      return Poll.comment(pollId, user.id, 'hello');
     })
     .then(() => Poll.getById(pollId));
 
@@ -332,11 +334,11 @@ describe('Poll', () => {
 
     const promise = Poll.publish(user.id, createPollData()).then(poll => {
       pollId = poll.id;
-      return Poll.comment(pollId, user, 'first');
+      return Poll.comment(pollId, user.id, 'first');
     })
-    .then(() => Poll.comment(pollId, user, 'second'))
-    .then(() => Poll.comment(pollId, user, 'third'))
-    .then(() => Poll.comment(pollId, user, 'fourth'))
+    .then(() => Poll.comment(pollId, user.id, 'second'))
+    .then(() => Poll.comment(pollId, user.id, 'third'))
+    .then(() => Poll.comment(pollId, user.id, 'fourth'))
     .then(() => Poll.getComments(pollId, options));
 
     return expect(promise).to.be.fulfilled.then(comments => {
