@@ -66,6 +66,39 @@ describe('Poll Router', () => {
     });
   });
 
+  describe('GET /polls', () => {
+    beforeEach(() => sinon.stub(Poll, 'getRecentUnvoted'));
+    afterEach(() => Poll.getRecentUnvoted.restore());
+
+    it('should respond with 200', done => {
+      Poll.getRecentUnvoted.withArgs(user.id).returns(Promise.resolve([]));
+      request(app).get('/polls')
+        .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .expect(200, [], done);
+    });
+
+    it('should paginate with before param', done => {
+      Poll.getRecentUnvoted.withArgs(user.id, '123')
+        .returns(Promise.resolve([]));
+      request(app).get('/polls')
+        .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ before: '123' })
+        .expect(200, [], done);
+    });
+
+    it('should exclude polls', done => {
+      Poll.getRecentUnvoted.withArgs(user.id, undefined, ['123'])
+        .returns(Promise.resolve([]));
+      request(app).get('/polls')
+        .set('x-access-token', 'testToken')
+        .set('Accept', 'application/json')
+        .query({ exclude: '123' })
+        .expect(200, [], done);
+    });
+  });
+
   describe('POST /polls/:id/votes', () => {
     const pollId = mongoose.Types.ObjectId().toString();
 

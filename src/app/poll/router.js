@@ -88,12 +88,9 @@ const getVoters = function (req, res, next) {
     .catch(next);
 };
 
-// TODO: test
 const getRecentUnvotedPolls = function (req, res, next) {
-  const user = req.user;
-  const exclude = req.query.exclude || [];
-  const beforePollId = req.query.before;
-  return Poll.getRecentUnvoted(user, beforePollId, [].concat(exclude))
+  const { before, exclude } = req.query;
+  return Poll.getRecentUnvoted(req.user.id, before, [].concat(exclude))
     .then(res.json.bind(res))
     .catch(next);
 };

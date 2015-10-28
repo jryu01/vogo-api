@@ -219,7 +219,7 @@ PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
     'answer1.voters': { $ne: userId },
     'answer2.voters': { $ne: userId }
   };
-  if (exclude.length > 1) {
+  if (exclude && exclude.length > 1) {
     query._id = { $nin: exclude.map(id => mongoose.Types.ObjectId(id)) };
   }
   if (beforePollId) {
