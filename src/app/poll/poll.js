@@ -57,32 +57,6 @@ PollSchema.options.toJSON = {
 };
 
 // Static methods
-// PollSchema.statics.publish = function (user, data = {}) {
-//   const pollData = {
-//     question: data.question,
-//     answer1: {
-//       text: data.answer1 && data.answer1.text,
-//       picture: data.answer1 && data.answer1.picture
-//     },
-//     answer2: {
-//       text: data.answer2 && data.answer2.text,
-//       picture: data.answer2 && data.answer2.picture
-//     },
-//     subscribers: [ user.id ],
-//     createdBy: {
-//       name: user.name,
-//       userId: user.id,
-//       picture: user.picture
-//     }
-//   };
-//   return this.createAsync(pollData).then(function (poll) {
-//     setImmediate(function () {
-//       eb.emit('pollModel:publish', { user: user, poll: poll });
-//     });
-//     return poll;
-//   });
-// };
-
 PollSchema.statics.publish = function (userId, data = {}) {
   const emitEventAsync = user => poll => {
     setImmediate(() =>
@@ -213,11 +187,11 @@ PollSchema.statics.getComments = function (pollId, {
 };
 
 // TODO: test this
-PollSchema.statics.getRecentUnvoted = function (user, beforePollId, exclude) {
-  const userId = mongoose.Types.ObjectId(user.id);
+PollSchema.statics.getRecentUnvoted = function (userId, beforePollId, exclude) {
+  const uid = mongoose.Types.ObjectId(userId);
   const query = {
-    'answer1.voters': { $ne: userId },
-    'answer2.voters': { $ne: userId }
+    'answer1.voters': { $ne: uid },
+    'answer2.voters': { $ne: uid }
   };
   if (exclude && exclude.length > 1) {
     query._id = { $nin: exclude.map(id => mongoose.Types.ObjectId(id)) };
