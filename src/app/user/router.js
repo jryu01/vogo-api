@@ -1,4 +1,4 @@
-import jwt from 'jwt-simple';
+import jwt from 'jsonwebtoken';
 import User from './user';
 import config from '../config';
 import crypto from 'crypto';
@@ -38,8 +38,8 @@ const signinWithPassword = function (req, res, next) {
       return user;
     });
   }).then(function (user) {
-    const token = jwt.encode({
-      iss: user.id,
+    const token = jwt.sign({
+      uid: user.id,
       exp: Date.now() + config.jwtexp
     }, config.jwtsecret);
     res.json({
@@ -90,8 +90,8 @@ const signinWithFacebook = function (req, res, next) {
       return user;
     });
   }).then(function (user) {
-    const token = jwt.encode({
-      iss: user.id,
+    const token = jwt.sign({
+      uid: user.id,
       exp: Date.now() + config.jwtexp
     }, config.jwtsecret);
     res.json({
@@ -121,20 +121,20 @@ const signin = function (req, res, next) {
 
 const follow = function (req, res, next) {
   const user = req.user;
-  if (req.params.id !== user.id.toString()) {
+  if (req.params.id !== user.uid.toString()) {
     return next({ status: 403 });
   }
-  User.follow(user.id, req.params.target).then(function () {
+  User.follow(user.uid, req.params.target).then(function () {
     return res.status(204).end();
   }).catch(next);
 };
 
 const unfollow = function (req, res, next) {
   const user = req.user;
-  if (req.params.id !== user.id.toString()) {
+  if (req.params.id !== user.uid.toString()) {
     return next({ status: 403 });
   }
-  User.unfollow(user.id, req.params.target).then(function () {
+  User.unfollow(user.uid, req.params.target).then(function () {
     res.status(204).end();
   }).catch(next);
 };
@@ -176,7 +176,7 @@ const getFollowingInfo = function (req, res, next) {
     return next({ status: 400, message: 'userId parameter is required'});
   }
   const uids = [].concat(req.query.userId);
-  User.getFollowingInfo(req.user.id, uids)
+  User.getFollowingInfo(req.user.uid, uids)
     .then(res.json.bind(res))
     .catch(next);
 };
@@ -218,7 +218,7 @@ const getS3Info = function (req, res, next) {
 };
 
 const registerDeviceToken = function (req, res, next) {
-  User.registerDeviceToken(req.user.id, req.body.token, req.body.os || 'ios')
+  User.registerDeviceToken(req.user.uid, req.body.token, req.body.os || 'ios')
     .then(res.status(201).json.bind(res)).catch(next);
 };
 

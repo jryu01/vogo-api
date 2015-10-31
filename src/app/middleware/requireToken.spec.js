@@ -16,7 +16,7 @@ describe('Middleware: requiresToken', () => {
   let mockConfig;
 
   beforeEach(() => {
-    mockJwt = { decode: sinon.stub(), encode: sinon.stub() };
+    mockJwt = { verify: sinon.stub(), sign: sinon.stub() };
     mockConfig = {
       jwtsecret: 'testsecret',
       aws: {
@@ -26,7 +26,7 @@ describe('Middleware: requiresToken', () => {
     };
     mockUser = { findByIdAsync: sinon.stub(), findOneAsync: sinon.stub() };
     requiresToken = proxyquire('./requireToken', {
-      'jwt-simple': mockJwt,
+      'jsonwebtoken': mockJwt,
       '../user/user': mockUser,
       '../config': mockConfig
     });
@@ -44,9 +44,9 @@ describe('Middleware: requiresToken', () => {
 
   beforeEach(() => {
     // set default behaviour of mocks
-    mockJwt.decode
+    mockJwt.verify
       .withArgs(TOKEN, 'testsecret').returns({
-        iss: 321, // user id
+        uid: 321, // user id
         exp: Date.now() + (60 * 24 * 60 * 60 * 1000)
       });
   });
@@ -97,7 +97,7 @@ describe('Middleware: requiresToken', () => {
     });
 
     it('should response with 401 with decoding error', done => {
-      mockJwt.decode.withArgs('invalidToken', 'testsecret')
+      mockJwt.verify.withArgs('invalidToken', 'testsecret')
       .throws(new Error('decode err'));
 
       request(app).get('/')
@@ -109,10 +109,10 @@ describe('Middleware: requiresToken', () => {
 
     it('should response with 401 when token is expired', done => {
       const expTokenDecoded = {
-        iss: 123,
+        uid: 123,
         exp: Date.now() - (60 * 24 * 60 * 60 * 1000)
       };
-      mockJwt.decode.withArgs('expToken', 'testsecret')
+      mockJwt.verify.withArgs('expToken', 'testsecret')
         .returns(expTokenDecoded);
 
       request(app).get('/')

@@ -9,9 +9,7 @@ import Poll from './poll';
 import Vote from './vote';
 
 const user = {
-  id: '507f1f77bcf86cd799439011',
-  email: 'test@user.com',
-  name: 'Test User'
+  uid: '507f1f77bcf86cd799439011'
 };
 
 const mockRequireToken = (req, res, next) => {
@@ -51,7 +49,7 @@ describe('Poll Router', () => {
         answer1: { text: 'left answer', picture: 'pic' },
         answer2: { text: 'right answer', picture: 'pic2' }
       };
-      Poll.publish.withArgs(user.id, reqBody).returns(Promise.resolve({
+      Poll.publish.withArgs(user.uid, reqBody).returns(Promise.resolve({
         question: 'Created Poll'
       }));
       request(app).post('/polls')
@@ -71,7 +69,7 @@ describe('Poll Router', () => {
     afterEach(() => Poll.getRecentUnvoted.restore());
 
     it('should respond with 200', done => {
-      Poll.getRecentUnvoted.withArgs(user.id).returns(Promise.resolve([]));
+      Poll.getRecentUnvoted.withArgs(user.uid).returns(Promise.resolve([]));
       request(app).get('/polls')
         .set('x-access-token', 'testToken')
         .set('Accept', 'application/json')
@@ -79,7 +77,7 @@ describe('Poll Router', () => {
     });
 
     it('should paginate with before param', done => {
-      Poll.getRecentUnvoted.withArgs(user.id, '123')
+      Poll.getRecentUnvoted.withArgs(user.uid, '123')
         .returns(Promise.resolve([]));
       request(app).get('/polls')
         .set('x-access-token', 'testToken')
@@ -89,7 +87,7 @@ describe('Poll Router', () => {
     });
 
     it('should exclude polls', done => {
-      Poll.getRecentUnvoted.withArgs(user.id, undefined, ['123'])
+      Poll.getRecentUnvoted.withArgs(user.uid, undefined, ['123'])
         .returns(Promise.resolve([]));
       request(app).get('/polls')
         .set('x-access-token', 'testToken')
@@ -107,7 +105,7 @@ describe('Poll Router', () => {
 
     it('should send 201 with result', done => {
       const reqBody = { answer: 1 };
-      Vote.createNew.withArgs(user.id, pollId, 1)
+      Vote.createNew.withArgs(user.uid, pollId, 1)
         .returns(Promise.resolve('result'));
 
       request(app).post('/polls/' + pollId + '/votes')
@@ -124,7 +122,7 @@ describe('Poll Router', () => {
     it('should send 404 with non-existing poll', done => {
       const reqBody = { answer: 1 };
       const expected = /poll not found or already voted with the user/;
-      Vote.createNew.withArgs(user.id, pollId, 1)
+      Vote.createNew.withArgs(user.uid, pollId, 1)
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/votes')
         .set('x-access-token', 'testToken')
@@ -141,7 +139,7 @@ describe('Poll Router', () => {
 
     it('should send 201 with created comments', done => {
       const reqBody = { text: 'new comment' };
-      Poll.comment.withArgs(pollId, user.id, 'new comment')
+      Poll.comment.withArgs(pollId, user.uid, 'new comment')
         .returns(Promise.resolve({
           comments: [{text: 'old comment'}, {text: 'new comment'}]
         }));
@@ -155,7 +153,7 @@ describe('Poll Router', () => {
     it('should send 404 with non existing poll', done => {
       const reqBody = { text: 'new comment' };
       const expected = /poll not found/;
-      Poll.comment.withArgs(pollId, user.id, 'new comment')
+      Poll.comment.withArgs(pollId, user.uid, 'new comment')
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/comments')
         .set('x-access-token', 'testToken')

@@ -199,7 +199,7 @@ export default () => {
   };
 
   const getNotifications = function (req, res, next) {
-    const query = { user: req.user.id };
+    const query = { user: req.user.uid };
     const options = { sort: { updatedAt: -1 }};
     options.limit = 100;
 
@@ -210,7 +210,7 @@ export default () => {
   };
 
   const getNotificationCount = function (req, res, next) {
-    const query = { user: req.user.id };
+    const query = { user: req.user.uid };
 
     if (req.query.after) {
       query.updatedAt = { $gt: req.query.after };

@@ -1,5 +1,5 @@
 import User from '../user/user';
-import jwt from 'jwt-simple';
+import jwt from 'jsonwebtoken';
 import config from '../config';
 
 export default (req, res, next) => {
@@ -12,7 +12,7 @@ export default (req, res, next) => {
       .json({ status: 401, message: 'Access token is missing!' });
   }
   try {
-    decoded = jwt.decode(token, config.jwtsecret);
+    decoded = jwt.verify(token, config.jwtsecret);
   } catch (e) {
     return res.status(401)
       .json({ status: 401, message: 'Access token is not a valid token!'});
@@ -21,7 +21,7 @@ export default (req, res, next) => {
     return res.status(401)
       .json({ status: 401, message: 'Access token has been expired!' });
   }
-  User.findByIdAsync(decoded.iss).then(user => {
+  User.findByIdAsync(decoded.uid).then(user => {
     if (!user) {
       return res.status(401)
         .json({ status: 401, message: 'User not found with the token!' });

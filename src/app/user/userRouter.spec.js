@@ -9,13 +9,11 @@ import request from 'request';
 import express from 'express';
 import config from '../config';
 import User from './user';
-import jwt from 'jwt-simple';
+import jwt from 'jsonwebtoken';
 
-const testUser = new User({
-  _id: mongoose.Types.ObjectId(),
-  email: 'test@vogo.vogo',
-  name: 'Test Vogo'
-});
+const testUser = {
+  uid: '507f1f77bcf86cd799439011',
+};
 
 const mockRequireToken = (req, res, next) => {
   const token = req.headers['x-access-token'];
@@ -86,8 +84,8 @@ describe('User Router', () => {
       it('should send 200 with access_token', done => {
         sinon.stub(Date, 'now').returns(1417876057391);
 
-        const ACCESS_TOKEN = jwt.encode({
-          iss: user.id,
+        const ACCESS_TOKEN = jwt.sign({
+          uid: user.id,
           exp: Date.now() + config.jwtexp
         }, config.jwtsecret);
 
@@ -242,8 +240,8 @@ describe('User Router', () => {
 
       it('should send 200 with access_token', done => {
         sinon.stub(Date, 'now').returns(1417876057391);
-        const ACCESS_TOKEN = jwt.encode({
-          iss: user.id,
+        const ACCESS_TOKEN = jwt.sign({
+          uid: user.id,
           exp: Date.now() + config.jwtexp
         }, config.jwtsecret);
         const reqBody = {grantType: 'facebook', facebookAccessToken: 'fakefbtk'};
@@ -341,7 +339,7 @@ describe('User Router', () => {
           if (err) { return done(err); }
           expect(res.body).to.equal('returned token');
           expect(User.registerDeviceToken).to.have.been
-            .calledWith(testUser.id, 'testiosdevicetoken', 'ios');
+            .calledWith(testUser.uid, 'testiosdevicetoken', 'ios');
           User.registerDeviceToken.restore();
           done();
         });
@@ -422,11 +420,11 @@ describe('User Router', () => {
         email: 'target@address.com',
         name: 'Target User'
       });
-      const path = '/users/' + testUser.id + '/following/' + targetUser.id;
+      const path = '/users/' + testUser.uid + '/following/' + targetUser.id;
       app.put(path).set('x-access-token', 'testToken')
         .expect(204, err => {
           if (err) { return done(err); }
-          expect(User.follow).to.be.calledWith(testUser.id, targetUser.id);
+          expect(User.follow).to.be.calledWith(testUser.uid, targetUser.id);
           User.follow.restore();
           done();
         });
@@ -448,12 +446,12 @@ describe('User Router', () => {
         email: 'target@address.com',
         name: 'Target User'
       });
-      const path = '/users/' + testUser.id + '/following/' + targetUser.id;
+      const path = '/users/' + testUser.uid + '/following/' + targetUser.id;
       app.del(path).set('x-access-token', 'testToken')
         .expect(204, err => {
           if (err) { return done(err); }
           expect(User.unfollow).to.have.been
-            .calledWith(testUser.id, targetUser.id);
+            .calledWith(testUser.uid, targetUser.id);
           User.unfollow.restore();
           done();
         });
@@ -465,18 +463,18 @@ describe('User Router', () => {
     afterEach(() => User.getFollowers.restore());
 
     it('should send 200 with list of followers', done => {
-      const path = '/users/' + testUser.id + '/followers';
+      const path = '/users/' + testUser.uid + '/followers';
       User.getFollowers
-        .withArgs(testUser.id, { skip: 0, limit: 100 })
+        .withArgs(testUser.uid, { skip: 0, limit: 100 })
         .returns(Promise.resolve([{ name: 'follower' }]));
       app.get(path).set('x-access-token', 'testToken')
         .expect(200, [{ name: 'follower' }], done);
     });
 
     it('should 200 with pagination parameters', done => {
-      const path = '/users/' + testUser.id + '/followers';
+      const path = '/users/' + testUser.uid + '/followers';
       User.getFollowers
-        .withArgs(testUser.id, { skip: 2, limit: 10 })
+        .withArgs(testUser.uid, { skip: 2, limit: 10 })
         .returns(Promise.resolve([{ name: 'follower' }]));
       app.get(path)
         .set('x-access-token', 'testToken')
@@ -490,9 +488,9 @@ describe('User Router', () => {
     afterEach(() => User.getFollowerCount.restore());
 
     it('should send 200 with followers count', done => {
-      const path = '/users/' + testUser.id + '/followers-count';
+      const path = '/users/' + testUser.uid + '/followers-count';
       User.getFollowerCount
-        .withArgs(testUser.id)
+        .withArgs(testUser.uid)
         .returns(Promise.resolve(3));
       app.get(path).set('x-access-token', 'testToken')
         .expect(200, { numberOfFollowers: 3 }, done);
@@ -504,18 +502,18 @@ describe('User Router', () => {
     afterEach(() => User.getFollowing.restore());
 
     it('should send 200 with list of following users', done => {
-      const path = '/users/' + testUser.id + '/following';
+      const path = '/users/' + testUser.uid + '/following';
       User.getFollowing
-        .withArgs(testUser.id, { skip: 0, limit: 100 })
+        .withArgs(testUser.uid, { skip: 0, limit: 100 })
         .returns(Promise.resolve([{ name: 'user' }]));
       app.get(path).set('x-access-token', 'testToken')
         .expect(200, [{ name: 'user' }], done);
     });
 
     it('should 200 with pagination parameters', done => {
-      const path = '/users/' + testUser.id + '/following';
+      const path = '/users/' + testUser.uid + '/following';
       User.getFollowing
-        .withArgs(testUser.id, { skip: 2, limit: 10 })
+        .withArgs(testUser.uid, { skip: 2, limit: 10 })
         .returns(Promise.resolve([{ name: 'user' }]));
       app.get(path)
         .set('x-access-token', 'testToken')
@@ -529,9 +527,9 @@ describe('User Router', () => {
     afterEach(() => User.getFollowingCount.restore());
 
     it('should send 200 with following count', done => {
-      const path = '/users/' + testUser.id + '/following-count';
+      const path = '/users/' + testUser.uid + '/following-count';
       User.getFollowingCount
-        .withArgs(testUser.id)
+        .withArgs(testUser.uid)
         .returns(Promise.resolve(2));
       app.get(path).set('x-access-token', 'testToken')
         .expect(200, { numberOfFollowing: 2 }, done);
@@ -546,7 +544,7 @@ describe('User Router', () => {
       const path = '/relationships/following';
       const uid = mongoose.Types.ObjectId().toString();
       User.getFollowingInfo
-        .withArgs(testUser.id, [uid])
+        .withArgs(testUser.uid, [uid])
         .returns(Promise.resolve({ result: 'result' }));
       app.get(path)
         .set('x-access-token', 'testToken')
@@ -559,7 +557,7 @@ describe('User Router', () => {
       const uid1 = mongoose.Types.ObjectId().toString();
       const uid2 = mongoose.Types.ObjectId().toString();
       User.getFollowingInfo
-        .withArgs(testUser.id, [uid1, uid2])
+        .withArgs(testUser.uid, [uid1, uid2])
         .returns(Promise.resolve({ result: 'result' }));
       app.get(path)
         .set('x-access-token', 'testToken')
@@ -575,7 +573,7 @@ describe('User Router', () => {
       const path = '/relationships/following';
       const uid = mongoose.Types.ObjectId().toString();
       User.getFollowingInfo
-        .withArgs(testUser.id, [uid])
+        .withArgs(testUser.uid, [uid])
         .returns(Promise.resolve({ result: 'result' }));
       app.get(path)
         .set('x-access-token', 'testToken')

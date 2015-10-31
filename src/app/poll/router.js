@@ -6,14 +6,14 @@ import Vote from './vote';
 
 const publish = function (req, res, next) {
   // TODO: input validation with req.body
-  Poll.publish(req.user.id, req.body)
+  Poll.publish(req.user.uid, req.body)
     .then(res.status(201).json.bind(res))
     .catch(next);
 };
 
 const vote = function (req, res, next) {
   // TODO: input validation
-  Vote.createNew(req.user.id, req.params.id, req.body.answer)
+  Vote.createNew(req.user.uid, req.params.id, req.body.answer)
     .then(function (data) {
       if (!data) {
         throw {
@@ -28,7 +28,7 @@ const vote = function (req, res, next) {
 const comment = function (req, res, next) {
   // TODO: input validation
   const pollId = req.params.id;
-  Poll.comment(pollId, req.user.id, req.body.text).then(function (poll) {
+  Poll.comment(pollId, req.user.uid, req.body.text).then(function (poll) {
     if (!poll) {
       throw { status: 404, message: 'poll not found' };
     }
@@ -90,7 +90,7 @@ const getVoters = function (req, res, next) {
 
 const getRecentUnvotedPolls = function (req, res, next) {
   const { before, exclude } = req.query;
-  return Poll.getRecentUnvoted(req.user.id, before, [].concat(exclude))
+  return Poll.getRecentUnvoted(req.user.uid, before, [].concat(exclude))
     .then(res.json.bind(res))
     .catch(next);
 };
