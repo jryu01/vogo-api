@@ -1,4 +1,4 @@
-import requireToken from '../middleware/requireToken';
+import expressJwt from 'express-jwt';
 import Notification from '../notification/notificationModel';
 import Promise from 'bluebird';
 import express from 'express';
@@ -227,8 +227,12 @@ export default () => {
   eb.on('pollModel:vote', handleVoteNotification);
   eb.on('pollModel:comment', handleCommentNotification);
 
-  router.get('/notifications', requireToken, getNotifications);
-  router.get('/notifications/count', requireToken, getNotificationCount);
+  router.use(expressJwt({
+    secret: config.jwtsecret,
+    getToken: req => req.headers['x-access-token'] || null
+  }));
+  router.get('/notifications', getNotifications);
+  router.get('/notifications/count', getNotificationCount);
 
   return router;
 };

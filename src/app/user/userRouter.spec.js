@@ -15,14 +15,10 @@ const testUser = {
   uid: '507f1f77bcf86cd799439011',
 };
 
-const mockRequireToken = (req, res, next) => {
-  const token = req.headers['x-access-token'];
-  if (token !== 'testToken') {
-    return res.status(401).end();
-  }
-  req.user = testUser;
-  next();
-};
+const TEST_ACCESS_TOKEN = jwt.sign({
+  uid: testUser.uid,
+  exp: Date.now() + config.jwtexp
+}, config.jwtsecret);
 
 const createApp = (stub = {}) => {
   const app = express();
@@ -34,9 +30,7 @@ const createApp = (stub = {}) => {
 };
 
 describe('User Router', () => {
-  const app = createApp({
-    '../middleware/requireToken': mockRequireToken
-  });
+  const app = createApp();
 
   it('should require authentication token', done => {
     app.post('/').expect(401, done);
@@ -333,7 +327,7 @@ describe('User Router', () => {
       sinon.stub(User, 'registerDeviceToken')
         .returns(Promise.resolve('returned token'));
       app.post(path)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .send({ token: 'testiosdevicetoken', os: 'ios' })
         .expect(201, (err, res) => {
           if (err) { return done(err); }
@@ -374,7 +368,7 @@ describe('User Router', () => {
 
     it('should retreive array of users', done => {
       app.get(path)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(200, (err, res) => {
           if (err) { return done(err); }
           expect(res.body).to.be.an('array');
@@ -395,7 +389,7 @@ describe('User Router', () => {
           if (err) { return done(err); }
           const userId = res.body.id;
           app.get(path + '/' + userId)
-            .set('x-access-token', 'testToken')
+            .set('x-access-token', TEST_ACCESS_TOKEN)
             .expect(200, (error, response) => {
               if (error) { return done(error); }
               expect(response.body).to.have.property('email', 'bob@vogo.vogo');
@@ -410,7 +404,7 @@ describe('User Router', () => {
       const OTHER_USER_ID = mongoose.Types.ObjectId();
       const TARGET_ID = mongoose.Types.ObjectId();
       const path = '/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
-      app.put(path).set('x-access-token', 'testToken').expect(403, done);
+      app.put(path).set('x-access-token', TEST_ACCESS_TOKEN).expect(403, done);
     });
 
     it('should send 200 with success', done => {
@@ -421,7 +415,7 @@ describe('User Router', () => {
         name: 'Target User'
       });
       const path = '/users/' + testUser.uid + '/following/' + targetUser.id;
-      app.put(path).set('x-access-token', 'testToken')
+      app.put(path).set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(204, err => {
           if (err) { return done(err); }
           expect(User.follow).to.be.calledWith(testUser.uid, targetUser.id);
@@ -436,7 +430,7 @@ describe('User Router', () => {
       const OTHER_USER_ID = mongoose.Types.ObjectId();
       const TARGET_ID = mongoose.Types.ObjectId();
       const path = '/users/' + OTHER_USER_ID + '/following/' + TARGET_ID;
-      app.del(path).set('x-access-token', 'testToken').expect(403, done);
+      app.del(path).set('x-access-token', TEST_ACCESS_TOKEN).expect(403, done);
     });
 
     it('should send 200 with success', done => {
@@ -447,7 +441,7 @@ describe('User Router', () => {
         name: 'Target User'
       });
       const path = '/users/' + testUser.uid + '/following/' + targetUser.id;
-      app.del(path).set('x-access-token', 'testToken')
+      app.del(path).set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(204, err => {
           if (err) { return done(err); }
           expect(User.unfollow).to.have.been
@@ -467,7 +461,7 @@ describe('User Router', () => {
       User.getFollowers
         .withArgs(testUser.uid, { skip: 0, limit: 100 })
         .returns(Promise.resolve([{ name: 'follower' }]));
-      app.get(path).set('x-access-token', 'testToken')
+      app.get(path).set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(200, [{ name: 'follower' }], done);
     });
 
@@ -477,7 +471,7 @@ describe('User Router', () => {
         .withArgs(testUser.uid, { skip: 2, limit: 10 })
         .returns(Promise.resolve([{ name: 'follower' }]));
       app.get(path)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .query({skip: 2, limit: 10})
         .expect(200, [{ name: 'follower' }], done);
     });
@@ -492,7 +486,7 @@ describe('User Router', () => {
       User.getFollowerCount
         .withArgs(testUser.uid)
         .returns(Promise.resolve(3));
-      app.get(path).set('x-access-token', 'testToken')
+      app.get(path).set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(200, { numberOfFollowers: 3 }, done);
     });
   });
@@ -506,7 +500,7 @@ describe('User Router', () => {
       User.getFollowing
         .withArgs(testUser.uid, { skip: 0, limit: 100 })
         .returns(Promise.resolve([{ name: 'user' }]));
-      app.get(path).set('x-access-token', 'testToken')
+      app.get(path).set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(200, [{ name: 'user' }], done);
     });
 
@@ -516,7 +510,7 @@ describe('User Router', () => {
         .withArgs(testUser.uid, { skip: 2, limit: 10 })
         .returns(Promise.resolve([{ name: 'user' }]));
       app.get(path)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .query({skip: 2, limit: 10})
         .expect(200, [{ name: 'user' }], done);
     });
@@ -531,7 +525,7 @@ describe('User Router', () => {
       User.getFollowingCount
         .withArgs(testUser.uid)
         .returns(Promise.resolve(2));
-      app.get(path).set('x-access-token', 'testToken')
+      app.get(path).set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(200, { numberOfFollowing: 2 }, done);
     });
   });
@@ -547,7 +541,7 @@ describe('User Router', () => {
         .withArgs(testUser.uid, [uid])
         .returns(Promise.resolve({ result: 'result' }));
       app.get(path)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .query({ userId: uid })
         .expect(200, { result: 'result' }, done);
     });
@@ -560,7 +554,7 @@ describe('User Router', () => {
         .withArgs(testUser.uid, [uid1, uid2])
         .returns(Promise.resolve({ result: 'result' }));
       app.get(path)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .query({ userId: [uid1, uid2] })
         .expect(200, { result: 'result' }, done);
     });
@@ -576,7 +570,7 @@ describe('User Router', () => {
         .withArgs(testUser.uid, [uid])
         .returns(Promise.resolve({ result: 'result' }));
       app.get(path)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .expect(400, resBody, done);
     });
   });

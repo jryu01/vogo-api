@@ -5,6 +5,7 @@ import mongoose from 'mongoose';
 import Promise from 'bluebird';
 import request from 'supertest';
 import express from 'express';
+import jwt from 'jsonwebtoken';
 import Poll from './poll';
 import Vote from './vote';
 
@@ -12,19 +13,15 @@ const user = {
   uid: '507f1f77bcf86cd799439011'
 };
 
-const mockRequireToken = (req, res, next) => {
-  const token = req.headers['x-access-token'];
-  if (token !== 'testToken') {
-    return res.status(401).end();
-  }
-  req.user = user;
-  next();
-};
+const TEST_ACCESS_TOKEN = jwt.sign({
+  uid: user.uid,
+  exp: Date.now() + 1000 * 60
+}, 'testSecret');
 
 const createApp = () => {
   const app = express();
   const router = proxyquire('./router', {
-    '../middleware/requireToken': mockRequireToken
+    '../config': { jwtsecret: 'testSecret'}
   });
   app.use(bodyParser.json());
   app.use(router());
@@ -53,7 +50,7 @@ describe('Poll Router', () => {
         question: 'Created Poll'
       }));
       request(app).post('/polls')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .send(reqBody)
         .expect(201, (err, res) => {
@@ -71,7 +68,7 @@ describe('Poll Router', () => {
     it('should respond with 200', done => {
       Poll.getRecentUnvoted.withArgs(user.uid).returns(Promise.resolve([]));
       request(app).get('/polls')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .expect(200, [], done);
     });
@@ -80,7 +77,7 @@ describe('Poll Router', () => {
       Poll.getRecentUnvoted.withArgs(user.uid, '123')
         .returns(Promise.resolve([]));
       request(app).get('/polls')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ before: '123' })
         .expect(200, [], done);
@@ -90,7 +87,7 @@ describe('Poll Router', () => {
       Poll.getRecentUnvoted.withArgs(user.uid, undefined, ['123'])
         .returns(Promise.resolve([]));
       request(app).get('/polls')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ exclude: '123' })
         .expect(200, [], done);
@@ -109,7 +106,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve('result'));
 
       request(app).post('/polls/' + pollId + '/votes')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .send(reqBody)
         .expect(201, (err, res) => {
@@ -125,7 +122,7 @@ describe('Poll Router', () => {
       Vote.createNew.withArgs(user.uid, pollId, 1)
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/votes')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .send(reqBody)
         .expect(404, expected, done);
     });
@@ -144,7 +141,7 @@ describe('Poll Router', () => {
           comments: [{text: 'old comment'}, {text: 'new comment'}]
         }));
       request(app).post('/polls/' + pollId + '/comments')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .send(reqBody)
         .expect(201, {text: 'new comment'}, done);
@@ -156,7 +153,7 @@ describe('Poll Router', () => {
       Poll.comment.withArgs(pollId, user.uid, 'new comment')
         .returns(Promise.resolve(null));
       request(app).post('/polls/' + pollId + '/comments')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .send(reqBody)
         .expect(404, expected, done);
@@ -174,7 +171,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve([{text: 'comment1'}, {text: 'comment2'}]));
 
       request(app).get('/polls/' + pollId + '/comments')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .expect(200, [{text: 'comment1'}, {text: 'comment2'}], done);
     });
@@ -184,7 +181,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve([{text: 'comment1'}, {text: 'comment2'}]));
 
       request(app).get('/polls/' + pollId + '/comments')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ skip: 20, limit: 2 })
         .expect(200, [{text: 'comment1'}, {text: 'comment2'}], done);
@@ -202,7 +199,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve({ id: pollId }));
 
       request(app).get('/polls/' + pollId)
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .expect(200, { id: pollId }, done);
     });
@@ -219,7 +216,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve({ question: 'poll?' }));
 
       request(app).get('/users/' + userId + '/polls').query({ limit: 20 })
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .expect(200, { question: 'poll?'}, done);
     });
@@ -230,7 +227,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve({ question: 'poll?' }));
 
       request(app).get('/users/' + userId + '/polls')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ before: pollId })
         .expect(200, { question: 'poll?'}, done);
@@ -254,7 +251,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve({ id: 1 }));
 
       request(app).get('/users/' + userId + '/votes')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ limit: 20})
         .expect(200, { id: 1 }, done);
@@ -266,7 +263,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve( { id: 1 }));
 
       request(app).get('/users/' + userId + '/votes')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ before: voteId, limit: 20 })
         .expect(200, { id: 1 }, done);
@@ -278,7 +275,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve( { id: 2 }));
 
       request(app).get('/users/' + userId + '/votes')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ pollIds: [pollId] })
         .expect(200, { id: 2 }, done);
@@ -296,7 +293,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve([{ name: 'user1' }]));
 
       request(app).get('/polls/' + pollId + '/voters')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ answer: 1 })
         .expect(200, [{ name: 'user1'}], done);
@@ -307,7 +304,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve([{ name: 'user1' }]));
 
       request(app).get('/polls/' + pollId + '/voters')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ answer: 2, limit: 1, skip: 20 })
         .expect(200, [{ name: 'user1'}], done);
@@ -318,7 +315,7 @@ describe('Poll Router', () => {
         .returns(Promise.resolve([{ name: 'user1' }]));
 
       request(app).get('/polls/' + pollId + '/voters')
-        .set('x-access-token', 'testToken')
+        .set('x-access-token', TEST_ACCESS_TOKEN)
         .set('Accept', 'application/json')
         .query({ answer: 2 })
         .expect(200, [{ name: 'user1'}], done);

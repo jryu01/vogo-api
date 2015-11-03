@@ -4,7 +4,7 @@ import config from '../config';
 import crypto from 'crypto';
 import express from 'express';
 import Promise from 'bluebird';
-import requireToken from '../middleware/requireToken';
+import expressJwt from 'express-jwt';
 import errorhandler from 'api-error-handler';
 import pUploader from './pUploader';
 
@@ -229,7 +229,10 @@ export default () => {
   router.post('/users', createUser);
 
   // Below routes require authentication tokens
-  router.use(requireToken);
+  router.use(expressJwt({
+    secret: config.jwtsecret,
+    getToken: req => req.headers['x-access-token'] || null
+  }));
 
   router.get('/s3info', getS3Info); // TODO: need test
   router.post('/deviceTokens', registerDeviceToken);

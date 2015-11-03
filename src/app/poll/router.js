@@ -1,4 +1,5 @@
-import requireToken from '../middleware/requireToken';
+import expressJwt from 'express-jwt';
+import config from '../config';
 import errorhandler from 'api-error-handler';
 import express from 'express';
 import Poll from './poll';
@@ -98,7 +99,10 @@ const getRecentUnvotedPolls = function (req, res, next) {
 export default () => {
   const router = express.Router();
 
-  router.use(requireToken);
+  router.use(expressJwt({
+    secret: config.jwtsecret,
+    getToken: req => req.headers['x-access-token'] || null
+  }));
 
   router.post('/polls', publish);
   router.post('/polls/:id/votes', vote);

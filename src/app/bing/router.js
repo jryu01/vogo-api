@@ -1,7 +1,7 @@
 import config from '../config';
 import express from 'express';
 import Promise from 'bluebird';
-import requireToken from '../middleware/requireToken';
+import expressJwt from 'express-jwt';
 
 const request = Promise.promisify(require('request'));
 
@@ -45,7 +45,11 @@ const searchImage = function (req, res, next) {
 export default () => {
   const router = express.Router();
 
-  router.get('/bing/search/image', requireToken, searchImage);
+  router.use(expressJwt({
+    secret: config.jwtsecret,
+    getToken: req => req.headers['x-access-token'] || null
+  }));
+  router.get('/bing/search/image', searchImage);
 
   return router;
 };
