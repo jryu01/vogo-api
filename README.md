@@ -1,7 +1,7 @@
-VoteIt API
+Vogo API
 ==========
 
-VoteIt backend restful api
+Vogo backend rest api
 
 Installation
 -------
